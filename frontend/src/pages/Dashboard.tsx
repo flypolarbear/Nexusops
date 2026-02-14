@@ -106,10 +106,10 @@ export default function Dashboard() {
 
       {/* Infrastructure Diagram and World Map */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={10}>
+        <Col xs={24} lg={12}>
           <DrawioRenderer height={400} />
         </Col>
-        <Col xs={24} lg={14}>
+        <Col xs={24} lg={12}>
           <WorldMap />
         </Col>
       </Row>
