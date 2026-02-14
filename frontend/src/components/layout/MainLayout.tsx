@@ -176,45 +176,47 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Breadcrumb items={getBreadcrumbItems()} />
           </div>
 
-          {/* Project/Version Selector */}
-          <div className="flex items-center gap-2">
-            <AppstoreOutlined className="text-gray-400" />
-            <Select
-              value={currentProjectId}
-              onChange={(value) => {
-                setCurrentProject(value)
-              }}
-              style={{ width: 150 }}
-              options={projects.map(p => ({ value: p.id, label: p.name }))}
-              size="small"
-            />
-            <Select
-              value={currentVersionId}
-              onChange={(value) => {
-                setCurrentVersion(value)
-              }}
-              style={{ width: 130 }}
-              size="small"
-              className={isProductionVersion ? 'bg-green-50' : 'bg-orange-50'}
-            >
-              {currentProject?.versions.map(v => (
-                <Select.Option key={v.id} value={v.id}>
-                  <div className="flex items-center gap-1">
-                    {currentProject.productionVersionId === v.id && (
-                      <StarFilled className="text-yellow-500 text-xs" />
-                    )}
-                    <span>{v.codename}</span>
-                    <Tag
-                      color={v.status === 'production' ? 'green' : 'orange'}
-                      style={{ marginLeft: 4, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}
-                    >
-                      {v.status === 'production' ? '生产' : '测试'}
-                    </Tag>
-                  </div>
-                </Select.Option>
-              ))}
-            </Select>
-          </div>
+          {/* Project/Version Selector - Hidden on Dashboard */}
+          {location.pathname !== '/dashboard' && (
+            <div className="flex items-center gap-2">
+              <AppstoreOutlined className="text-gray-400" />
+              <Select
+                value={currentProjectId}
+                onChange={(value) => {
+                  setCurrentProject(value)
+                }}
+                style={{ width: 150 }}
+                options={projects.map(p => ({ value: p.id, label: p.name }))}
+                size="small"
+              />
+              <Select
+                value={currentVersionId}
+                onChange={(value) => {
+                  setCurrentVersion(value)
+                }}
+                style={{ width: 130 }}
+                size="small"
+                className={isProductionVersion ? 'bg-green-50' : 'bg-orange-50'}
+              >
+                {currentProject?.versions.map(v => (
+                  <Select.Option key={v.id} value={v.id}>
+                    <div className="flex items-center gap-1">
+                      {currentProject.productionVersionId === v.id && (
+                        <StarFilled className="text-yellow-500 text-xs" />
+                      )}
+                      <span>{v.codename}</span>
+                      <Tag
+                        color={v.status === 'production' ? 'green' : 'orange'}
+                        style={{ marginLeft: 4, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}
+                      >
+                        {v.status === 'production' ? '生产' : '测试'}
+                      </Tag>
+                    </div>
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             {/* AI Assistant Button */}

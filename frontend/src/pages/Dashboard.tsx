@@ -6,15 +6,15 @@ import {
   AlertOutlined,
   CheckCircleOutlined,
   WarningOutlined,
-  MessageOutlined,
   ClockCircleOutlined,
   ThunderboltOutlined,
   GlobalOutlined,
 } from '@ant-design/icons'
-import { PieChart, Pie, Cell, ResponsiveContainer, Line, XAxis, YAxis, Tooltip as RechartsTooltip, AreaChart, Area } from 'recharts'
+import { Line, XAxis, YAxis, Tooltip as RechartsTooltip, AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { overviewApi } from '../services/api'
 import type { OverviewStats } from '../types'
 import DrawioRenderer from '../components/DrawioRenderer'
+import WorldMap from '../components/WorldMap'
 
 const { Title, Text } = Typography
 
@@ -26,12 +26,6 @@ export default function Dashboard() {
       return res.data as OverviewStats
     },
   })
-
-  const healthData = overview ? [
-    { name: 'Healthy', value: overview.services.healthy, color: '#22c55e' },
-    { name: 'Warning', value: overview.services.warning, color: '#eab308' },
-    { name: 'Critical', value: overview.services.critical, color: '#ef4444' },
-  ] : []
 
   const mockTrendData = [
     { time: '00:00', requests: 1200, latency: 45 },
@@ -54,17 +48,11 @@ export default function Dashboard() {
     { id: '3', service: 'auth-service', version: 'v1.1.0', status: 'failed', time: '4h ago' },
   ]
 
-  // Conversation quality metrics
-  const conversationMetrics = [
-    { title: "Today's Conversations", value: 12847, prefix: <MessageOutlined />, trend: '+12%' },
-    { title: 'P95 Latency', value: '145ms', prefix: <ThunderboltOutlined />, trend: '-8%' },
-    { title: 'Success Rate', value: '99.2%', prefix: <CheckCircleOutlined />, trend: '+0.3%' },
-  ]
-
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">Dashboard Overview</Title>
+        <Title level={4} className="m-0">Infrastructure Overview</Title>
         <Space>
           <Text type="secondary">
             <ClockCircleOutlined className="mr-1" />
@@ -72,27 +60,6 @@ export default function Dashboard() {
           </Text>
         </Space>
       </div>
-
-      {/* Conversation Quality KPIs */}
-      <Row gutter={[16, 16]}>
-        {conversationMetrics.map((metric, index) => (
-          <Col xs={24} sm={8} key={index}>
-            <Card>
-              <Statistic
-                title={metric.title}
-                value={metric.value}
-                prefix={metric.prefix}
-                valueStyle={{ color: index === 0 ? '#3b82f6' : index === 1 ? '#22c55e' : '#8b5cf6' }}
-              />
-              <div className="mt-2">
-                <Tag color={metric.trend.startsWith('+') ? 'green' : 'blue'}>
-                  {metric.trend} vs yesterday
-                </Tag>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
 
       {/* Stats Cards */}
       <Row gutter={[16, 16]}>
@@ -137,41 +104,13 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* Infrastructure Diagram and Service Health */}
+      {/* Infrastructure Diagram and World Map */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={14}>
+        <Col xs={24} lg={10}>
           <DrawioRenderer height={400} />
         </Col>
-        <Col xs={24} lg={10}>
-          <Card title="Service Health Distribution" className="h-full">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={healthData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {healthData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex justify-center gap-6 mt-4">
-              {healthData.map((item, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <Text>{item.name}: {item.value}</Text>
-                </div>
-              ))}
-            </div>
-          </Card>
+        <Col xs={24} lg={14}>
+          <WorldMap />
         </Col>
       </Row>
 

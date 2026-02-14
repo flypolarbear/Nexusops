@@ -9,6 +9,11 @@ import {
   Typography,
   Tooltip,
   message,
+  Statistic,
+  Row,
+  Col,
+  Card,
+  Tag,
 } from 'antd'
 import {
   RobotOutlined,
@@ -17,6 +22,8 @@ import {
   DeleteOutlined,
   PaperClipOutlined,
   ThunderboltOutlined,
+  MessageOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -185,6 +192,35 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
         body: { display: 'flex', flexDirection: 'column', padding: 0 },
       }}
     >
+      {/* Conversation Stats */}
+      <div className="p-4 border-b bg-gray-50">
+        <Row gutter={12}>
+          <Col span={12}>
+            <Card size="small" className="text-center">
+              <Statistic
+                title="Today's Conversations"
+                value={12847}
+                prefix={<MessageOutlined className="text-blue-500" />}
+                valueStyle={{ fontSize: 18, color: '#3b82f6' }}
+              />
+              <Tag color="green" className="mt-1">+12% vs yesterday</Tag>
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card size="small" className="text-center">
+              <Statistic
+                title="Success Rate"
+                value={99.2}
+                suffix="%"
+                prefix={<CheckCircleOutlined className="text-green-500" />}
+                valueStyle={{ fontSize: 18, color: '#22c55e' }}
+              />
+              <Tag color="green" className="mt-1">+0.3%</Tag>
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
       {/* Messages Area */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {messages.length === 0 ? (
