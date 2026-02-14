@@ -1,0 +1,678 @@
+{
+  "project": "NexusOps",
+  "description": "AI Native Operations Platform - 多模态对话系统统一运维 Web 平台",
+  "mvp_scope": "统一看板 + 变更发布视图 + 轻量工单 + AI 助手",
+  "target_users": ["研发", "算法工程师"],
+  "pain_points": ["信息分散", "跨平台跳转", "跨区域资源可见性", "第三方外包协作"],
+  "features": [
+    {
+      "id": "AUTH-001",
+      "category": "authentication",
+      "priority": "critical",
+      "description": "用户登录认证 - 支持 OIDC/OAuth2 集成企业 SSO",
+      "steps": [
+        "访问 /login 页面",
+        "支持用户名密码登录",
+        "支持 OIDC 跳转登录",
+        "登录成功后获取 JWT token",
+        "token 存储到前端状态管理",
+        "自动跳转到 Dashboard"
+      ],
+      "acceptance_criteria": [
+        "登录页面正常显示",
+        "OIDC 登录流程完整",
+        "JWT token 正确存储",
+        "未认证用户自动跳转登录页"
+      ],
+      "passes": false
+    },
+    {
+      "id": "AUTH-002",
+      "category": "authentication",
+      "priority": "high",
+      "description": "用户会话管理 - token 刷新与登出",
+      "steps": [
+        "实现 token 过期检测",
+        "实现自动刷新机制",
+        "实现登出功能清除状态",
+        "会话超时自动跳转登录"
+      ],
+      "acceptance_criteria": [
+        "token 过期前自动刷新",
+        "登出清除所有认证状态",
+        "会话超时正确处理"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DB-001",
+      "category": "infrastructure",
+      "priority": "critical",
+      "description": "数据库 schema 设计与初始化",
+      "steps": [
+        "设计用户表 users",
+        "设计项目表 projects",
+        "设计服务表 services",
+        "设计部署记录表 deployments",
+        "设计告警表 alerts",
+        "设计工单表 tickets",
+        "设计 AI 对话历史表 ai_conversations",
+        "创建 init-db.sql 迁移脚本"
+      ],
+      "acceptance_criteria": [
+        "所有表结构符合设计",
+        "外键关系正确",
+        "索引创建合理",
+        "Docker 启动时自动初始化"
+      ],
+      "passes": false
+    },
+    {
+      "id": "K8S-001",
+      "category": "integration",
+      "priority": "high",
+      "description": "Kubernetes 客户端集成 - 多集群支持",
+      "steps": [
+        "实现 K8s client 初始化",
+        "支持多 kubeconfig 加载",
+        "实现 namespace 列表获取",
+        "实现 deployment 列表获取",
+        "实现 pod 列表获取",
+        "实现 service 列表获取",
+        "实现资源状态聚合"
+      ],
+      "acceptance_criteria": [
+        "支持连接多个 K8s 集群",
+        "正确获取各类资源",
+        "错误处理完善",
+        "支持 context 切换"
+      ],
+      "passes": false
+    },
+    {
+      "id": "GRAFANA-001",
+      "category": "integration",
+      "priority": "high",
+      "description": "Grafana 集成 - 嵌入式面板与告警数据",
+      "steps": [
+        "实现 Grafana API 客户端",
+        "获取 dashboard 列表",
+        "实现 dashboard 嵌入 iframe",
+        "获取告警规则列表",
+        "获取当前告警状态"
+      ],
+      "acceptance_criteria": [
+        "Dashboard 嵌入正常显示",
+        "告警数据实时获取",
+        "支持 Grafana SSO 集成"
+      ],
+      "passes": false
+    },
+    {
+      "id": "ARGOCD-001",
+      "category": "integration",
+      "priority": "high",
+      "description": "ArgoCD 集成 - GitOps 部署状态",
+      "steps": [
+        "实现 ArgoCD API 客户端",
+        "获取 Application 列表",
+        "获取同步状态",
+        "获取部署历史",
+        "触发同步操作"
+      ],
+      "acceptance_criteria": [
+        "Application 列表正确展示",
+        "同步状态实时更新",
+        "部署历史可追溯"
+      ],
+      "passes": false
+    },
+    {
+      "id": "JENKINS-001",
+      "category": "integration",
+      "priority": "medium",
+      "description": "Jenkins 集成 - CI 流水线状态",
+      "steps": [
+        "实现 Jenkins API 客户端",
+        "获取 Job 列表",
+        "获取构建历史",
+        "获取构建日志",
+        "触发构建"
+      ],
+      "acceptance_criteria": [
+        "Job 列表正确展示",
+        "构建状态实时更新",
+        "构建日志可查看"
+      ],
+      "passes": false
+    },
+    {
+      "id": "OPENCLAW-001",
+      "category": "integration",
+      "priority": "high",
+      "description": "OpenClaw 集成 - 多 Agent 状态监控",
+      "steps": [
+        "实现 OpenClaw WebSocket 连接",
+        "获取 Agent 列表与状态",
+        "获取 Agent 运行指标",
+        "实现实时状态推送"
+      ],
+      "acceptance_criteria": [
+        "Agent 状态实时显示",
+        "WebSocket 连接稳定",
+        "断线自动重连"
+      ],
+      "passes": false
+    },
+    {
+      "id": "PIPECAT-001",
+      "category": "integration",
+      "priority": "high",
+      "description": "Pipecat 集成 - 多模态管道状态",
+      "steps": [
+        "实现 Pipecat API 客户端",
+        "获取 Pipeline 列表",
+        "获取节点状态",
+        "获取流量指标"
+      ],
+      "acceptance_criteria": [
+        "Pipeline 状态正确展示",
+        "节点健康状态可见",
+        "流量指标可监控"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DASH-001",
+      "category": "dashboard",
+      "priority": "critical",
+      "description": "统一看板 - 总览页面布局",
+      "steps": [
+        "实现 4 象限布局",
+        "服务健康状态卡片",
+        "集群状态卡片",
+        "告警汇总卡片",
+        "部署活动卡片"
+      ],
+      "acceptance_criteria": [
+        "页面布局符合设计",
+        "卡片响应式适配",
+        "数据自动刷新"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DASH-002",
+      "category": "dashboard",
+      "priority": "critical",
+      "description": "统一看板 - 世界地图资源分布",
+      "steps": [
+        "实现世界地图组件",
+        "标记各区域集群位置",
+        "显示区域健康状态",
+        "点击区域可钻取详情"
+      ],
+      "acceptance_criteria": [
+        "地图正确渲染",
+        "区域标记准确",
+        "钻取功能正常"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DASH-003",
+      "category": "dashboard",
+      "priority": "high",
+      "description": "统一看板 - 跨区域资源可见性",
+      "steps": [
+        "实现区域选择器",
+        "支持多区域对比视图",
+        "区域间资源切换",
+        "全局搜索跨区域资源"
+      ],
+      "acceptance_criteria": [
+        "区域切换流畅",
+        "对比视图直观",
+        "搜索结果准确"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DASH-004",
+      "category": "dashboard",
+      "priority": "high",
+      "description": "统一看板 - 实时数据刷新",
+      "steps": [
+        "实现 WebSocket 数据推送",
+        "实现轮询 fallback",
+        "数据变更动画提示",
+        "支持暂停/恢复刷新"
+      ],
+      "acceptance_criteria": [
+        "数据实时更新",
+        "断线自动恢复",
+        "动画效果流畅"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DEPLOY-001",
+      "category": "deployment",
+      "priority": "critical",
+      "description": "变更发布视图 - 部署列表页面",
+      "steps": [
+        "显示部署记录列表",
+        "支持按服务/环境筛选",
+        "支持按时间范围筛选",
+        "显示部署状态和进度",
+        "支持分页"
+      ],
+      "acceptance_criteria": [
+        "列表数据正确",
+        "筛选功能正常",
+        "分页功能正常"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DEPLOY-002",
+      "category": "deployment",
+      "priority": "critical",
+      "description": "变更发布视图 - 部署详情页面",
+      "steps": [
+        "显示部署元信息",
+        "显示变更内容 diff",
+        "显示部署时间线",
+        "显示关联告警",
+        "显示回滚选项"
+      ],
+      "acceptance_criteria": [
+        "详情信息完整",
+        "Diff 渲染正确",
+        "时间线清晰"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DEPLOY-003",
+      "category": "deployment",
+      "priority": "high",
+      "description": "变更发布视图 - 部署操作",
+      "steps": [
+        "触发新部署",
+        "取消进行中部署",
+        "回滚到历史版本",
+        "操作确认弹窗",
+        "操作审计日志"
+      ],
+      "acceptance_criteria": [
+        "操作响应及时",
+        "确认机制完善",
+        "审计日志完整"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DEPLOY-004",
+      "category": "deployment",
+      "priority": "high",
+      "description": "变更发布视图 - 服务拓扑图",
+      "steps": [
+        "使用 Drawio 渲染拓扑",
+        "显示服务依赖关系",
+        "显示当前部署状态",
+        "支持交互式探索"
+      ],
+      "acceptance_criteria": [
+        "拓扑图正确渲染",
+        "依赖关系准确",
+        "交互体验流畅"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TICKET-001",
+      "category": "ticket",
+      "priority": "critical",
+      "description": "轻量工单 - 工单列表页面",
+      "steps": [
+        "显示工单列表",
+        "支持按状态筛选",
+        "支持按优先级筛选",
+        "支持按分配人筛选",
+        "支持关键字搜索",
+        "支持分页"
+      ],
+      "acceptance_criteria": [
+        "列表数据正确",
+        "筛选搜索正常",
+        "分页功能正常"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TICKET-002",
+      "category": "ticket",
+      "priority": "critical",
+      "description": "轻量工单 - 创建工单",
+      "steps": [
+        "工单创建表单",
+        "选择关联服务/资源",
+        "设置优先级",
+        "分配处理人",
+        "添加描述和附件",
+        "提交创建"
+      ],
+      "acceptance_criteria": [
+        "表单验证完整",
+        "关联资源正确",
+        "提交流程顺畅"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TICKET-003",
+      "category": "ticket",
+      "priority": "high",
+      "description": "轻量工单 - 工单详情与状态流转",
+      "steps": [
+        "显示工单详情",
+        "显示状态变更历史",
+        "支持状态变更操作",
+        "支持添加评论",
+        "支持关联告警/部署"
+      ],
+      "acceptance_criteria": [
+        "详情信息完整",
+        "状态流转正确",
+        "评论功能正常"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TICKET-004",
+      "category": "ticket",
+      "priority": "medium",
+      "description": "轻量工单 - 外协人员协作",
+      "steps": [
+        "支持外部用户邀请",
+        "外部用户权限控制",
+        "操作审计追踪",
+        "工单共享链接"
+      ],
+      "acceptance_criteria": [
+        "外协用户可访问",
+        "权限控制正确",
+        "审计记录完整"
+      ],
+      "passes": false
+    },
+    {
+      "id": "AI-001",
+      "category": "ai_assistant",
+      "priority": "critical",
+      "description": "AI 助手 - 基础对话界面",
+      "steps": [
+        "对话输入框",
+        "消息列表显示",
+        "支持 Markdown 渲染",
+        "支持代码高亮",
+        "支持复制回复"
+      ],
+      "acceptance_criteria": [
+        "对话交互流畅",
+        "渲染效果正确",
+        "复制功能正常"
+      ],
+      "passes": false
+    },
+    {
+      "id": "AI-002",
+      "category": "ai_assistant",
+      "priority": "critical",
+      "description": "AI 助手 - 运维知识问答",
+      "steps": [
+        "集成后端 AI 查询 API",
+        "流式响应显示",
+        "引用来源链接",
+        "相关资源推荐"
+      ],
+      "acceptance_criteria": [
+        "问答响应准确",
+        "流式输出流畅",
+        "来源可追溯"
+      ],
+      "passes": false
+    },
+    {
+      "id": "AI-003",
+      "category": "ai_assistant",
+      "priority": "high",
+      "description": "AI 助手 - 上下文感知",
+      "steps": [
+        "获取当前页面上下文",
+        "自动注入资源信息",
+        "智能推荐操作",
+        "一键执行建议"
+      ],
+      "acceptance_criteria": [
+        "上下文感知准确",
+        "推荐相关性强",
+        "执行流程顺畅"
+      ],
+      "passes": false
+    },
+    {
+      "id": "AI-004",
+      "category": "ai_assistant",
+      "priority": "high",
+      "description": "AI 助手 - 侧边栏快速访问",
+      "steps": [
+        "实现 Drawer 侧边栏",
+        "全局快捷键呼出",
+        "对话历史保持",
+        "最小化/展开切换"
+      ],
+      "acceptance_criteria": [
+        "侧边栏交互流畅",
+        "快捷键响应正确",
+        "历史记录保持"
+      ],
+      "passes": false
+    },
+    {
+      "id": "AI-005",
+      "category": "ai_assistant",
+      "priority": "medium",
+      "description": "AI 助手 - K8sGPT 集成诊断",
+      "steps": [
+        "集成 K8sGPT 分析能力",
+        "自动诊断资源问题",
+        "提供修复建议",
+        "一键应用修复"
+      ],
+      "acceptance_criteria": [
+        "诊断结果准确",
+        "建议可操作",
+        "修复执行安全"
+      ],
+      "passes": false
+    },
+    {
+      "id": "UI-001",
+      "category": "ui_ux",
+      "priority": "high",
+      "description": "UI/UX - 响应式布局与主题",
+      "steps": [
+        "实现深色/浅色主题切换",
+        "移动端适配",
+        "侧边栏折叠",
+        "布局持久化"
+      ],
+      "acceptance_criteria": [
+        "主题切换正常",
+        "移动端可用",
+        "布局状态保持"
+      ],
+      "passes": false
+    },
+    {
+      "id": "UI-002",
+      "category": "ui_ux",
+      "priority": "medium",
+      "description": "UI/UX - 快捷键支持",
+      "steps": [
+        "全局搜索快捷键",
+        "页面导航快捷键",
+        "AI 助手快捷键",
+        "快捷键帮助面板"
+      ],
+      "acceptance_criteria": [
+        "快捷键响应正确",
+        "帮助面板清晰"
+      ],
+      "passes": false
+    },
+    {
+      "id": "UI-003",
+      "category": "ui_ux",
+      "priority": "medium",
+      "description": "UI/UX - 国际化支持",
+      "steps": [
+        "集成 i18n 框架",
+        "中文翻译完整",
+        "英文翻译完整",
+        "语言切换功能"
+      ],
+      "acceptance_criteria": [
+        "翻译准确完整",
+        "切换实时生效"
+      ],
+      "passes": false
+    },
+    {
+      "id": "API-001",
+      "category": "api",
+      "priority": "critical",
+      "description": "API - 统一错误处理",
+      "steps": [
+        "定义标准错误响应格式",
+        "实现错误码映射",
+        "前端统一错误提示",
+        "错误日志记录"
+      ],
+      "acceptance_criteria": [
+        "错误格式统一",
+        "提示信息友好",
+        "日志可追溯"
+      ],
+      "passes": false
+    },
+    {
+      "id": "API-002",
+      "category": "api",
+      "priority": "high",
+      "description": "API - 请求限流与熔断",
+      "steps": [
+        "实现 API 限流中间件",
+        "实现熔断器",
+        "客户端重试机制",
+        "限流提示友好"
+      ],
+      "acceptance_criteria": [
+        "限流生效正确",
+        "熔断保护有效",
+        "重试机制合理"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TEST-001",
+      "category": "testing",
+      "priority": "high",
+      "description": "测试 - 后端单元测试",
+      "steps": [
+        "API handler 单元测试",
+        "Service 层单元测试",
+        "Mock 外部依赖",
+        "覆盖率 > 80%"
+      ],
+      "acceptance_criteria": [
+        "测试用例完整",
+        "覆盖率达标",
+        "CI 集成"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TEST-002",
+      "category": "testing",
+      "priority": "high",
+      "description": "测试 - 前端单元测试",
+      "steps": [
+        "组件单元测试",
+        "Hook 单元测试",
+        "Store 单元测试",
+        "覆盖率 > 80%"
+      ],
+      "acceptance_criteria": [
+        "测试用例完整",
+        "覆盖率达标",
+        "CI 集成"
+      ],
+      "passes": false
+    },
+    {
+      "id": "TEST-003",
+      "category": "testing",
+      "priority": "medium",
+      "description": "测试 - E2E 测试",
+      "steps": [
+        "登录流程 E2E",
+        "看板页面 E2E",
+        "工单 CRUD E2E",
+        "AI 对话 E2E"
+      ],
+      "acceptance_criteria": [
+        "关键流程覆盖",
+        "CI 集成"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DEPLOY-INFRA-001",
+      "category": "deployment_infra",
+      "priority": "medium",
+      "description": "部署 - Docker Compose 生产配置",
+      "steps": [
+        "优化 docker-compose.yaml",
+        "配置健康检查",
+        "配置资源限制",
+        "配置日志收集"
+      ],
+      "acceptance_criteria": [
+        "服务启动稳定",
+        "健康检查有效",
+        "日志可查询"
+      ],
+      "passes": false
+    },
+    {
+      "id": "DEPLOY-INFRA-002",
+      "category": "deployment_infra",
+      "priority": "low",
+      "description": "部署 - Kubernetes Helm Chart",
+      "steps": [
+        "创建 Helm Chart",
+        "配置 Ingress",
+        "配置 HPA",
+        "配置 Secrets"
+      ],
+      "acceptance_criteria": [
+        "Chart 部署成功",
+        "自动伸缩有效"
+      ],
+      "passes": false
+    }
+  ]
+}
