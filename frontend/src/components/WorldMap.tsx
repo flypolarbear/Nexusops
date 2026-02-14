@@ -245,9 +245,9 @@ export default function WorldMap() {
 
     // Register world map - try multiple CDNs for reliability
     const mapUrls = [
+      'https://echarts.apache.org/examples/data/asset/geo/world.json',
       'https://unpkg.com/echarts@5.4.3/map/json/world.json',
       'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/map/json/world.json',
-      'https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/map/json/world.json',
     ]
 
     const loadMap = async () => {
