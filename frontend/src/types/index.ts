@@ -79,6 +79,43 @@ export interface Image {
   pushedAt: string
 }
 
+// Version Deployment - 记录某个 Project 的某个 Version 部署到哪个 Region
+export interface VersionDeployment {
+  id: string
+  projectId: string
+  projectName: string
+  versionId: string
+  codename: string           // 版本代号，如 Phoenix, Titan
+  imageVersion: string       // 镜像版本，如 v1.2.3
+  regionId: string           // 部署区域 ID
+  regionName: string         // 区域名称，如 US East (AWS)
+
+  // GitOps 信息
+  gitRepo: string            // Git 仓库地址
+  gitBranch: string          // Git 分支
+  gitCommit: string          // Git Commit SHA
+  gitCommitUrl: string       // Git Commit 链接
+
+  // ArgoCD 信息
+  argocdApp: string          // ArgoCD Application 名称
+  argocdUrl: string          // ArgoCD 应用链接
+  argocdSyncStatus: 'synced' | 'out-of-sync' | 'unknown'
+  argocdHealthStatus: 'healthy' | 'degraded' | 'progressing' | 'unknown'
+  argocdRevision: string     // ArgoCD 同步的 Git revision
+
+  // 服务状态
+  serviceName: string        // K8s 服务名称
+  replicas: number           // 副本数
+  status: 'running' | 'warning' | 'error' | 'unknown'
+  cpu: string                // CPU 使用
+  memory: string             // 内存使用
+
+  // 元数据
+  deployedAt: string
+  deployedBy: string
+}
+
+// Legacy Deployment (保留兼容)
 export interface Deployment {
   id: string
   serviceId: string

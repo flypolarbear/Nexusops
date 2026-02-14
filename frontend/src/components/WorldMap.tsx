@@ -1,123 +1,43 @@
 import { useEffect, useRef, useState } from 'react'
 import * as echarts from 'echarts'
 import { Card, Tooltip as AntTooltip, Modal, Descriptions, Tag, Table, Typography } from 'antd'
-import { CheckCircleOutlined, WarningOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, WarningOutlined, ExclamationCircleOutlined, GithubOutlined, LinkOutlined } from '@ant-design/icons'
+import { useDeploymentStore } from '../stores/deploymentStore'
+import type { VersionDeployment } from '../types'
 
 const { Text } = Typography
 
-interface ServiceDeployment {
-  name: string
-  imageVersion: string      // 镜像版本，如 v1.2.3
-  codename: string | null   // 版本代号，如 Phoenix、Titan
-  status: 'running' | 'warning' | 'error'
-  replicas: number
-  cpu: string
-  memory: string
+// 区域坐标配置
+const regionCoordinates: Record<string, [number, number]> = {
+  'us-east': [-77.0369, 38.9072],
+  'us-west': [-122.4194, 37.7749],
+  'eu-west': [-0.1276, 51.5074],
+  'eu-central': [8.6821, 50.1109],
+  'ap-east': [121.4737, 31.2304],
+  'ap-southeast': [103.8198, 1.3521],
 }
 
-interface RegionData {
-  id: string
-  name: string
-  coordinates: [number, number]
-  status: 'healthy' | 'warning' | 'critical'
-  clusters: number
-  cpu: number
-  memory: number
-  services: ServiceDeployment[]
+const regionNames: Record<string, string> = {
+  'us-east': 'US East (AWS)',
+  'us-west': 'US West (AWS)',
+  'eu-west': 'EU West (GCP)',
+  'eu-central': 'EU Central (AWS)',
+  'ap-east': 'Asia Pacific (AliCloud)',
+  'ap-southeast': 'AP Southeast (AWS)',
 }
-
-const mockRegions: RegionData[] = [
-  {
-    id: 'us-east',
-    name: 'US East (AWS)',
-    coordinates: [-77.0369, 38.9072],
-    status: 'healthy',
-    clusters: 3,
-    cpu: 65,
-    memory: 72,
-    services: [
-      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 3, cpu: '450m', memory: '512Mi' },
-      { name: 'chat-gateway', imageVersion: 'v2.0.1', codename: 'Aurora', status: 'running', replicas: 2, cpu: '200m', memory: '256Mi' },
-      { name: 'auth-service', imageVersion: 'v1.1.0', codename: null, status: 'running', replicas: 2, cpu: '100m', memory: '128Mi' },
-      { name: 'worker', imageVersion: 'v1.0.5', codename: 'Titan', status: 'running', replicas: 5, cpu: '500m', memory: '1Gi' },
-    ],
-  },
-  {
-    id: 'us-west',
-    name: 'US West (AWS)',
-    coordinates: [-122.4194, 37.7749],
-    status: 'healthy',
-    clusters: 2,
-    cpu: 45,
-    memory: 58,
-    services: [
-      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 2, cpu: '300m', memory: '384Mi' },
-      { name: 'chat-gateway', imageVersion: 'v2.0.1', codename: 'Aurora', status: 'running', replicas: 2, cpu: '180m', memory: '220Mi' },
-    ],
-  },
-  {
-    id: 'eu-west',
-    name: 'EU West (GCP)',
-    coordinates: [-0.1276, 51.5074],
-    status: 'warning',
-    clusters: 2,
-    cpu: 78,
-    memory: 82,
-    services: [
-      { name: 'api-gateway', imageVersion: 'v1.2.2', codename: 'legacy', status: 'warning', replicas: 2, cpu: '650m', memory: '780Mi' },
-      { name: 'chat-gateway', imageVersion: 'v2.0.0', codename: 'stable', status: 'running', replicas: 2, cpu: '200m', memory: '256Mi' },
-      { name: 'auth-service', imageVersion: 'v1.1.0', codename: null, status: 'running', replicas: 1, cpu: '80m', memory: '96Mi' },
-    ],
-  },
-  {
-    id: 'eu-central',
-    name: 'EU Central (AWS)',
-    coordinates: [8.6821, 50.1109],
-    status: 'healthy',
-    clusters: 1,
-    cpu: 52,
-    memory: 61,
-    services: [
-      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 2, cpu: '280m', memory: '320Mi' },
-    ],
-  },
-  {
-    id: 'ap-east',
-    name: 'Asia Pacific (AliCloud)',
-    coordinates: [121.4737, 31.2304],
-    status: 'critical',
-    clusters: 2,
-    cpu: 92,
-    memory: 88,
-    services: [
-      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'error', replicas: 1, cpu: '950m', memory: '920Mi' },
-      { name: 'chat-gateway', imageVersion: 'v2.0.1', codename: 'Aurora', status: 'warning', replicas: 2, cpu: '400m', memory: '480Mi' },
-      { name: 'worker', imageVersion: 'v1.0.5', codename: 'Titan', status: 'error', replicas: 0, cpu: '0m', memory: '0Mi' },
-    ],
-  },
-  {
-    id: 'ap-southeast',
-    name: 'AP Southeast (AWS)',
-    coordinates: [103.8198, 1.3521],
-    status: 'healthy',
-    clusters: 1,
-    cpu: 38,
-    memory: 45,
-    services: [
-      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 1, cpu: '150m', memory: '192Mi' },
-    ],
-  },
-]
 
 const getStatusColor = (status: string): string => {
   switch (status) {
     case 'healthy':
     case 'running':
+    case 'synced':
       return '#22c55e'
     case 'warning':
+    case 'out-of-sync':
       return '#eab308'
     case 'critical':
     case 'error':
+    case 'degraded':
       return '#ef4444'
     default:
       return '#94a3b8'
@@ -127,21 +47,43 @@ const getStatusColor = (status: string): string => {
 export default function WorldMap() {
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<echarts.ECharts | null>(null)
-  const [selectedRegion, setSelectedRegion] = useState<RegionData | null>(null)
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  const handleRegionClick = (regionId: string) => {
-    const region = mockRegions.find(r => r.id === regionId)
-    if (region) {
-      setSelectedRegion(region)
-      setModalOpen(true)
-    }
+  const { deployments, getDeploymentsByRegion, getRegionStatus } = useDeploymentStore()
+
+  // 获取各区域统计
+  const getRegionStats = () => {
+    const regionIds = Object.keys(regionCoordinates)
+    return regionIds.map(regionId => {
+      const regionDeployments = getDeploymentsByRegion(regionId)
+      const status = getRegionStatus(regionId)
+      const clusters = new Set(regionDeployments.map(d => d.argocdApp)).size || 1
+      const cpuAvg = regionDeployments.length > 0
+        ? Math.round(regionDeployments.reduce((sum, d) => sum + parseInt(d.cpu) || 0, 0) / regionDeployments.length)
+        : 0
+      const memoryAvg = regionDeployments.length > 0
+        ? Math.round(regionDeployments.reduce((sum, d) => sum + parseInt(d.memory) || 0, 0) / regionDeployments.length)
+        : 0
+
+      return {
+        id: regionId,
+        name: regionNames[regionId] || regionId,
+        coordinates: regionCoordinates[regionId],
+        status,
+        clusters,
+        serviceCount: regionDeployments.length,
+        cpu: cpuAvg,
+        memory: memoryAvg,
+      }
+    })
   }
 
   useEffect(() => {
     if (!chartRef.current) return
 
     chartInstance.current = echarts.init(chartRef.current)
+    const regionStats = getRegionStats()
 
     const option: echarts.EChartsOption = {
       backgroundColor: 'transparent',
@@ -155,9 +97,9 @@ export default function WorldMap() {
                 <strong>${data.name}</strong><br/>
                 Status: <span style="color: ${getStatusColor(data.status)}">${data.status.toUpperCase()}</span><br/>
                 Clusters: ${data.clusters}<br/>
-                Services: ${data.serviceCount}<br/>
-                CPU: ${data.cpu}%<br/>
-                Memory: ${data.memory}%
+                Deployments: ${data.serviceCount}<br/>
+                Avg CPU: ${data.cpu}m<br/>
+                Avg Memory: ${data.memory}Mi
               </div>
             `
           }
@@ -189,13 +131,13 @@ export default function WorldMap() {
         {
           type: 'scatter',
           coordinateSystem: 'geo',
-          data: mockRegions.map((region) => ({
+          data: regionStats.map((region) => ({
             name: region.name,
             value: [...region.coordinates, region.clusters],
             regionId: region.id,
             status: region.status,
             clusters: region.clusters,
-            serviceCount: region.services.length,
+            serviceCount: region.serviceCount,
             cpu: region.cpu,
             memory: region.memory,
             itemStyle: {
@@ -222,7 +164,7 @@ export default function WorldMap() {
         {
           type: 'effectScatter',
           coordinateSystem: 'geo',
-          data: mockRegions
+          data: regionStats
             .filter((r) => r.status === 'critical' || r.status === 'warning')
             .map((region) => ({
               name: region.name,
@@ -255,7 +197,8 @@ export default function WorldMap() {
           // Add click event
           chartInstance.current?.on('click', (params: any) => {
             if (params.data && params.data.regionId) {
-              handleRegionClick(params.data.regionId)
+              setSelectedRegion(params.data.regionId)
+              setModalOpen(true)
             }
           })
           return
@@ -281,7 +224,7 @@ export default function WorldMap() {
         series: [
           {
             type: 'scatter',
-            data: mockRegions.map((region) => ({
+            data: regionStats.map((region) => ({
               name: region.name,
               value: region.coordinates,
               regionId: region.id,
@@ -296,7 +239,8 @@ export default function WorldMap() {
 
       chartInstance.current?.on('click', (params: any) => {
         if (params.data && params.data.regionId) {
-          handleRegionClick(params.data.regionId)
+          setSelectedRegion(params.data.regionId)
+          setModalOpen(true)
         }
       })
     }
@@ -312,14 +256,28 @@ export default function WorldMap() {
       window.removeEventListener('resize', handleResize)
       chartInstance.current?.dispose()
     }
-  }, [])
+  }, [deployments])
+
+  const regionDeployments = selectedRegion ? getDeploymentsByRegion(selectedRegion) : []
+  const regionStatus = selectedRegion ? getRegionStatus(selectedRegion) : 'healthy'
 
   const serviceColumns = [
     {
       title: 'Service',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'serviceName',
+      key: 'serviceName',
       render: (name: string) => <span className="font-medium">{name}</span>,
+    },
+    {
+      title: 'Project',
+      dataIndex: 'projectName',
+      key: 'projectName',
+      render: (name: string, record: VersionDeployment) => (
+        <span>
+          {name}
+          {record.projectId !== 'proj-1' && <Tag color="cyan" className="ml-1">外部</Tag>}
+        </span>
+      ),
     },
     {
       title: 'Image Version',
@@ -331,8 +289,8 @@ export default function WorldMap() {
       title: 'Codename',
       dataIndex: 'codename',
       key: 'codename',
-      render: (codename: string | null) => codename
-        ? <Tag color="purple">{codename}</Tag>
+      render: (codename: string) => codename
+        ? <Tag color={codename === 'legacy' ? 'default' : 'purple'}>{codename}</Tag>
         : <span className="text-gray-400">-</span>,
     },
     {
@@ -355,16 +313,15 @@ export default function WorldMap() {
       key: 'replicas',
     },
     {
-      title: 'CPU',
-      dataIndex: 'cpu',
-      key: 'cpu',
-    },
-    {
-      title: 'Memory',
-      dataIndex: 'memory',
-      key: 'memory',
+      title: 'CPU/Mem',
+      key: 'resources',
+      render: (_: unknown, record: VersionDeployment) => (
+        <span className="text-xs">{record.cpu} / {record.memory}</span>
+      ),
     },
   ]
+
+  const regionStats = getRegionStats()
 
   return (
     <>
@@ -376,19 +333,19 @@ export default function WorldMap() {
             <AntTooltip title="Healthy">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-sm text-gray-500">{mockRegions.filter(r => r.status === 'healthy').length}</span>
+                <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'healthy').length}</span>
               </span>
             </AntTooltip>
             <AntTooltip title="Warning">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span className="text-sm text-gray-500">{mockRegions.filter(r => r.status === 'warning').length}</span>
+                <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'warning').length}</span>
               </span>
             </AntTooltip>
             <AntTooltip title="Critical">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-sm text-gray-500">{mockRegions.filter(r => r.status === 'critical').length}</span>
+                <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'critical').length}</span>
               </span>
             </AntTooltip>
           </div>
@@ -403,45 +360,89 @@ export default function WorldMap() {
       <Modal
         title={
           <span>
-            Region: {selectedRegion?.name}
+            Region: {regionNames[selectedRegion || '']}
             <Tag
-              color={selectedRegion?.status === 'healthy' ? 'green' : selectedRegion?.status === 'warning' ? 'orange' : 'red'}
+              color={regionStatus === 'healthy' ? 'green' : regionStatus === 'warning' ? 'orange' : 'red'}
               className="ml-2"
             >
-              {selectedRegion?.status?.toUpperCase()}
+              {regionStatus.toUpperCase()}
             </Tag>
           </span>
         }
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         footer={null}
-        width={700}
+        width={900}
       >
-        {selectedRegion && (
+        {selectedRegion && regionDeployments.length > 0 && (
           <div className="space-y-4">
-            <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="Clusters">{selectedRegion.clusters}</Descriptions.Item>
-              <Descriptions.Item label="Services">{selectedRegion.services.length}</Descriptions.Item>
-              <Descriptions.Item label="CPU Usage">
-                <Tag color={selectedRegion.cpu > 80 ? 'red' : selectedRegion.cpu > 60 ? 'orange' : 'green'}>
-                  {selectedRegion.cpu}%
-                </Tag>
+            {/* 按版本分组统计 */}
+            <Descriptions bordered column={3} size="small">
+              <Descriptions.Item label="Total Deployments">{regionDeployments.length}</Descriptions.Item>
+              <Descriptions.Item label="Versions">
+                {Array.from(new Set(regionDeployments.map(d => d.codename))).map(codename => (
+                  <Tag key={codename} color="purple" className="mr-1">{codename}</Tag>
+                ))}
               </Descriptions.Item>
-              <Descriptions.Item label="Memory Usage">
-                <Tag color={selectedRegion.memory > 80 ? 'red' : selectedRegion.memory > 60 ? 'orange' : 'green'}>
-                  {selectedRegion.memory}%
-                </Tag>
+              <Descriptions.Item label="Projects">
+                {Array.from(new Set(regionDeployments.map(d => d.projectName))).join(', ')}
               </Descriptions.Item>
             </Descriptions>
 
+            {/* 部署详情表格 */}
             <div>
               <Text strong className="mb-2 block">Deployed Services</Text>
               <Table
-                dataSource={selectedRegion.services}
+                dataSource={regionDeployments}
                 columns={serviceColumns}
-                rowKey="name"
+                rowKey="id"
                 pagination={false}
                 size="small"
+                expandable={{
+                  expandedRowRender: (record) => (
+                    <div className="p-2 bg-gray-50 space-y-2">
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-500 w-20">Git Repo:</span>
+                        <a href={record.gitRepo} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                          <GithubOutlined />
+                          {record.gitRepo.replace('https://github.com/', '')}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-500 w-20">Branch:</span>
+                        <code className="bg-gray-200 px-2 py-0.5 rounded text-sm">{record.gitBranch}</code>
+                        <span className="text-gray-400">@</span>
+                        <a href={record.gitCommitUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-sm">
+                          {record.gitCommit.substring(0, 7)}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-500 w-20">ArgoCD App:</span>
+                        <a href={record.argocdUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-500">
+                          <LinkOutlined />
+                          {record.argocdApp}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-500 w-20">Sync Status:</span>
+                        <Tag color={record.argocdSyncStatus === 'synced' ? 'green' : 'orange'}>
+                          {record.argocdSyncStatus.toUpperCase()}
+                        </Tag>
+                        <span className="text-gray-500 ml-4">Health:</span>
+                        <Tag color={record.argocdHealthStatus === 'healthy' ? 'green' : record.argocdHealthStatus === 'degraded' ? 'red' : 'orange'}>
+                          {record.argocdHealthStatus.toUpperCase()}
+                        </Tag>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-500 w-20">Deployed:</span>
+                        <span>{record.deployedAt}</span>
+                        <span className="text-gray-400">by</span>
+                        <span>{record.deployedBy}</span>
+                      </div>
+                    </div>
+                  ),
+                  rowExpandable: () => true,
+                }}
               />
             </div>
           </div>
