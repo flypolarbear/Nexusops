@@ -243,37 +243,29 @@ export default function WorldMap() {
       ],
     }
 
-    // Register world map - try multiple CDNs for reliability
-    const mapUrls = [
-      'https://echarts.apache.org/examples/data/asset/geo/world.json',
-      'https://unpkg.com/echarts@5.4.3/map/json/world.json',
-      'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/map/json/world.json',
-    ]
-
+    // Register world map - use local file to avoid CORS issues
     const loadMap = async () => {
-      for (const url of mapUrls) {
-        try {
-          const response = await fetch(url)
-          if (response.ok) {
-            const worldJson = await response.json()
-            echarts.registerMap('world', worldJson)
-            chartInstance.current?.setOption(option)
+      try {
+        const response = await fetch('/assets/world.json')
+        if (response.ok) {
+          const worldJson = await response.json()
+          echarts.registerMap('world', worldJson)
+          chartInstance.current?.setOption(option)
 
-            // Add click event
-            chartInstance.current?.on('click', (params: any) => {
-              if (params.data && params.data.regionId) {
-                handleRegionClick(params.data.regionId)
-              }
-            })
-            return // Success, exit
-          }
-        } catch (e) {
-          console.warn(`Failed to load map from ${url}:`, e)
+          // Add click event
+          chartInstance.current?.on('click', (params: any) => {
+            if (params.data && params.data.regionId) {
+              handleRegionClick(params.data.regionId)
+            }
+          })
+          return
         }
+      } catch (e) {
+        console.error('Failed to load local map:', e)
       }
 
-      // All CDNs failed, use scatter plot fallback
-      console.error('All map CDNs failed, using scatter fallback')
+      // Fallback: scatter plot without map
+      console.warn('Using scatter fallback')
       const fallbackOption: echarts.EChartsOption = {
         backgroundColor: 'transparent',
         tooltip: {
