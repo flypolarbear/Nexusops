@@ -7,7 +7,8 @@ const { Text } = Typography
 
 interface ServiceDeployment {
   name: string
-  version: string
+  imageVersion: string      // 镜像版本，如 v1.2.3
+  codename: string | null   // 版本代号，如 Phoenix、Titan
   status: 'running' | 'warning' | 'error'
   replicas: number
   cpu: string
@@ -35,10 +36,10 @@ const mockRegions: RegionData[] = [
     cpu: 65,
     memory: 72,
     services: [
-      { name: 'api-gateway', version: 'v1.2.3', status: 'running', replicas: 3, cpu: '450m', memory: '512Mi' },
-      { name: 'chat-gateway', version: 'v2.0.1', status: 'running', replicas: 2, cpu: '200m', memory: '256Mi' },
-      { name: 'auth-service', version: 'v1.1.0', status: 'running', replicas: 2, cpu: '100m', memory: '128Mi' },
-      { name: 'worker', version: 'v1.0.5', status: 'running', replicas: 5, cpu: '500m', memory: '1Gi' },
+      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 3, cpu: '450m', memory: '512Mi' },
+      { name: 'chat-gateway', imageVersion: 'v2.0.1', codename: 'Aurora', status: 'running', replicas: 2, cpu: '200m', memory: '256Mi' },
+      { name: 'auth-service', imageVersion: 'v1.1.0', codename: null, status: 'running', replicas: 2, cpu: '100m', memory: '128Mi' },
+      { name: 'worker', imageVersion: 'v1.0.5', codename: 'Titan', status: 'running', replicas: 5, cpu: '500m', memory: '1Gi' },
     ],
   },
   {
@@ -50,8 +51,8 @@ const mockRegions: RegionData[] = [
     cpu: 45,
     memory: 58,
     services: [
-      { name: 'api-gateway', version: 'v1.2.3', status: 'running', replicas: 2, cpu: '300m', memory: '384Mi' },
-      { name: 'chat-gateway', version: 'v2.0.1', status: 'running', replicas: 2, cpu: '180m', memory: '220Mi' },
+      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 2, cpu: '300m', memory: '384Mi' },
+      { name: 'chat-gateway', imageVersion: 'v2.0.1', codename: 'Aurora', status: 'running', replicas: 2, cpu: '180m', memory: '220Mi' },
     ],
   },
   {
@@ -63,9 +64,9 @@ const mockRegions: RegionData[] = [
     cpu: 78,
     memory: 82,
     services: [
-      { name: 'api-gateway', version: 'v1.2.2', status: 'warning', replicas: 2, cpu: '650m', memory: '780Mi' },
-      { name: 'chat-gateway', version: 'v2.0.0', status: 'running', replicas: 2, cpu: '200m', memory: '256Mi' },
-      { name: 'auth-service', version: 'v1.1.0', status: 'running', replicas: 1, cpu: '80m', memory: '96Mi' },
+      { name: 'api-gateway', imageVersion: 'v1.2.2', codename: 'legacy', status: 'warning', replicas: 2, cpu: '650m', memory: '780Mi' },
+      { name: 'chat-gateway', imageVersion: 'v2.0.0', codename: 'stable', status: 'running', replicas: 2, cpu: '200m', memory: '256Mi' },
+      { name: 'auth-service', imageVersion: 'v1.1.0', codename: null, status: 'running', replicas: 1, cpu: '80m', memory: '96Mi' },
     ],
   },
   {
@@ -77,7 +78,7 @@ const mockRegions: RegionData[] = [
     cpu: 52,
     memory: 61,
     services: [
-      { name: 'api-gateway', version: 'v1.2.3', status: 'running', replicas: 2, cpu: '280m', memory: '320Mi' },
+      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 2, cpu: '280m', memory: '320Mi' },
     ],
   },
   {
@@ -89,9 +90,9 @@ const mockRegions: RegionData[] = [
     cpu: 92,
     memory: 88,
     services: [
-      { name: 'api-gateway', version: 'v1.2.3', status: 'error', replicas: 1, cpu: '950m', memory: '920Mi' },
-      { name: 'chat-gateway', version: 'v2.0.1', status: 'warning', replicas: 2, cpu: '400m', memory: '480Mi' },
-      { name: 'worker', version: 'v1.0.5', status: 'error', replicas: 0, cpu: '0m', memory: '0Mi' },
+      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'error', replicas: 1, cpu: '950m', memory: '920Mi' },
+      { name: 'chat-gateway', imageVersion: 'v2.0.1', codename: 'Aurora', status: 'warning', replicas: 2, cpu: '400m', memory: '480Mi' },
+      { name: 'worker', imageVersion: 'v1.0.5', codename: 'Titan', status: 'error', replicas: 0, cpu: '0m', memory: '0Mi' },
     ],
   },
   {
@@ -103,7 +104,7 @@ const mockRegions: RegionData[] = [
     cpu: 38,
     memory: 45,
     services: [
-      { name: 'api-gateway', version: 'v1.2.3', status: 'running', replicas: 1, cpu: '150m', memory: '192Mi' },
+      { name: 'api-gateway', imageVersion: 'v1.2.3', codename: 'Phoenix', status: 'running', replicas: 1, cpu: '150m', memory: '192Mi' },
     ],
   },
 ]
@@ -242,62 +243,73 @@ export default function WorldMap() {
       ],
     }
 
-    // Register world map
-    fetch('https://cdn.jsdelivr.net/npm/echarts@5/map/json/world.json')
-      .then((response) => response.json())
-      .then((worldJson) => {
-        echarts.registerMap('world', worldJson)
-        chartInstance.current?.setOption(option)
+    // Register world map - try multiple CDNs for reliability
+    const mapUrls = [
+      'https://unpkg.com/echarts@5.4.3/map/json/world.json',
+      'https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/map/json/world.json',
+      'https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/map/json/world.json',
+    ]
 
-        // Add click event
-        chartInstance.current?.on('click', (params: any) => {
-          if (params.data && params.data.regionId) {
-            handleRegionClick(params.data.regionId)
-          }
-        })
-      })
-      .catch((error) => {
-        console.error('Failed to load world map:', error)
-        // Try alternative CDN
-        fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
-          .then((response) => response.json())
-          .then(() => {
-            // Fallback: just show points without map background
-            const fallbackOption: echarts.EChartsOption = {
-              backgroundColor: 'transparent',
-              tooltip: {
-                trigger: 'item',
-                formatter: (params: any) => {
-                  const data = params.data
-                  return `<div style="padding: 8px;"><strong>${data.name}</strong><br/>Status: ${data.status}</div>`
-                },
-              },
-              xAxis: { type: 'value', show: false, min: -180, max: 180 },
-              yAxis: { type: 'value', show: false, min: -90, max: 90 },
-              grid: { left: 0, right: 0, top: 0, bottom: 0 },
-              series: [
-                {
-                  type: 'scatter',
-                  data: mockRegions.map((region) => ({
-                    name: region.name,
-                    value: region.coordinates,
-                    regionId: region.id,
-                    status: region.status,
-                    itemStyle: { color: getStatusColor(region.status) },
-                  })),
-                  symbolSize: 25,
-                },
-              ],
-            }
-            chartInstance.current?.setOption(fallbackOption)
+    const loadMap = async () => {
+      for (const url of mapUrls) {
+        try {
+          const response = await fetch(url)
+          if (response.ok) {
+            const worldJson = await response.json()
+            echarts.registerMap('world', worldJson)
+            chartInstance.current?.setOption(option)
 
+            // Add click event
             chartInstance.current?.on('click', (params: any) => {
               if (params.data && params.data.regionId) {
                 handleRegionClick(params.data.regionId)
               }
             })
-          })
+            return // Success, exit
+          }
+        } catch (e) {
+          console.warn(`Failed to load map from ${url}:`, e)
+        }
+      }
+
+      // All CDNs failed, use scatter plot fallback
+      console.error('All map CDNs failed, using scatter fallback')
+      const fallbackOption: echarts.EChartsOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'item',
+          formatter: (params: any) => {
+            const data = params.data
+            return `<div style="padding: 8px;"><strong>${data.name}</strong><br/>Status: ${data.status}</div>`
+          },
+        },
+        xAxis: { type: 'value', show: false, min: -180, max: 180 },
+        yAxis: { type: 'value', show: false, min: -90, max: 90 },
+        grid: { left: 0, right: 0, top: 0, bottom: 0 },
+        series: [
+          {
+            type: 'scatter',
+            data: mockRegions.map((region) => ({
+              name: region.name,
+              value: region.coordinates,
+              regionId: region.id,
+              status: region.status,
+              itemStyle: { color: getStatusColor(region.status) },
+            })),
+            symbolSize: 25,
+          },
+        ],
+      }
+      chartInstance.current?.setOption(fallbackOption)
+
+      chartInstance.current?.on('click', (params: any) => {
+        if (params.data && params.data.regionId) {
+          handleRegionClick(params.data.regionId)
+        }
       })
+    }
+
+    loadMap()
 
     const handleResize = () => {
       chartInstance.current?.resize()
@@ -318,10 +330,18 @@ export default function WorldMap() {
       render: (name: string) => <span className="font-medium">{name}</span>,
     },
     {
-      title: 'Version',
-      dataIndex: 'version',
-      key: 'version',
+      title: 'Image Version',
+      dataIndex: 'imageVersion',
+      key: 'imageVersion',
       render: (version: string) => <Tag color="blue">{version}</Tag>,
+    },
+    {
+      title: 'Codename',
+      dataIndex: 'codename',
+      key: 'codename',
+      render: (codename: string | null) => codename
+        ? <Tag color="purple">{codename}</Tag>
+        : <span className="text-gray-400">-</span>,
     },
     {
       title: 'Status',
