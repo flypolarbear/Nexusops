@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # === Infrastructure ===
+  postgres:
+    image: postgres:15-alpine
+    container_name: nexusops-postgres
+    environment:
+      POSTGRES_USER: nexusops
+      POSTGRES_PASSWORD: nexusops_dev
+      POSTGRES_DB: nexusops
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusops"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexusops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # === External Systems (for local dev) ===
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: nexusops-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: nexusops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: nexusops-jenkins
+    ports:
+      - "8082:8080"
+      - "50000:50000"
+    environment:
+      JENKINS_ADMIN_PASSWORD: admin
+    volumes:
+      - jenkins_data:/var/jenkins_home
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  argocd:
+    image: argoproj/argocd:v2.8.0
+    container_name: nexusops-argocd
+    ports:
+      - "8083:8080"
+    command: ["argocd-server", "--insecure"]
+    volumes:
+      - argocd_data:/app/config
+
+  harbor:
+    image: goharbor/harbor-core:v2.9.0
+    container_name: nexusops-harbor
+    ports:
+      - "8084:8080"
+    environment:
+      CORE_SECRET: notverysecure
+      JOBSERVICE_SECRET: notverysecure
+    # Note: Full Harbor requires multiple containers
+    # This is a minimal setup for API testing
+
+  # === MinIO (S3-compatible for file storage) ===
+  minio:
+    image: minio/minio:latest
+    container_name: nexusops-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === Keycloak (OIDC Provider) ===
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: nexusops-keycloak
+    ports:
+      - "8085:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+  prometheus_data:
+  jenkins_data:
+  argocd_data:
+  minio_data:
+  keycloak_data:
+
+networks:
+  default:
+    name: nexusops-network
