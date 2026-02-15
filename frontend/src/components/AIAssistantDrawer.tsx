@@ -14,6 +14,8 @@ import {
   Col,
   Card,
   Tag,
+  Divider,
+  List,
 } from 'antd'
 import {
   RobotOutlined,
@@ -24,11 +26,17 @@ import {
   ThunderboltOutlined,
   MessageOutlined,
   CheckCircleOutlined,
+  RocketOutlined,
+  RollbackOutlined,
+  LineChartOutlined,
+  FileTextOutlined,
+  SwapOutlined,
 } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
+import { useVersionStore } from '../stores/versionStore'
 import type { Message } from '../types'
 
 const { Text } = Typography
@@ -38,6 +46,53 @@ interface AIAssistantDrawerProps {
   open: boolean
   onClose: () => void
 }
+
+// Slash commands definition
+interface SlashCommand {
+  command: string
+  description: string
+  usage: string
+  icon: React.ReactNode
+  example: string
+}
+
+const slashCommands: SlashCommand[] = [
+  {
+    command: '/deploy',
+    description: 'Deploy a version to a region',
+    usage: '/deploy <version> to <region>',
+    icon: <RocketOutlined />,
+    example: '/deploy Phoenix to us-east',
+  },
+  {
+    command: '/rollback',
+    description: 'Rollback a version in a region',
+    usage: '/rollback <version> in <region>',
+    icon: <RollbackOutlined />,
+    example: '/rollback Aurora in eu-west',
+  },
+  {
+    command: '/status',
+    description: 'Check version status',
+    usage: '/status <version>',
+    icon: <LineChartOutlined />,
+    example: '/status Phoenix',
+  },
+  {
+    command: '/logs',
+    description: 'View service logs',
+    usage: '/logs <service> --tail <lines>',
+    icon: <FileTextOutlined />,
+    example: '/logs api-gateway --tail 100',
+  },
+  {
+    command: '/compare',
+    description: 'Compare two versions',
+    usage: '/compare <v1> vs <v2>',
+    icon: <SwapOutlined />,
+    example: '/compare Phoenix vs Titan',
+  },
+]
 
 // Mock AI responses for demo
 const mockResponses: Record<string, string> = {
@@ -90,11 +145,158 @@ Would you like me to:
 1. Check specific service health?
 2. Review recent deployments?
 3. Analyze resource trends?
-`
+`,
+  '/deploy': `## 🚀 Deployment Triggered
+
+**Version:** {version}
+**Target Region:** {region}
+
+### Deployment Progress
+\`\`\`
+[████████░░] 80% - Applying manifests...
+\`\`\`
+
+### Steps Completed:
+1. ✅ Image pulled successfully
+2. ✅ Pre-deployment checks passed
+3. 🔄 Applying Kubernetes manifests
+4. ⏳ Health check pending
+
+The deployment is in progress. I'll notify you when it completes.
+
+**Track progress:** [View in ArgoCD →](https://argocd.example.com)
+`,
+  '/rollback': `## ⏪ Rollback Initiated
+
+**Version:** {version}
+**Region:** {region}
+
+Rolling back to the previous stable version...
+
+### Rollback Steps:
+1. ✅ Previous revision identified (Revision 41)
+2. ✅ Rollback command sent to ArgoCD
+3. 🔄 Waiting for sync to complete
+
+**Estimated time:** ~2 minutes
+
+[View rollback status →](https://argocd.example.com)
+`,
+  '/status': `## 📊 Version Status: {version}
+
+### Deployment Summary
+| Region | Status | Health | Replicas |
+|--------|--------|--------|----------|
+| US East | ✅ Synced | 🟢 Healthy | 3/3 |
+| US West | ✅ Synced | 🟢 Healthy | 2/2 |
+| EU West | ⚠️ Out of Sync | 🟡 Progressing | 1/2 |
+| AP East | ❌ Failed | 🔴 Degraded | 0/1 |
+
+### Recent Events
+- **14:30** - Deployed to US East
+- **14:25** - Deployed to US West
+- **14:20** - Deploy started
+
+### Resource Usage
+- CPU: 450m / 500m (90%)
+- Memory: 768Mi / 1Gi (75%)
+
+**Action Required:** EU West and AP East need attention.
+`,
+  '/logs': `## 📋 Service Logs: {service}
+
+Showing last **{lines}** lines:
+
+\`\`\`log
+2024-01-15 14:32:15 INFO  [main] Request received: GET /api/v1/users
+2024-01-15 14:32:15 DEBUG [db] Query executed in 23ms
+2024-01-15 14:32:15 INFO  [main] Response sent: 200 OK
+2024-01-15 14:32:16 WARN  [cache] Cache miss for key: user_preferences_123
+2024-01-15 14:32:16 INFO  [main] Cache refreshed for user_preferences_123
+2024-01-15 14:32:17 ERROR [worker] Connection timeout to redis-master
+2024-01-15 14:32:18 INFO  [worker] Retrying connection...
+2024-01-15 14:32:19 INFO  [worker] Connection restored
+2024-01-15 14:32:20 INFO  [main] Health check passed
+\`\`\`
+
+**Analysis:** One connection timeout detected but auto-recovered.
+[View full logs in Grafana →](https://grafana.example.com)
+`,
+  '/compare': `## 🔄 Version Comparison
+
+### {v1} vs {v2}
+
+| Aspect | {v1} | {v2} |
+|--------|------|------|
+| **Git Branch** | feature/phoenix | feature/titan |
+| **Image Version** | v1.2.3-rc3 | v1.2.4-beta2 |
+| **Deployed Regions** | 5 | 1 |
+| **Health Status** | 🟢 4/5 Healthy | 🟢 1/1 Healthy |
+| **CPU Usage** | 450m avg | 500m avg |
+| **Memory Usage** | 768Mi avg | 1Gi avg |
+
+### Key Differences
+- **{v1}**: Production-ready, deployed to multiple regions
+- **{v2}**: Testing phase, new translation features
+
+### Recommendation
+{v1} is ready for production promotion. {v2} needs more testing before wide deployment.
+`,
 }
 
 function getMockResponse(query: string): string {
   const lowerQuery = query.toLowerCase()
+
+  // Handle slash commands
+  if (query.startsWith('/deploy')) {
+    const match = query.match(/\/deploy\s+(\w+)\s+to\s+(\w+)/i)
+    if (match) {
+      return mockResponses['/deploy']
+        .replace('{version}', match[1])
+        .replace('{region}', match[2])
+    }
+    return `**Usage:** \`/deploy <version> to <region>\`\n\nExample: \`/deploy Phoenix to us-east\``
+  }
+
+  if (query.startsWith('/rollback')) {
+    const match = query.match(/\/rollback\s+(\w+)\s+in\s+(\w+)/i)
+    if (match) {
+      return mockResponses['/rollback']
+        .replace('{version}', match[1])
+        .replace('{region}', match[2])
+    }
+    return `**Usage:** \`/rollback <version> in <region>\`\n\nExample: \`/rollback Aurora in eu-west\``
+  }
+
+  if (query.startsWith('/status')) {
+    const match = query.match(/\/status\s+(\w+)/i)
+    if (match) {
+      return mockResponses['/status'].replace(/{version}/g, match[1])
+    }
+    return `**Usage:** \`/status <version>\`\n\nExample: \`/status Phoenix\``
+  }
+
+  if (query.startsWith('/logs')) {
+    const match = query.match(/\/logs\s+(\S+)(?:\s+--tail\s+(\d+))?/i)
+    if (match) {
+      return mockResponses['/logs']
+        .replace('{service}', match[1])
+        .replace('{lines}', match[2] || '50')
+    }
+    return `**Usage:** \`/logs <service> --tail <lines>\`\n\nExample: \`/logs api-gateway --tail 100\``
+  }
+
+  if (query.startsWith('/compare')) {
+    const match = query.match(/\/compare\s+(\w+)\s+vs\s+(\w+)/i)
+    if (match) {
+      return mockResponses['/compare']
+        .replace(/{v1}/g, match[1])
+        .replace(/{v2}/g, match[2])
+    }
+    return `**Usage:** \`/compare <v1> vs <v2>\`\n\nExample: \`/compare Phoenix vs Titan\``
+  }
+
+  // Regular queries
   if (lowerQuery.includes('alert') || lowerQuery.includes('warning') || lowerQuery.includes('critical')) {
     return mockResponses['alerts']
   }
@@ -109,9 +311,14 @@ function getMockResponse(query: string): string {
 
 export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerProps) {
   const [inputValue, setInputValue] = useState('')
+  const [showCommands, setShowCommands] = useState(false)
+  const [filteredCommands, setFilteredCommands] = useState<SlashCommand[]>(slashCommands)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<any>(null)
+
   const { messages, isTyping, addMessage, setTyping, clearMessages } = useChatStore()
   useAuthStore() // Keep auth store initialized
+  useVersionStore() // Keep version store initialized
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -120,6 +327,21 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Filter commands based on input
+  useEffect(() => {
+    if (inputValue.startsWith('/')) {
+      const query = inputValue.toLowerCase()
+      const filtered = slashCommands.filter(cmd =>
+        cmd.command.toLowerCase().startsWith(query) ||
+        cmd.description.toLowerCase().includes(query.slice(1))
+      )
+      setFilteredCommands(filtered)
+      setShowCommands(true)
+    } else {
+      setShowCommands(false)
+    }
+  }, [inputValue])
 
   const handleSend = useCallback(() => {
     if (!inputValue.trim()) return
@@ -133,6 +355,7 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
     }
     addMessage(userMessage)
     setInputValue('')
+    setShowCommands(false)
     setTyping(true)
 
     // Simulate AI response with delay
@@ -156,6 +379,12 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
     }
   }
 
+  const handleCommandSelect = (cmd: SlashCommand) => {
+    setInputValue(cmd.example)
+    setShowCommands(false)
+    inputRef.current?.focus()
+  }
+
   const quickQueries = [
     { icon: 'alert', text: 'Check current alerts' },
     { icon: 'deploy', text: 'Recent deployments' },
@@ -168,10 +397,11 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
         <div className="flex items-center gap-2">
           <RobotOutlined className="text-primary-500" />
           <span>AI Operations Assistant</span>
+          <Tag color="purple" className="ml-2">OPS-003</Tag>
         </div>
       }
       placement="right"
-      width={480}
+      width={500}
       onClose={onClose}
       open={open}
       extra={
@@ -228,9 +458,44 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
             <Avatar size={64} icon={<RobotOutlined />} className="bg-primary-500 mb-4" />
             <Text strong className="text-lg mb-2">How can I help you today?</Text>
             <Text type="secondary" className="mb-4">
-              Ask me about resources, alerts, deployments, or any operations question.
+              Ask me about resources, alerts, deployments, or use slash commands.
             </Text>
+
+            {/* Slash Commands Quick Reference */}
+            <div className="w-full max-w-sm mb-4">
+              <Divider className="text-xs text-gray-400">Quick Commands</Divider>
+              <div className="space-y-2">
+                {slashCommands.slice(0, 3).map((cmd, i) => (
+                  <Button
+                    key={i}
+                    block
+                    size="small"
+                    type="dashed"
+                    onClick={() => handleCommandSelect(cmd)}
+                    className="text-left"
+                  >
+                    {cmd.icon}
+                    <span className="ml-2 font-mono text-xs">{cmd.command}</span>
+                    <span className="ml-2 text-gray-400">{cmd.description}</span>
+                  </Button>
+                ))}
+                <Button
+                  block
+                  size="small"
+                  type="link"
+                  onClick={() => {
+                    setInputValue('/')
+                    setShowCommands(true)
+                  }}
+                >
+                  View all commands...
+                </Button>
+              </div>
+            </div>
+
+            {/* Regular Quick Queries */}
             <div className="space-y-2 w-full max-w-xs">
+              <Divider className="text-xs text-gray-400">Common Queries</Divider>
               {quickQueries.map((q, i) => (
                 <Button
                   key={i}
@@ -292,19 +557,58 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Command Autocomplete */}
+      {showCommands && filteredCommands.length > 0 && (
+        <div className="border-t bg-white p-2 max-h-48 overflow-auto">
+          <Text type="secondary" className="text-xs px-2">Available Commands</Text>
+          <List
+            size="small"
+            dataSource={filteredCommands}
+            renderItem={(cmd) => (
+              <List.Item
+                className="cursor-pointer hover:bg-gray-50 px-2 rounded"
+                onClick={() => handleCommandSelect(cmd)}
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <span className="text-primary-500">{cmd.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm font-medium">{cmd.command}</code>
+                      <Text type="secondary" className="text-xs">{cmd.description}</Text>
+                    </div>
+                    <Text type="secondary" className="text-xs">{cmd.usage}</Text>
+                  </div>
+                </div>
+              </List.Item>
+            )}
+          />
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="border-t p-4">
         <div className="flex gap-2 mb-2">
           <Tooltip title="Attach file (coming soon)">
             <Button icon={<PaperClipOutlined />} disabled />
           </Tooltip>
+          <Tooltip title="Show commands">
+            <Button
+              icon={<ThunderboltOutlined />}
+              onClick={() => {
+                setInputValue('/')
+                setShowCommands(true)
+                inputRef.current?.focus()
+              }}
+            />
+          </Tooltip>
         </div>
         <div className="flex gap-2">
           <TextArea
+            ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask about resources, alerts, deployments..."
+            placeholder="Ask about resources, alerts, deployments... or use /commands"
             autoSize={{ minRows: 1, maxRows: 4 }}
             className="flex-1"
           />
@@ -316,7 +620,7 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
           />
         </div>
         <Text type="secondary" className="text-xs mt-2 block">
-          Press Enter to send, Shift+Enter for new line
+          Press Enter to send • Type <code>/</code> for commands • Shift+Enter for new line
         </Text>
       </div>
     </Drawer>
