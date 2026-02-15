@@ -54,7 +54,7 @@
             "Admin 审批通过后自动触发部署",
             "多区域依次/同时部署"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "VC-004",
@@ -208,15 +208,15 @@
     }
   ],
   "current_progress": {
-    "frontend_complete": "85%",
+    "frontend_complete": "90%",
     "backend_complete": "10%",
     "mvp_ready": false,
     "completed_features": [
       "VC-001: Projects 页面版本卡片增强 ✓",
-      "VC-002: 创建版本流程优化 ✓"
+      "VC-002: 创建版本流程优化 ✓",
+      "VC-003: 申请上线流程 ✓"
     ],
     "next_actions": [
-      "VC-003: 申请上线流程",
       "VC-004: Dashboard 测试版本概览",
       "VC-005: WorldMap 按版本筛选"
     ]
