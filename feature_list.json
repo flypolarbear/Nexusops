@@ -40,7 +40,7 @@
             "显示部署进度",
             "部署完成后通知"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "VC-003",
@@ -208,16 +208,17 @@
     }
   ],
   "current_progress": {
-    "frontend_complete": "80%",
+    "frontend_complete": "85%",
     "backend_complete": "10%",
     "mvp_ready": false,
     "completed_features": [
-      "VC-001: Projects 页面版本卡片增强 ✓"
+      "VC-001: Projects 页面版本卡片增强 ✓",
+      "VC-002: 创建版本流程优化 ✓"
     ],
     "next_actions": [
-      "VC-002: 创建版本流程优化",
       "VC-003: 申请上线流程",
-      "VC-004: Dashboard 测试版本概览"
+      "VC-004: Dashboard 测试版本概览",
+      "VC-005: WorldMap 按版本筛选"
     ]
   }
 }
