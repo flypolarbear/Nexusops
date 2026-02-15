@@ -21,6 +21,10 @@ import {
   Alert,
   Popconfirm,
   Divider,
+  Progress,
+  Steps,
+  Result,
+  notification,
 } from 'antd'
 import {
   PlusOutlined,
@@ -40,6 +44,9 @@ import {
   WarningOutlined,
   GithubOutlined,
   ExportOutlined,
+  LoadingOutlined,
+  CloudUploadOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons'
 import {
   useVersionStore,
@@ -52,6 +59,21 @@ import { useDeploymentStore } from '../stores/deploymentStore'
 
 const { Title, Text, Link } = Typography
 const { TextArea } = Input
+
+// 部署进度步骤
+type DeploymentStep = 'idle' | 'building' | 'deploying' | 'healthcheck' | 'completed' | 'failed'
+
+interface DeploymentProgress {
+  versionId: string
+  codename: string
+  step: DeploymentStep
+  progress: number
+  testUrl: string
+  regions: string[]
+  message: string
+  buildLog?: string
+  deployLog?: string
+}
 
 // 版本状态配置
 const versionStatusConfig: Record<VersionStatus, { color: string; label: string; icon: React.ReactNode }> = {
@@ -67,10 +89,13 @@ export default function Projects() {
   const [newVersionModalOpen, setNewVersionModalOpen] = useState(false)
   const [switchRequestModalOpen, setSwitchRequestModalOpen] = useState(false)
   const [newProjectModalOpen, setNewProjectModalOpen] = useState(false)
+  const [deploymentProgressModalOpen, setDeploymentProgressModalOpen] = useState(false)
+  const [deploymentProgress, setDeploymentProgress] = useState<DeploymentProgress | null>(null)
   const [versionForm] = Form.useForm()
   const [switchForm] = Form.useForm()
   const [projectForm] = Form.useForm()
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
 
   const {
     projects,
@@ -84,33 +109,113 @@ export default function Projects() {
   const {
     deployments,
     getDeploymentsByCodename,
+    regions,
   } = useDeploymentStore()
+
+  // 自动生成测试 URL
+  const generateTestUrl = (projectCode: string, codename: string) => {
+    const codenameSlug = codename.toLowerCase().replace(/\s+/g, '-')
+    return `https://${projectCode}-${codenameSlug}.test.internal`
+  }
+
+  // 模拟部署进度更新
+  const simulateDeployment = (versionId: string, codename: string, projectCode: string, regions: string[]) => {
+    const testUrl = generateTestUrl(projectCode, codename)
+
+    // 初始状态
+    setDeploymentProgress({
+      versionId,
+      codename,
+      step: 'building',
+      progress: 0,
+      testUrl,
+      regions,
+      message: '开始 CI/CD 构建...',
+    })
+    setDeploymentProgressModalOpen(true)
+
+    // 模拟构建进度
+    let progress = 0
+    const progressInterval = setInterval(() => {
+      progress += Math.random() * 15
+      if (progress > 100) progress = 100
+
+      setDeploymentProgress(prev => {
+        if (!prev) return prev
+
+        if (progress < 33) {
+          return { ...prev, step: 'building', progress: Math.round(progress), message: '正在构建 Docker 镜像...' }
+        } else if (progress < 66) {
+          return { ...prev, step: 'deploying', progress: Math.round(progress), message: 'ArgoCD 正在部署到测试环境...' }
+        } else if (progress < 100) {
+          return { ...prev, step: 'healthcheck', progress: Math.round(progress), message: '健康检查中...' }
+        } else {
+          clearInterval(progressInterval)
+          // 部署完成通知
+          notification.success({
+            message: '部署完成',
+            description: (
+              <div>
+                <p>版本 <strong>{codename}</strong> 已成功部署到测试环境</p>
+                <p>测试链接: <a href={testUrl} target="_blank" rel="noopener noreferrer">{testUrl}</a></p>
+              </div>
+            ),
+            duration: 10,
+          })
+          return { ...prev, step: 'completed', progress: 100, message: '部署完成!' }
+        }
+      })
+    }, 800)
+
+    return () => clearInterval(progressInterval)
+  }
 
   // 创建新版本
   const handleCreateVersion = (projectId: string) => {
     setCurrentProjectId(projectId)
     const project = projects.find(p => p.id === projectId)
+    const autoTestUrl = generateTestUrl(project?.code || '', '')
     versionForm.setFieldsValue({
       projectId,
       projectName: project?.name,
+      projectCode: project?.code,
+      testUrl: autoTestUrl,
     })
+    setSelectedRegions([])
     setNewVersionModalOpen(true)
   }
 
   const handleSubmitVersion = () => {
     versionForm.validateFields().then((values) => {
+      // 生成测试 URL
+      const testUrl = generateTestUrl(values.projectCode, values.codename)
+      const versionId = `ver-${Date.now()}`
+
+      // 添加版本
       addVersion(currentProjectId!, {
         codename: values.codename,
         description: values.description,
         gitBranch: values.gitBranch,
         imageUrl: values.imageUrl,
         owner: values.owner,
-        testUrl: values.testUrl,
+        testUrl: testUrl,
         environments: ['dev'],
       })
-      message.success(`版本 "${values.codename}" 创建成功!`)
+
       setNewVersionModalOpen(false)
       versionForm.resetFields()
+
+      // 如果选择了部署区域，触发部署
+      if (selectedRegions.length > 0) {
+        simulateDeployment(
+          versionId,
+          values.codename,
+          values.projectCode,
+          selectedRegions
+        )
+      } else {
+        message.success(`版本 "${values.codename}" 创建成功!`)
+      }
     })
   }
 
@@ -980,19 +1085,19 @@ export default function Projects() {
         )}
       </Modal>
 
-      {/* 新建版本弹窗 */}
+      {/* 新建版本弹窗 - 增强 */}
       <Modal
         title="创建新版本"
         open={newVersionModalOpen}
         onCancel={() => setNewVersionModalOpen(false)}
         onOk={handleSubmitVersion}
-        okText="创建版本"
-        width={600}
+        okText="创建并部署"
+        width={650}
       >
         <Alert
           message={
             <span>
-              <strong>Vibe Coding:</strong> 创建版本后自动触发 CI/CD 构建和部署到测试环境
+              <strong>🚀 Vibe Coding:</strong> 创建版本后自动触发 CI/CD 构建和部署到测试环境
             </span>
           }
           type="info"
@@ -1003,22 +1108,18 @@ export default function Projects() {
           <Form.Item label="所属项目" name="projectName">
             <Input disabled />
           </Form.Item>
-          <Form.Item
-            label="版本代号"
-            name="codename"
-            rules={[{ required: true, message: '请输入版本代号' }]}
-            extra="如: Phoenix, Titan, Nova 等"
-          >
-            <Input placeholder="输入内部代号" />
+          <Form.Item name="projectCode" hidden>
+            <Input />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="Git 分支"
-                name="gitBranch"
-                rules={[{ required: true }]}
+                label="版本代号"
+                name="codename"
+                rules={[{ required: true, message: '请输入版本代号' }]}
+                extra="如: Phoenix, Titan, Nova"
               >
-                <Input placeholder="feature/xxx 或 main" />
+                <Input placeholder="输入内部代号" />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1031,19 +1132,59 @@ export default function Projects() {
               </Form.Item>
             </Col>
           </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Git 分支"
+                name="gitBranch"
+                rules={[{ required: true }]}
+              >
+                <Input placeholder="feature/xxx 或 main" prefix={<GithubOutlined />} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="镜像地址"
+                name="imageUrl"
+                rules={[{ required: true }]}
+              >
+                <Input placeholder="harbor.local/project:image-tag" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item
-            label="镜像地址"
-            name="imageUrl"
-            rules={[{ required: true }]}
+            label="部署区域"
+            extra="选择要部署到的测试环境区域"
           >
-            <Input placeholder="harbor.local/project:image-tag" />
+            <Select
+              mode="multiple"
+              placeholder="选择部署区域"
+              value={selectedRegions}
+              onChange={setSelectedRegions}
+              style={{ width: '100%' }}
+              options={regions.map(r => ({
+                value: r.id,
+                label: (
+                  <Space>
+                    <GlobalOutlined />
+                    {r.name}
+                    <Text type="secondary" className="text-xs">({r.id})</Text>
+                  </Space>
+                ),
+              }))}
+            />
           </Form.Item>
           <Form.Item
-            label="测试链接"
+            label="测试链接（自动生成）"
             name="testUrl"
-            extra="测试版本的访问地址（可选，创建后自动生成）"
+            extra="创建后将自动生成测试环境 URL"
           >
-            <Input placeholder="https://xxx.test.internal" />
+            <Input
+              prefix={<LinkOutlined />}
+              placeholder="https://project-codename.test.internal"
+              disabled
+              className="bg-gray-50"
+            />
           </Form.Item>
           <Form.Item label="描述" name="description">
             <TextArea rows={2} placeholder="版本描述、主要变更等" />
@@ -1123,6 +1264,170 @@ export default function Projects() {
             <Input placeholder="负责人姓名" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 部署进度弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <RocketOutlined style={{ color: '#1890ff' }} />
+            <span>部署进度</span>
+            {deploymentProgress && (
+              <Tag color="blue">{deploymentProgress.codename}</Tag>
+            )}
+          </Space>
+        }
+        open={deploymentProgressModalOpen}
+        onCancel={() => {
+          if (deploymentProgress?.step === 'completed') {
+            setDeploymentProgressModalOpen(false)
+            setDeploymentProgress(null)
+          }
+        }}
+        footer={
+          deploymentProgress?.step === 'completed' ? (
+            <Space>
+              <Button
+                icon={<ExportOutlined />}
+                href={deploymentProgress.testUrl}
+                target="_blank"
+              >
+                打开测试环境
+              </Button>
+              <Button
+                type="primary"
+                icon={<RocketOutlined />}
+                onClick={() => {
+                  setDeploymentProgressModalOpen(false)
+                  // 找到刚创建的版本并打开申请上线弹窗
+                  const version = allVersions.find(v => v.codename === deploymentProgress.codename)
+                  if (version) {
+                    const project = projects.find(p => p.id === version.projectId)
+                    if (project) {
+                      handleRequestSwitch(project, version)
+                    }
+                  }
+                }}
+              >
+                申请上线
+              </Button>
+            </Space>
+          ) : null
+        }
+        width={600}
+        closable={deploymentProgress?.step === 'completed'}
+        maskClosable={false}
+      >
+        {deploymentProgress && (
+          <div className="space-y-6">
+            {/* 整体进度条 */}
+            <div className="text-center">
+              <Progress
+                type="circle"
+                percent={deploymentProgress.progress}
+                status={deploymentProgress.step === 'completed' ? 'success' : 'active'}
+                strokeColor={{
+                  '0%': '#108ee9',
+                  '100%': '#87d068',
+                }}
+              />
+            </div>
+
+            {/* 部署步骤 */}
+            <Steps
+              current={
+                deploymentProgress.step === 'building' ? 0 :
+                deploymentProgress.step === 'deploying' ? 1 :
+                deploymentProgress.step === 'healthcheck' ? 2 :
+                deploymentProgress.step === 'completed' ? 3 : -1
+              }
+              status={deploymentProgress.step === 'failed' ? 'error' : 'process'}
+              items={[
+                {
+                  title: 'CI/CD 构建',
+                  icon: deploymentProgress.step === 'building' ? <LoadingOutlined /> : <CloudUploadOutlined />,
+                  description: deploymentProgress.step === 'building' ? '正在构建镜像...' : undefined,
+                },
+                {
+                  title: 'ArgoCD 部署',
+                  icon: deploymentProgress.step === 'deploying' ? <LoadingOutlined /> : <RocketOutlined />,
+                  description: deploymentProgress.step === 'deploying' ? '正在部署到测试环境...' : undefined,
+                },
+                {
+                  title: '健康检查',
+                  icon: deploymentProgress.step === 'healthcheck' ? <LoadingOutlined /> : <SafetyCertificateOutlined />,
+                  description: deploymentProgress.step === 'healthcheck' ? '检查服务健康状态...' : undefined,
+                },
+                {
+                  title: '完成',
+                  icon: deploymentProgress.step === 'completed' ? <CheckCircleOutlined /> : undefined,
+                },
+              ]}
+            />
+
+            {/* 当前状态消息 */}
+            <Alert
+              message={deploymentProgress.message}
+              type={deploymentProgress.step === 'completed' ? 'success' : 'info'}
+              showIcon
+              icon={
+                deploymentProgress.step === 'completed' ? <CheckCircleOutlined /> :
+                <LoadingOutlined spin />
+              }
+            />
+
+            {/* 部署区域 */}
+            <div>
+              <Text type="secondary">部署区域:</Text>
+              <div className="mt-2">
+                <Space>
+                  {deploymentProgress.regions.map(r => (
+                    <Tag key={r} icon={<GlobalOutlined />} color="blue">{r}</Tag>
+                  ))}
+                </Space>
+              </div>
+            </div>
+
+            {/* 测试链接 */}
+            {deploymentProgress.testUrl && (
+              <div>
+                <Text type="secondary">测试链接:</Text>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    value={deploymentProgress.testUrl}
+                    readOnly
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    icon={<CopyOutlined />}
+                    onClick={() => handleCopy(deploymentProgress!.testUrl, '测试链接')}
+                  >
+                    复制
+                  </Button>
+                  {deploymentProgress.step === 'completed' && (
+                    <Button
+                      type="primary"
+                      icon={<ExportOutlined />}
+                      href={deploymentProgress.testUrl}
+                      target="_blank"
+                    >
+                      打开
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 完成后的提示 */}
+            {deploymentProgress.step === 'completed' && (
+              <Result
+                status="success"
+                title="部署成功!"
+                subTitle={`版本 ${deploymentProgress.codename} 已成功部署到测试环境，可以开始验证功能了。`}
+              />
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   )

@@ -2,6 +2,16 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { VersionDeployment } from '../types'
 
+// 区域定义
+export const regions = [
+  { id: 'us-east', name: 'US East (AWS)' },
+  { id: 'us-west', name: 'US West (AWS)' },
+  { id: 'eu-west', name: 'EU West (GCP)' },
+  { id: 'eu-central', name: 'EU Central (AWS)' },
+  { id: 'ap-east', name: 'Asia Pacific (AliCloud)' },
+  { id: 'ap-southeast', name: 'AP Southeast (AWS)' },
+]
+
 // Mock 部署数据 - 展示 Project/Version 和 Region 的关联
 const mockDeployments: VersionDeployment[] = [
   // US East - Phoenix 版本
@@ -250,6 +260,7 @@ const mockDeployments: VersionDeployment[] = [
 
 interface DeploymentState {
   deployments: VersionDeployment[]
+  regions: typeof regions
 
   // Actions
   getDeploymentsByRegion: (regionId: string) => VersionDeployment[]
@@ -263,6 +274,7 @@ export const useDeploymentStore = create<DeploymentState>()(
   persist(
     (_set, get) => ({
       deployments: mockDeployments,
+      regions: regions,
 
       getDeploymentsByRegion: (regionId) => {
         return get().deployments.filter(d => d.regionId === regionId)
