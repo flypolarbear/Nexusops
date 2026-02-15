@@ -13,32 +13,69 @@
 
 **Completed**:
 1. 创建 `feature_list.json` - 包含 37 个功能特性
-   - 认证模块: 2 个特性
-   - 基础设施: 1 个特性
-   - 外部集成: 6 个特性 (K8s, Grafana, ArgoCD, Jenkins, OpenClaw, Pipecat)
-   - 统一看板: 4 个特性
-   - 变更发布: 4 个特性
-   - 轻量工单: 4 个特性
-   - AI 助手: 5 个特性
-   - UI/UX: 3 个特性
-   - API: 2 个特性
-   - 测试: 3 个特性
-   - 部署: 2 个特性
-
 2. 创建 `claude-progress.txt` - 进度日志文件
-
 3. 创建 `init.sh` - 开发环境启动脚本
 
+---
+
+### Session 2 - 2024-02-14 (Frontend Refinement)
+**Focus**: 前端 Dashboard 优化
+
+**Completed**:
+1. Dashboard 布局重构
+   - 移除对话质量 KPI 卡片（P95 Latency, Success Rate, Today's Conversations）
+   - 用 WorldMap 组件替换健康饼图，展示全球资源分布
+   - 调整布局：DrawioRenderer (10列) + WorldMap (14列)
+   - 标题改为 "Infrastructure Overview"
+
+2. MainLayout 优化
+   - Dashboard 页面隐藏项目/版本选择器
+
+3. AIAssistantDrawer 增强
+   - 添加 Today's Conversations 和 Success Rate 统计卡片
+
 **Current State**:
-- 项目框架已存在 (Go backend + React frontend)
-- API handlers 为占位符实现
-- 前端页面结构已搭建
-- 所有功能特性标记为 `passes: false`
+- 前端开发约 80% 完成
+- Dashboard 聚焦全局基础设施视角
+- WorldMap 组件集成完成
+- 所有数据仍为 mock 数据
 
 **Next Steps**:
-1. 首先完成 AUTH-001 (用户登录认证)
-2. 然后完成 DB-001 (数据库 schema)
-3. 依次实现外部集成模块
+1. VC-001: Projects 页面版本卡片增强（显示测试 URL、部署区域、Git 信息）
+2. VC-002: 创建版本流程优化
+3. VC-003: 申请上线流程
+
+---
+
+### Session 3 - 2024-02-14 (Vibe Coding 规划)
+**Focus**: 优化项目规划支持 Vibe Coding 工作流
+
+**Completed**:
+1. 创建 `docs/VIBE_CODING_WORKFLOW.md` - Vibe Coding 工作流设计文档
+   - 定义核心工作流：快速验证 → 快速迭代 → 快速上线
+   - 优化 Projects 页面交互设计
+   - 优化 Dashboard 和 WorldMap 交互
+   - 定义 AI Assistant 快捷命令
+
+2. 更新 `feature_list.json` - 按 Vibe Coding 重新组织
+   - Phase 1: Vibe Coding 基础（MVP）- 5 个特性
+   - Phase 2: 部署监控与诊断 - 3 个特性
+   - Phase 3: 后端集成 - 3 个特性
+   - Phase 4: 优化打磨 - 2 个特性
+
+3. 创建 `deploymentStore.ts` - 部署数据管理
+   - VersionDeployment 数据模型
+   - 支持 GitOps + ArgoCD 信息
+
+**Current State**:
+- 前端开发 75% 完成
+- 后端开发 10% 完成
+- MVP 未就绪
+
+**Next Actions**:
+1. VC-001: Projects 页面版本卡片增强
+2. VC-002: 创建版本流程优化
+3. VC-003: 申请上线流程
 
 **Blockers**: None
 
