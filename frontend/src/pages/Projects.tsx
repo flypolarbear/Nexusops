@@ -20,6 +20,7 @@ import {
   Statistic,
   Alert,
   Popconfirm,
+  Divider,
 } from 'antd'
 import {
   PlusOutlined,
@@ -29,11 +30,16 @@ import {
   RocketOutlined,
   BranchesOutlined,
   HistoryOutlined,
-  CodeOutlined,
   LinkOutlined,
   UserOutlined,
   CopyOutlined,
   StarFilled,
+  SyncOutlined,
+  GlobalOutlined,
+  CheckCircleOutlined,
+  WarningOutlined,
+  GithubOutlined,
+  ExportOutlined,
 } from '@ant-design/icons'
 import {
   useVersionStore,
@@ -42,22 +48,16 @@ import {
   type VersionSwitchRequest,
   type VersionStatus,
 } from '../stores/versionStore'
+import { useDeploymentStore } from '../stores/deploymentStore'
 
-const { Title, Text } = Typography
+const { Title, Text, Link } = Typography
 const { TextArea } = Input
 
-// 版本状态配置 - 简化
+// 版本状态配置
 const versionStatusConfig: Record<VersionStatus, { color: string; label: string; icon: React.ReactNode }> = {
   testing: { color: 'orange', label: '测试版本', icon: <ClockCircleOutlined /> },
   production: { color: 'green', label: '生产版本', icon: <StarFilled /> },
   archived: { color: 'default', label: '已归档', icon: <HistoryOutlined /> },
-}
-
-// 环境颜色
-const envColors: Record<string, string> = {
-  dev: 'blue',
-  staging: 'orange',
-  production: 'red',
 }
 
 export default function Projects() {
@@ -80,6 +80,11 @@ export default function Projects() {
     approveSwitchRequest,
     rejectSwitchRequest,
   } = useVersionStore()
+
+  const {
+    deployments,
+    getDeploymentsByCodename,
+  } = useDeploymentStore()
 
   // 创建新版本
   const handleCreateVersion = (projectId: string) => {
@@ -133,13 +138,22 @@ export default function Projects() {
         toVersionId: values.toVersionId,
         toVersionCodename: values.toVersionCodename,
         reason: values.reason,
-        requester: 'Current User', // 实际应从 auth store 获取
+        requester: 'Current User',
         createdAt: new Date().toISOString(),
       })
       message.success('版本切换申请已提交，等待 Admin 审批')
       setSwitchRequestModalOpen(false)
       switchForm.resetFields()
     })
+  }
+
+  // 重新部署
+  const handleRedeploy = (version: Version) => {
+    // TODO: 调用后端 API 触发重新部署
+    message.loading({ content: `正在触发 ${version.codename} 重新部署...`, key: 'redeploy' })
+    setTimeout(() => {
+      message.success({ content: `${version.codename} 重新部署已触发`, key: 'redeploy' })
+    }, 1500)
   }
 
   // 审批
@@ -153,10 +167,33 @@ export default function Projects() {
     message.warning('已拒绝版本切换申请')
   }
 
-  // 复制测试链接
-  const handleCopyTestUrl = (url: string) => {
-    navigator.clipboard.writeText(url)
-    message.success('测试链接已复制到剪贴板')
+  // 复制到剪贴板
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    message.success(`${label}已复制`)
+  }
+
+  // 获取版本的部署信息
+  const getVersionDeployments = (version: Version) => {
+    return getDeploymentsByCodename(version.codename)
+  }
+
+  // 获取版本部署的区域
+  const getVersionRegions = (version: Version) => {
+    const deps = getVersionDeployments(version)
+    const regions = [...new Set(deps.map(d => d.regionName))]
+    return regions
+  }
+
+  // 获取版本健康状态
+  const getVersionHealth = (version: Version) => {
+    const deps = getVersionDeployments(version)
+    if (deps.length === 0) return 'unknown'
+    const hasError = deps.some(d => d.status === 'error')
+    const hasWarning = deps.some(d => d.status === 'warning')
+    if (hasError) return 'critical'
+    if (hasWarning) return 'warning'
+    return 'healthy'
   }
 
   // 获取所有版本的扁平列表
@@ -166,6 +203,7 @@ export default function Projects() {
       projectName: p.name,
       projectCode: p.code,
       isProduction: p.productionVersionId === v.id,
+      projectId: p.id,
     }))
   )
 
@@ -175,7 +213,7 @@ export default function Projects() {
       title: '项目',
       dataIndex: 'projectName',
       key: 'projectName',
-      width: 140,
+      width: 130,
       render: (name: string, record: Version & { projectCode: string }) => (
         <div>
           <div className="font-medium">{name}</div>
@@ -187,17 +225,31 @@ export default function Projects() {
       title: '版本代号',
       dataIndex: 'codename',
       key: 'codename',
-      width: 120,
-      render: (codename: string, record: Version & { isProduction: boolean }) => (
-        <Space>
-          {record.isProduction && (
-            <Tooltip title="当前生产版本">
-              <StarFilled className="text-yellow-500" />
-            </Tooltip>
-          )}
-          <span className="font-medium">{codename}</span>
-        </Space>
-      ),
+      width: 130,
+      render: (codename: string, record: Version & { isProduction: boolean }) => {
+        const health = getVersionHealth(record)
+        const healthColors: Record<string, string> = {
+          healthy: 'text-green-500',
+          warning: 'text-yellow-500',
+          critical: 'text-red-500',
+          unknown: 'text-gray-400',
+        }
+        return (
+          <Space>
+            {record.isProduction && (
+              <Tooltip title="当前生产版本">
+                <StarFilled className="text-yellow-500" />
+              </Tooltip>
+            )}
+            <span className="font-medium">{codename}</span>
+            {health !== 'unknown' && (
+              <Tooltip title={`状态: ${health}`}>
+                <span className={healthColors[health]}>●</span>
+              </Tooltip>
+            )}
+          </Space>
+        )
+      },
     },
     {
       title: '状态',
@@ -210,38 +262,59 @@ export default function Projects() {
       },
     },
     {
-      title: '环境',
-      dataIndex: 'environments',
-      key: 'environments',
-      width: 120,
-      render: (envs: string[]) => (
-        <Space size={4}>
-          {envs.map(env => (
-            <Tag key={env} color={envColors[env] || 'default'} style={{ margin: 0 }}>
-              {env}
-            </Tag>
-          ))}
-        </Space>
-      ),
+      title: '部署区域',
+      key: 'regions',
+      width: 180,
+      render: (_: unknown, record: Version) => {
+        const regions = getVersionRegions(record)
+        if (regions.length === 0) {
+          return <Text type="secondary">未部署</Text>
+        }
+        return (
+          <Space size={2} wrap>
+            {regions.slice(0, 3).map(r => (
+              <Tag key={r} className="text-xs">{r}</Tag>
+            ))}
+            {regions.length > 3 && (
+              <Tooltip title={regions.slice(3).join(', ')}>
+                <Tag>+{regions.length - 3}</Tag>
+              </Tooltip>
+            )}
+          </Space>
+        )
+      },
     },
     {
       title: '测试链接',
       dataIndex: 'testUrl',
       key: 'testUrl',
-      width: 180,
-      ellipsis: true,
+      width: 160,
       render: (url: string | undefined) => url ? (
         <Space size={4}>
           <Tooltip title={url}>
-            <Text className="text-primary-500" style={{ maxWidth: 120 }} ellipsis>
-              {url.replace('https://', '')}
-            </Text>
+            <Link
+              href={url}
+              target="_blank"
+              className="text-xs"
+              style={{ maxWidth: 100 }}
+              ellipsis
+            >
+              {url.replace('https://', '').replace('http://', '')}
+            </Link>
           </Tooltip>
           <Button
             type="text"
             size="small"
             icon={<CopyOutlined />}
-            onClick={() => handleCopyTestUrl(url)}
+            onClick={() => handleCopy(url, '测试链接')}
+            style={{ padding: '0 4px' }}
+          />
+          <Button
+            type="text"
+            size="small"
+            icon={<ExportOutlined />}
+            href={url}
+            target="_blank"
             style={{ padding: '0 4px' }}
           />
         </Space>
@@ -250,26 +323,48 @@ export default function Projects() {
       ),
     },
     {
+      title: 'Git',
+      key: 'git',
+      width: 140,
+      render: (_: unknown, record: Version) => {
+        const deps = getVersionDeployments(record)
+        const gitInfo = deps[0]
+        return gitInfo ? (
+          <Space direction="vertical" size={0}>
+            <span className="text-xs">
+              <GithubOutlined className="mr-1" />
+              {gitInfo.gitBranch}
+            </span>
+            <a
+              href={gitInfo.gitCommitUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-500"
+            >
+              {gitInfo.gitCommit.substring(0, 7)}
+            </a>
+          </Space>
+        ) : (
+          <Text type="secondary" className="text-xs">{record.gitBranch}</Text>
+        )
+      },
+    },
+    {
       title: '负责人',
       dataIndex: 'owner',
       key: 'owner',
-      width: 90,
-    },
-    {
-      title: '更新时间',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      width: 100,
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      width: 80,
     },
     {
       title: '操作',
       key: 'actions',
-      width: 120,
-      render: (_: unknown, record: Version & { isProduction: boolean; projectName: string }) => {
+      width: 180,
+      fixed: 'right' as const,
+      render: (_: unknown, record: Version & { isProduction: boolean; projectName: string; projectId: string }) => {
         const project = projects.find(p => p.id === record.projectId)
+        const hasDeployments = getVersionDeployments(record).length > 0
         return (
-          <Space size={4}>
+          <Space size={2}>
             <Button
               type="link"
               size="small"
@@ -281,16 +376,24 @@ export default function Projects() {
             >
               详情
             </Button>
-            {record.status === 'testing' && !record.isProduction && (
-              <Tooltip title="申请切换为生产版本">
+            {hasDeployments && (
+              <Tooltip title="重新部署">
                 <Button
                   type="link"
                   size="small"
-                  icon={<RocketOutlined />}
+                  icon={<SyncOutlined />}
+                  onClick={() => handleRedeploy(record)}
+                />
+              </Tooltip>
+            )}
+            {record.status === 'testing' && !record.isProduction && hasDeployments && (
+              <Tooltip title="申请上线">
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<RocketOutlined style={{ color: '#22c55e' }} />}
                   onClick={() => handleRequestSwitch(project!, record)}
-                >
-                  上线
-                </Button>
+                />
               </Tooltip>
             )}
           </Space>
@@ -372,6 +475,78 @@ export default function Projects() {
     },
   ]
 
+  // 版本详情中的部署列表
+  const versionDeploymentColumns = [
+    {
+      title: '区域',
+      dataIndex: 'regionName',
+      key: 'regionName',
+      width: 150,
+    },
+    {
+      title: '服务',
+      dataIndex: 'serviceName',
+      key: 'serviceName',
+      width: 120,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 80,
+      render: (status: string) => {
+        const config: Record<string, { color: string; icon: React.ReactNode }> = {
+          running: { color: 'green', icon: <CheckCircleOutlined /> },
+          warning: { color: 'orange', icon: <WarningOutlined /> },
+          error: { color: 'red', icon: <ExclamationCircleOutlined /> },
+        }
+        const { color, icon } = config[status] || { color: 'default', icon: null }
+        return <Tag color={color} icon={icon}>{status}</Tag>
+      },
+    },
+    {
+      title: 'ArgoCD',
+      key: 'argocd',
+      width: 180,
+      render: (_: unknown, record: typeof deployments[0]) => (
+        <Space direction="vertical" size={0}>
+          <a href={record.argocdUrl} target="_blank" rel="noopener noreferrer" className="text-xs">
+            <LinkOutlined className="mr-1" />
+            {record.argocdApp}
+          </a>
+          <Space size={4}>
+            <Tag
+              color={record.argocdSyncStatus === 'synced' ? 'green' : 'orange'}
+              className="text-xs"
+              style={{ margin: 0 }}
+            >
+              {record.argocdSyncStatus}
+            </Tag>
+            <Tag
+              color={record.argocdHealthStatus === 'healthy' ? 'green' : record.argocdHealthStatus === 'degraded' ? 'red' : 'orange'}
+              className="text-xs"
+              style={{ margin: 0 }}
+            >
+              {record.argocdHealthStatus}
+            </Tag>
+          </Space>
+        </Space>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 80,
+      render: () => (
+        <Space>
+          <Tooltip title="查看日志">
+            <Button type="link" size="small" icon={<EyeOutlined />} />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -432,13 +607,12 @@ export default function Projects() {
         </Col>
       </Row>
 
-      {/* 提示信息 */}
+      {/* Vibe Coding 工作流提示 */}
       <Alert
         message={
           <span>
-            <strong>版本管理说明：</strong>
-            每个版本有独立的代号（如 Phoenix、Titan）。测试版本可并行运行，各版本有独立的测试 URL。
-            切换生产版本需要 Admin 审批。
+            <strong>🚀 Vibe Coding 工作流：</strong>
+            创建版本 → 自动部署测试 → 获取测试 URL → 验证功能 → 申请上线 → Admin 审批 → 一键上线
           </span>
         }
         type="info"
@@ -485,7 +659,7 @@ export default function Projects() {
                   columns={versionColumns}
                   rowKey="id"
                   pagination={{ pageSize: 10 }}
-                  scroll={{ x: 1200 }}
+                  scroll={{ x: 1300 }}
                 />
               </Card>
             ),
@@ -545,19 +719,33 @@ export default function Projects() {
                           <div className="mt-4">
                             <Text type="secondary" className="text-xs">测试版本:</Text>
                             <div className="mt-2 flex flex-wrap gap-2">
-                              {testingVersions.map(v => (
-                                <Tag key={v.id} color="orange">
-                                  {v.codename}
-                                  {v.testUrl && (
-                                    <Tooltip title="复制测试链接">
+                              {testingVersions.map(v => {
+                                const regions = getVersionRegions(v)
+                                const health = getVersionHealth(v)
+                                return (
+                                  <Tag
+                                    key={v.id}
+                                    color={health === 'healthy' ? 'orange' : health === 'critical' ? 'red' : 'orange'}
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                      setSelectedVersion(v)
+                                      setVersionDetailOpen(true)
+                                    }}
+                                  >
+                                    {v.codename}
+                                    {regions.length > 0 && <span className="ml-1">({regions.length}区)</span>}
+                                    {v.testUrl && (
                                       <CopyOutlined
-                                        className="ml-1 cursor-pointer"
-                                        onClick={() => handleCopyTestUrl(v.testUrl!)}
+                                        className="ml-1"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleCopy(v.testUrl!, '测试链接')
+                                        }}
                                       />
-                                    </Tooltip>
-                                  )}
-                                </Tag>
-                              ))}
+                                    )}
+                                  </Tag>
+                                )
+                              })}
                             </div>
                           </div>
                         )}
@@ -595,24 +783,65 @@ export default function Projects() {
         ]}
       />
 
-      {/* 版本详情弹窗 */}
+      {/* 版本详情弹窗 - 增强 */}
       <Modal
         title={
           <Space>
             <span>版本详情</span>
+            {selectedVersion && (
+              <Tag color={versionStatusConfig[selectedVersion.status].color}>
+                {versionStatusConfig[selectedVersion.status].label}
+              </Tag>
+            )}
             {selectedVersion?.status === 'production' && (
-              <Tag color="gold" icon={<StarFilled />}>生产版本</Tag>
+              <Tag color="gold" icon={<StarFilled />}>生产</Tag>
             )}
           </Space>
         }
         open={versionDetailOpen}
         onCancel={() => setVersionDetailOpen(false)}
-        footer={null}
-        width={700}
+        footer={
+          selectedVersion && (
+            <Space>
+              {getVersionDeployments(selectedVersion).length > 0 && (
+                <Button
+                  icon={<SyncOutlined />}
+                  onClick={() => handleRedeploy(selectedVersion)}
+                >
+                  重新部署
+                </Button>
+              )}
+              {selectedVersion.testUrl && (
+                <Button
+                  icon={<ExportOutlined />}
+                  href={selectedVersion.testUrl}
+                  target="_blank"
+                >
+                  打开测试环境
+                </Button>
+              )}
+              {selectedVersion.status === 'testing' && getVersionDeployments(selectedVersion).length > 0 && (
+                <Button
+                  type="primary"
+                  icon={<RocketOutlined />}
+                  onClick={() => {
+                    const project = projects.find(p => p.id === selectedVersion.projectId)
+                    if (project) handleRequestSwitch(project, selectedVersion)
+                    setVersionDetailOpen(false)
+                  }}
+                >
+                  申请上线
+                </Button>
+              )}
+            </Space>
+          )
+        }
+        width={900}
       >
         {selectedVersion && (
           <div className="space-y-4">
-            <Descriptions bordered column={2}>
+            {/* 基本信息 */}
+            <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="版本代号">
                 <span className="text-lg font-medium">{selectedVersion.codename}</span>
               </Descriptions.Item>
@@ -621,13 +850,10 @@ export default function Projects() {
                   {versionStatusConfig[selectedVersion.status].label}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Git 分支">
-                <Space>
-                  <CodeOutlined />
-                  <code className="bg-gray-100 px-2 py-0.5 rounded text-sm">
-                    {selectedVersion.gitBranch}
-                  </code>
-                </Space>
+              <Descriptions.Item label="镜像版本">
+                <code className="bg-gray-100 px-2 py-0.5 rounded text-sm">
+                  {selectedVersion.imageUrl?.split(':').pop()}
+                </code>
               </Descriptions.Item>
               <Descriptions.Item label="负责人">
                 <Space>
@@ -635,43 +861,121 @@ export default function Projects() {
                   {selectedVersion.owner}
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="镜像地址" span={2}>
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs block">
-                  {selectedVersion.imageUrl}
-                </code>
-              </Descriptions.Item>
-              <Descriptions.Item label="描述" span={2}>
-                {selectedVersion.description}
-              </Descriptions.Item>
-              <Descriptions.Item label="已部署环境">
-                <Space>
-                  {selectedVersion.environments.map(env => (
-                    <Tag key={env} color={envColors[env]}>{env}</Tag>
-                  ))}
-                </Space>
-              </Descriptions.Item>
-              <Descriptions.Item label="创建时间">
-                {new Date(selectedVersion.createdAt).toLocaleString()}
-              </Descriptions.Item>
             </Descriptions>
 
+            {/* 测试链接 */}
             {selectedVersion.testUrl && (
-              <Card size="small" title="测试链接" className="bg-gray-50">
+              <Card size="small" title="测试链接" className="bg-blue-50">
                 <Space>
                   <LinkOutlined />
-                  <a href={selectedVersion.testUrl} target="_blank" rel="noopener noreferrer">
+                  <Link href={selectedVersion.testUrl} target="_blank">
                     {selectedVersion.testUrl}
-                  </a>
+                  </Link>
                   <Button
                     size="small"
                     icon={<CopyOutlined />}
-                    onClick={() => handleCopyTestUrl(selectedVersion.testUrl!)}
+                    onClick={() => handleCopy(selectedVersion.testUrl!, '测试链接')}
                   >
                     复制
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<ExportOutlined />}
+                    href={selectedVersion.testUrl}
+                    target="_blank"
+                  >
+                    打开
                   </Button>
                 </Space>
               </Card>
             )}
+
+            {/* 部署详情 */}
+            {(() => {
+              const versionDeps = getVersionDeployments(selectedVersion)
+              if (versionDeps.length === 0) {
+                return (
+                  <Alert
+                    message="此版本尚未部署到任何区域"
+                    description="请先触发 CI/CD 构建和部署"
+                    type="warning"
+                    showIcon
+                  />
+                )
+              }
+              const regions = getVersionRegions(selectedVersion)
+              return (
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Text strong>部署详情</Text>
+                    <Space>
+                      <GlobalOutlined />
+                      {regions.map(r => (
+                        <Tag key={r}>{r}</Tag>
+                      ))}
+                    </Space>
+                  </div>
+                  <Table
+                    dataSource={versionDeps}
+                    columns={versionDeploymentColumns}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    expandable={{
+                      expandedRowRender: (record) => (
+                        <div className="p-2 bg-gray-50 space-y-2 text-xs">
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-20">Git 仓库:</span>
+                            <a href={record.gitRepo} target="_blank" rel="noopener noreferrer">
+                              <GithubOutlined className="mr-1" />
+                              {record.gitRepo.replace('https://github.com/', '')}
+                            </a>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-20">分支/Commit:</span>
+                            <code className="bg-gray-200 px-2 py-0.5 rounded">{record.gitBranch}</code>
+                            <span className="text-gray-400">@</span>
+                            <a href={record.gitCommitUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                              {record.gitCommit.substring(0, 7)}
+                            </a>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-20">ArgoCD:</span>
+                            <a href={record.argocdUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                              <LinkOutlined className="mr-1" />
+                              {record.argocdApp}
+                            </a>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-20">镜像:</span>
+                            <code className="bg-gray-200 px-2 py-0.5 rounded">{record.imageVersion}</code>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-20">资源:</span>
+                            <span>{record.cpu} CPU / {record.memory} 内存</span>
+                            <span className="text-gray-400 ml-4">副本: {record.replicas}</span>
+                          </div>
+                        </div>
+                      ),
+                      rowExpandable: () => true,
+                    }}
+                  />
+                </div>
+              )
+            })()}
+
+            {/* Git 信息 */}
+            <Card size="small" title="Git 信息">
+              <Space split={<Divider type="vertical" />}>
+                <span>
+                  <GithubOutlined className="mr-1" />
+                  分支: <code className="bg-gray-100 px-2 py-0.5 rounded">{selectedVersion.gitBranch}</code>
+                </span>
+                <span>
+                  创建: {new Date(selectedVersion.createdAt).toLocaleString()}
+                </span>
+              </Space>
+            </Card>
           </div>
         )}
       </Modal>
@@ -686,7 +990,11 @@ export default function Projects() {
         width={600}
       >
         <Alert
-          message="创建新版本无需审批，创建后默认为测试版本"
+          message={
+            <span>
+              <strong>Vibe Coding:</strong> 创建版本后自动触发 CI/CD 构建和部署到测试环境
+            </span>
+          }
           type="info"
           showIcon
           className="mb-4"
@@ -733,7 +1041,7 @@ export default function Projects() {
           <Form.Item
             label="测试链接"
             name="testUrl"
-            extra="测试版本的访问地址"
+            extra="测试版本的访问地址（可选，创建后自动生成）"
           >
             <Input placeholder="https://xxx.test.internal" />
           </Form.Item>
