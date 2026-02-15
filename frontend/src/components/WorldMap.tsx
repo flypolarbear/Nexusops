@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import * as echarts from 'echarts'
-import { Card, Tooltip as AntTooltip, Modal, Descriptions, Tag, Table, Typography } from 'antd'
-import { CheckCircleOutlined, WarningOutlined, ExclamationCircleOutlined, GithubOutlined, LinkOutlined } from '@ant-design/icons'
+import { Card, Tooltip as AntTooltip, Modal, Descriptions, Tag, Table, Typography, Select, Space } from 'antd'
+import { CheckCircleOutlined, WarningOutlined, ExclamationCircleOutlined, GithubOutlined, LinkOutlined, FilterOutlined } from '@ant-design/icons'
 import { useDeploymentStore } from '../stores/deploymentStore'
+import { useVersionStore } from '../stores/versionStore'
 import type { VersionDeployment } from '../types'
 
 const { Text } = Typography
@@ -49,15 +50,42 @@ export default function WorldMap() {
   const chartInstance = useRef<echarts.ECharts | null>(null)
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [selectedCodename, setSelectedCodename] = useState<string | null>(null)
 
-  const { deployments, getDeploymentsByRegion, getRegionStatus } = useDeploymentStore()
+  const { deployments } = useDeploymentStore()
+  const { projects } = useVersionStore()
 
-  // 获取各区域统计
+  // 获取所有唯一的 codenames
+  const allCodenames = [...new Set(deployments.map(d => d.codename))]
+
+  // 根据 codename 过滤部署数据
+  const filteredDeployments = selectedCodename
+    ? deployments.filter(d => d.codename === selectedCodename)
+    : deployments
+
+  // 获取版本详情（用于 tooltip）
+  const getVersionInfo = (codename: string) => {
+    for (const project of projects) {
+      const version = project.versions.find(v => v.codename === codename)
+      if (version) {
+        return {
+          testUrl: version.testUrl,
+          gitBranch: version.gitBranch,
+          owner: version.owner,
+        }
+      }
+    }
+    return null
+  }
+
+  // 获取各区域统计（基于过滤后的部署数据）
   const getRegionStats = () => {
     const regionIds = Object.keys(regionCoordinates)
     return regionIds.map(regionId => {
-      const regionDeployments = getDeploymentsByRegion(regionId)
-      const status = getRegionStatus(regionId)
+      const regionDeployments = filteredDeployments.filter(d => d.regionId === regionId)
+      const status = regionDeployments.length === 0 ? 'healthy' :
+        regionDeployments.some(d => d.status === 'error') ? 'critical' :
+        regionDeployments.some(d => d.status === 'warning') ? 'warning' : 'healthy'
       const clusters = new Set(regionDeployments.map(d => d.argocdApp)).size || 1
       const cpuAvg = regionDeployments.length > 0
         ? Math.round(regionDeployments.reduce((sum, d) => sum + parseInt(d.cpu) || 0, 0) / regionDeployments.length)
@@ -75,6 +103,7 @@ export default function WorldMap() {
         serviceCount: regionDeployments.length,
         cpu: cpuAvg,
         memory: memoryAvg,
+        codenames: [...new Set(regionDeployments.map(d => d.codename))],
       }
     })
   }
@@ -92,12 +121,15 @@ export default function WorldMap() {
         formatter: (params: any) => {
           if (params.seriesType === 'scatter' || params.seriesType === 'effectScatter') {
             const data = params.data
+            const codenamesHtml = data.codenames && data.codenames.length > 0
+              ? `<br/>Versions: ${data.codenames.map((c: string) => `<span style="color: #8b5cf6">${c}</span>`).join(', ')}`
+              : ''
             return `
               <div style="padding: 8px;">
                 <strong>${data.name}</strong><br/>
                 Status: <span style="color: ${getStatusColor(data.status)}">${data.status.toUpperCase()}</span><br/>
                 Clusters: ${data.clusters}<br/>
-                Deployments: ${data.serviceCount}<br/>
+                Deployments: ${data.serviceCount}${codenamesHtml}<br/>
                 Avg CPU: ${data.cpu}m<br/>
                 Avg Memory: ${data.memory}Mi
               </div>
@@ -140,6 +172,7 @@ export default function WorldMap() {
             serviceCount: region.serviceCount,
             cpu: region.cpu,
             memory: region.memory,
+            codenames: region.codenames,
             itemStyle: {
               color: getStatusColor(region.status),
               shadowBlur: 10,
@@ -256,10 +289,16 @@ export default function WorldMap() {
       window.removeEventListener('resize', handleResize)
       chartInstance.current?.dispose()
     }
-  }, [deployments])
+  }, [filteredDeployments])
 
-  const regionDeployments = selectedRegion ? getDeploymentsByRegion(selectedRegion) : []
-  const regionStatus = selectedRegion ? getRegionStatus(selectedRegion) : 'healthy'
+  const regionDeployments = selectedRegion
+    ? filteredDeployments.filter(d => d.regionId === selectedRegion)
+    : []
+
+  const regionStatus = selectedRegion && regionDeployments.length > 0
+    ? regionDeployments.some(d => d.status === 'error') ? 'critical'
+    : regionDeployments.some(d => d.status === 'warning') ? 'warning' : 'healthy'
+    : 'healthy'
 
   const serviceColumns = [
     {
@@ -329,26 +368,58 @@ export default function WorldMap() {
         title="WorldMap"
         className="h-full"
         extra={
-          <div className="flex gap-3">
-            <AntTooltip title="Healthy">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'healthy').length}</span>
-              </span>
-            </AntTooltip>
-            <AntTooltip title="Warning">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'warning').length}</span>
-              </span>
-            </AntTooltip>
-            <AntTooltip title="Critical">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'critical').length}</span>
-              </span>
-            </AntTooltip>
-          </div>
+          <Space>
+            {/* VC-005: 版本选择器 */}
+            <Select
+              placeholder="筛选版本"
+              allowClear
+              style={{ width: 140 }}
+              value={selectedCodename}
+              onChange={(value) => setSelectedCodename(value)}
+              suffixIcon={<FilterOutlined />}
+              options={allCodenames.map(c => {
+                const versionInfo = getVersionInfo(c)
+                return {
+                  value: c,
+                  label: (
+                    <AntTooltip
+                      title={
+                        versionInfo ? (
+                          <div>
+                            <div>Git: {versionInfo.gitBranch}</div>
+                            {versionInfo.testUrl && <div>URL: {versionInfo.testUrl}</div>}
+                            <div>Owner: {versionInfo.owner}</div>
+                          </div>
+                        ) : null
+                      }
+                    >
+                      <span>{c}</span>
+                    </AntTooltip>
+                  ),
+                }
+              })}
+            />
+            <div className="flex gap-3">
+              <AntTooltip title="Healthy">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'healthy').length}</span>
+                </span>
+              </AntTooltip>
+              <AntTooltip title="Warning">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'warning').length}</span>
+                </span>
+              </AntTooltip>
+              <AntTooltip title="Critical">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="text-sm text-gray-500">{regionStats.filter(r => r.status === 'critical').length}</span>
+                </span>
+              </AntTooltip>
+            </div>
+          </Space>
         }
       >
         <div ref={chartRef} style={{ height: 300, width: '100%' }} />

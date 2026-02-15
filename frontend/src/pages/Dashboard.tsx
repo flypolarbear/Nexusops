@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Card, Row, Col, Statistic, Progress, Table, Tag, Typography, Space, Button } from 'antd'
+import { Card, Row, Col, Statistic, Progress, Table, Tag, Typography, Space, Button, Tooltip, Badge } from 'antd'
 import {
   CloudServerOutlined,
   ClusterOutlined,
@@ -9,12 +9,17 @@ import {
   ClockCircleOutlined,
   ThunderboltOutlined,
   GlobalOutlined,
+  RocketOutlined,
+  EyeOutlined,
+  StarFilled,
 } from '@ant-design/icons'
 import { Line, XAxis, YAxis, Tooltip as RechartsTooltip, AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { overviewApi } from '../services/api'
 import type { OverviewStats } from '../types'
 import DrawioRenderer from '../components/DrawioRenderer'
 import WorldMap from '../components/WorldMap'
+import { useVersionStore } from '../stores/versionStore'
+import { useDeploymentStore } from '../stores/deploymentStore'
 
 const { Title, Text } = Typography
 
@@ -26,6 +31,30 @@ export default function Dashboard() {
       return res.data as OverviewStats
     },
   })
+
+  const { projects } = useVersionStore()
+  const { getDeploymentsByCodename } = useDeploymentStore()
+
+  // 获取所有测试版本
+  const testingVersions = projects.flatMap(p =>
+    p.versions
+      .filter(v => v.status === 'testing')
+      .map(v => {
+        const deployments = getDeploymentsByCodename(v.codename)
+        const versionRegions = [...new Set(deployments.map(d => d.regionName))]
+        const hasError = deployments.some(d => d.status === 'error')
+        const hasWarning = deployments.some(d => d.status === 'warning')
+        const health = deployments.length === 0 ? 'unknown' : hasError ? 'critical' : hasWarning ? 'warning' : 'healthy'
+        return {
+          ...v,
+          projectName: p.name,
+          projectId: p.id,
+          regions: versionRegions,
+          health,
+          isProduction: p.productionVersionId === v.id,
+        }
+      })
+  )
 
   const mockTrendData = [
     { time: '00:00', requests: 1200, latency: 45 },
@@ -103,6 +132,138 @@ export default function Dashboard() {
           </Card>
         </Col>
       </Row>
+
+      {/* VC-004: 测试版本概览 */}
+      <Card
+        title={
+          <Space>
+            <ClockCircleOutlined style={{ color: '#f97316' }} />
+            <span>测试版本概览</span>
+            <Badge count={testingVersions.length} style={{ backgroundColor: '#f97316' }} />
+          </Space>
+        }
+        extra={<Button type="link" href="/projects">查看全部版本</Button>}
+      >
+        {testingVersions.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <ClockCircleOutlined style={{ fontSize: 48 }} />
+            <p className="mt-4">暂无测试版本</p>
+          </div>
+        ) : (
+          <Table
+            dataSource={testingVersions}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            columns={[
+              {
+                title: '项目',
+                dataIndex: 'projectName',
+                key: 'projectName',
+                width: 130,
+                render: (name: string) => <span className="font-medium">{name}</span>,
+              },
+              {
+                title: '版本代号',
+                dataIndex: 'codename',
+                key: 'codename',
+                width: 120,
+                render: (codename: string, record) => (
+                  <Space>
+                    {record.isProduction && (
+                      <Tooltip title="当前生产版本">
+                        <StarFilled className="text-yellow-500" />
+                      </Tooltip>
+                    )}
+                    <span className="font-medium">{codename}</span>
+                  </Space>
+                ),
+              },
+              {
+                title: '健康状态',
+                key: 'health',
+                width: 100,
+                render: (_: unknown, record) => {
+                  const healthConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
+                    healthy: { color: 'green', icon: <CheckCircleOutlined />, label: '健康' },
+                    warning: { color: 'orange', icon: <WarningOutlined />, label: '警告' },
+                    critical: { color: 'red', icon: <WarningOutlined />, label: '异常' },
+                    unknown: { color: 'default', icon: <ClockCircleOutlined />, label: '未知' },
+                  }
+                  const config = healthConfig[record.health]
+                  return (
+                    <Tag color={config.color} icon={config.icon}>
+                      {config.label}
+                    </Tag>
+                  )
+                },
+              },
+              {
+                title: '部署区域',
+                dataIndex: 'regions',
+                key: 'regions',
+                width: 200,
+                render: (regions: string[]) => (
+                  <Space size={2} wrap>
+                    {regions.length === 0 ? (
+                      <Text type="secondary">未部署</Text>
+                    ) : (
+                      regions.slice(0, 3).map(r => (
+                        <Tag key={r} icon={<GlobalOutlined />} className="text-xs">{r}</Tag>
+                      ))
+                    )}
+                    {regions.length > 3 && (
+                      <Tooltip title={regions.slice(3).join(', ')}>
+                        <Tag>+{regions.length - 3}</Tag>
+                      </Tooltip>
+                    )}
+                  </Space>
+                ),
+              },
+              {
+                title: '测试链接',
+                dataIndex: 'testUrl',
+                key: 'testUrl',
+                width: 150,
+                render: (url: string) => url ? (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs">
+                    {url.replace('https://', '').replace('http://', '')}
+                  </a>
+                ) : (
+                  <Text type="secondary">-</Text>
+                ),
+              },
+              {
+                title: '操作',
+                key: 'actions',
+                width: 120,
+                render: (_: unknown, record) => (
+                  <Space>
+                    <Tooltip title="查看详情">
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<EyeOutlined />}
+                        href={`/projects?version=${record.id}`}
+                      />
+                    </Tooltip>
+                    {record.regions.length > 0 && (
+                      <Tooltip title="申请上线">
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<RocketOutlined style={{ color: '#22c55e' }} />}
+                          href={`/projects?apply=${record.id}`}
+                        />
+                      </Tooltip>
+                    )}
+                  </Space>
+                ),
+              },
+            ]}
+          />
+        )}
+      </Card>
 
       {/* Infrastructure Diagram and World Map */}
       <Row gutter={[16, 16]}>
