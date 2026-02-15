@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Tree, Table, Tag, Input, Select, Space, Typography, Button, Modal, Descriptions, Progress, Breadcrumb, Alert } from 'antd'
+import { Card, Tree, Table, Tag, Input, Select, Space, Typography, Button, Modal, Descriptions, Progress, Breadcrumb, Alert, Tooltip, message } from 'antd'
 import {
   SearchOutlined,
   FolderOutlined,
@@ -10,6 +10,9 @@ import {
   SafetyOutlined,
   DashboardOutlined,
   InfoCircleOutlined,
+  ToolOutlined,
+  LinkOutlined,
+  RocketOutlined,
 } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
 import ResourceChatPanel from '../components/ResourceChatPanel'
@@ -33,13 +36,13 @@ const mockClusters = [
 ]
 
 const mockServices = [
-  { id: 'svc-1', name: 'api-gateway', namespace: 'production', cluster: 'Production Cluster', replicas: 3, status: 'running', cpu: 450, cpuLimit: 500, memory: 920, memoryLimit: 1024, restarts: 0, insight: 'Memory at 90%' },
-  { id: 'svc-2', name: 'chat-gateway', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 200, cpuLimit: 500, memory: 256, memoryLimit: 512, restarts: 0, insight: 'Healthy' },
-  { id: 'svc-3', name: 'auth-service', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 100, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy' },
-  { id: 'svc-4', name: 'grafana', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 50, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy' },
-  { id: 'svc-5', name: 'prometheus', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 200, cpuLimit: 500, memory: 512, memoryLimit: 1024, restarts: 0, insight: 'Healthy' },
-  { id: 'svc-6', name: 'test-api', namespace: 'default', cluster: 'Development Cluster', replicas: 1, status: 'error', cpu: 0, cpuLimit: 200, memory: 0, memoryLimit: 256, restarts: 15, insight: 'CrashLoopBackOff' },
-  { id: 'svc-7', name: 'worker', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 850, cpuLimit: 1000, memory: 890, memoryLimit: 1024, restarts: 3, insight: 'OOM risk' },
+  { id: 'svc-1', name: 'api-gateway', namespace: 'production', cluster: 'Production Cluster', replicas: 3, status: 'running', cpu: 450, cpuLimit: 500, memory: 920, memoryLimit: 1024, restarts: 0, insight: 'Memory at 90%', codename: 'Phoenix', versionId: 'ver-2' },
+  { id: 'svc-2', name: 'chat-gateway', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 200, cpuLimit: 500, memory: 256, memoryLimit: 512, restarts: 0, insight: 'Healthy', codename: 'Aurora', versionId: 'ver-6' },
+  { id: 'svc-3', name: 'auth-service', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 100, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy', codename: 'Legacy', versionId: 'ver-1' },
+  { id: 'svc-4', name: 'grafana', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 50, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy', codename: '-', versionId: null },
+  { id: 'svc-5', name: 'prometheus', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 200, cpuLimit: 500, memory: 512, memoryLimit: 1024, restarts: 0, insight: 'Healthy', codename: '-', versionId: null },
+  { id: 'svc-6', name: 'test-api', namespace: 'default', cluster: 'Development Cluster', replicas: 1, status: 'error', cpu: 0, cpuLimit: 200, memory: 0, memoryLimit: 256, restarts: 15, insight: 'CrashLoopBackOff', codename: 'Test', versionId: 'ver-test' },
+  { id: 'svc-7', name: 'worker', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 850, cpuLimit: 1000, memory: 890, memoryLimit: 1024, restarts: 3, insight: 'OOM risk', codename: 'Titan', versionId: 'ver-3' },
 ]
 
 export default function Resources() {
@@ -91,11 +94,69 @@ export default function Resources() {
 
   const handleActionExecute = (action: string) => {
     console.log('Executing action:', action)
-    // In real implementation, this would trigger the appropriate action
-    Modal.info({
-      title: 'Action Triggered',
-      content: `Action "${action}" would be executed here. In production, this would apply fixes or navigate to detailed views.`,
-    })
+    // Handle different action types
+    if (action.startsWith('fix:')) {
+      const target = action.replace('fix:', '')
+      Modal.confirm({
+        title: 'Apply Fix',
+        icon: <SafetyOutlined />,
+        content: (
+          <div className="space-y-2">
+            <p>This will apply the recommended fix for <strong>{target}</strong>.</p>
+            <Alert
+              message="Recommended Fix"
+              description={
+                <div className="text-xs">
+                  <p><strong>Fix Type:</strong> Configuration Update</p>
+                  <p><strong>Impact:</strong> Pod will be restarted</p>
+                </div>
+              }
+              type="info"
+              className="mt-2"
+            />
+          </div>
+        ),
+        okText: 'Apply Fix',
+        onOk: () => {
+          message.loading({ content: `Applying fix for ${target}...`, key: 'fix' })
+          setTimeout(() => {
+            message.success({ content: `Fix applied successfully for ${target}`, key: 'fix' })
+          }, 2000)
+        },
+      })
+    } else if (action.startsWith('scale:')) {
+      const target = action.replace('scale:', '')
+      Modal.confirm({
+        title: 'Scale Resource',
+        icon: <DashboardOutlined />,
+        content: (
+          <div className="space-y-2">
+            <p>Scale <strong>{target}</strong> horizontally to distribute load.</p>
+            <Select
+              defaultValue={3}
+              style={{ width: '100%' }}
+              options={[
+                { value: 2, label: '2 replicas' },
+                { value: 3, label: '3 replicas' },
+                { value: 5, label: '5 replicas' },
+              ]}
+            />
+          </div>
+        ),
+        okText: 'Scale',
+        onOk: () => {
+          message.loading({ content: `Scaling ${target}...`, key: 'scale' })
+          setTimeout(() => {
+            message.success({ content: `${target} scaled successfully`, key: 'scale' })
+          }, 1500)
+        },
+      })
+    } else {
+      Modal.info({
+        title: 'Action Triggered',
+        content: `Action "${action}" would be executed here. In production, this would apply fixes or navigate to detailed views.`,
+      })
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -118,7 +179,19 @@ export default function Resources() {
       title: 'Service',
       dataIndex: 'name',
       key: 'name',
-      render: (name: string) => <span className="font-medium">{name}</span>,
+      render: (name: string, record: typeof mockServices[0]) => (
+        <Space direction="vertical" size={0}>
+          <span className="font-medium">{name}</span>
+          {record.codename && record.codename !== '-' && (
+            <Tooltip title={`Version: ${record.codename}`}>
+              <Tag color="purple" className="text-xs cursor-pointer" onClick={() => window.location.href = `/projects?version=${record.versionId}`}>
+                <RocketOutlined className="mr-1" />
+                {record.codename}
+              </Tag>
+            </Tooltip>
+          )}
+        </Space>
+      ),
     },
     {
       title: 'Namespace',
@@ -185,14 +258,36 @@ export default function Resources() {
     {
       title: 'Actions',
       key: 'actions',
-      render: () => (
-        <Space>
+      width: 150,
+      render: (_: unknown, record: typeof mockServices[0]) => (
+        <Space size={2}>
+          <Tooltip title="K8sGPT Diagnose">
+            <Button
+              type="link"
+              size="small"
+              icon={<ToolOutlined style={{ color: '#8b5cf6' }} />}
+              onClick={() => {
+                setViewMode('chat')
+                // Trigger diagnosis in chat panel
+              }}
+            />
+          </Tooltip>
           <Button type="link" size="small" icon={<BugOutlined />}>
             Debug
           </Button>
           <Button type="link" size="small" icon={<DashboardOutlined />}>
             Metrics
           </Button>
+          {record.versionId && (
+            <Tooltip title="Go to Version">
+              <Button
+                type="link"
+                size="small"
+                icon={<LinkOutlined />}
+                href={`/projects?version=${record.versionId}`}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },
