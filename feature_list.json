@@ -12,7 +12,7 @@
     {
       "name": "Phase 1: Vibe Coding 基础（MVP）",
       "description": "支持完整的快速验证和快速上线流程",
-      "status": "in_progress",
+      "status": "completed",
       "features": [
         {
           "id": "VC-001",
@@ -67,7 +67,7 @@
             "快速跳转到版本详情",
             "一键申请上线"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "VC-005",
@@ -79,7 +79,7 @@
             "悬浮显示版本详情（Git、测试 URL）",
             "点击跳转版本详情页"
           ],
-          "passes": false
+          "passes": true
         }
       ]
     },
@@ -208,17 +208,19 @@
     }
   ],
   "current_progress": {
-    "frontend_complete": "90%",
+    "frontend_complete": "95%",
     "backend_complete": "10%",
-    "mvp_ready": false,
+    "mvp_ready": true,
     "completed_features": [
       "VC-001: Projects 页面版本卡片增强 ✓",
       "VC-002: 创建版本流程优化 ✓",
-      "VC-003: 申请上线流程 ✓"
+      "VC-003: 申请上线流程 ✓",
+      "VC-004: Dashboard 测试版本概览 ✓",
+      "VC-005: WorldMap 按版本筛选 ✓"
     ],
     "next_actions": [
-      "VC-004: Dashboard 测试版本概览",
-      "VC-005: WorldMap 按版本筛选"
+      "Phase 2: 部署监控与诊断",
+      "Phase 3: 后端集成"
     ]
   }
 }
