@@ -86,7 +86,7 @@
     {
       "name": "Phase 2: 部署监控与诊断",
       "description": "提升问题定位和解决效率",
-      "status": "pending",
+      "status": "completed",
       "features": [
         {
           "id": "OPS-001",
@@ -99,7 +99,7 @@
             "失败步骤高亮并显示原因",
             "一键操作：强制同步、快速回滚"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "OPS-002",
@@ -112,7 +112,7 @@
             "一键应用修复",
             "诊断结果与版本关联"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "OPS-003",
@@ -126,7 +126,7 @@
             "/logs <service> --tail 100",
             "/compare <v1> vs <v2>"
           ],
-          "passes": false
+          "passes": true
         }
       ]
     },
@@ -208,7 +208,7 @@
     }
   ],
   "current_progress": {
-    "frontend_complete": "95%",
+    "frontend_complete": "98%",
     "backend_complete": "10%",
     "mvp_ready": true,
     "completed_features": [
@@ -216,11 +216,14 @@
       "VC-002: 创建版本流程优化 ✓",
       "VC-003: 申请上线流程 ✓",
       "VC-004: Dashboard 测试版本概览 ✓",
-      "VC-005: WorldMap 按版本筛选 ✓"
+      "VC-005: WorldMap 按版本筛选 ✓",
+      "OPS-001: 部署链追踪增强 ✓",
+      "OPS-002: K8sGPT 诊断增强 ✓",
+      "OPS-003: AI Assistant 快捷命令 ✓"
     ],
     "next_actions": [
-      "Phase 2: 部署监控与诊断",
-      "Phase 3: 后端集成"
+      "Phase 3: 后端集成",
+      "Phase 4: 优化打磨"
     ]
   }
 }
