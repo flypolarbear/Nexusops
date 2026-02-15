@@ -91,6 +91,7 @@ export default function Projects() {
   const [newProjectModalOpen, setNewProjectModalOpen] = useState(false)
   const [deploymentProgressModalOpen, setDeploymentProgressModalOpen] = useState(false)
   const [deploymentProgress, setDeploymentProgress] = useState<DeploymentProgress | null>(null)
+  const [productionDeployRegions, setProductionDeployRegions] = useState<string[]>([])
   const [versionForm] = Form.useForm()
   const [switchForm] = Form.useForm()
   const [projectForm] = Form.useForm()
@@ -222,19 +223,32 @@ export default function Projects() {
   // 申请切换生产版本
   const handleRequestSwitch = (project: Project, version: Version) => {
     const currentProd = project.versions.find(v => v.id === project.productionVersionId)
+    const versionDeps = getVersionDeployments(version)
+    const gitInfo = versionDeps[0]
+
     switchForm.setFieldsValue({
       projectId: project.id,
       projectName: project.name,
       fromVersionId: currentProd?.id,
-      fromVersionCodename: currentProd?.codename,
+      fromVersionCodename: currentProd?.codename || 'N/A',
       toVersionId: version.id,
       toVersionCodename: version.codename,
+      gitBranch: gitInfo?.gitBranch || version.gitBranch,
+      gitCommit: gitInfo?.gitCommit || 'N/A',
+      imageVersion: gitInfo?.imageVersion || version.imageUrl?.split(':').pop() || 'N/A',
+      testUrl: version.testUrl,
     })
+    setProductionDeployRegions([]) // Reset selected regions
     setSwitchRequestModalOpen(true)
   }
 
   const handleSubmitSwitchRequest = () => {
     switchForm.validateFields().then((values) => {
+      if (productionDeployRegions.length === 0) {
+        message.error('请选择至少一个部署区域')
+        return
+      }
+
       createSwitchRequest({
         projectId: values.projectId,
         projectName: values.projectName,
@@ -242,13 +256,31 @@ export default function Projects() {
         fromVersionCodename: values.fromVersionCodename,
         toVersionId: values.toVersionId,
         toVersionCodename: values.toVersionCodename,
-        reason: values.reason,
+        reason: `${values.changeSummary}\n\n测试结果: ${values.testResults}${values.riskAssessment ? `\n\n风险评估: ${values.riskAssessment}` : ''}${values.rollbackPlan ? `\n\n回滚方案: ${values.rollbackPlan}` : ''}`,
+        gitBranch: values.gitBranch,
+        gitCommit: values.gitCommit,
+        imageVersion: values.imageVersion,
+        deployRegions: productionDeployRegions,
+        deployStrategy: values.deployStrategy,
+        deployOrder: values.deployOrder,
         requester: 'Current User',
         createdAt: new Date().toISOString(),
       })
-      message.success('版本切换申请已提交，等待 Admin 审批')
+
+      notification.success({
+        message: '上线申请已提交',
+        description: (
+          <div>
+            <p>版本 <strong>{values.toVersionCodename}</strong> 的上线申请已提交</p>
+            <p>部署区域: {productionDeployRegions.length} 个</p>
+            <p>等待 Admin 审批</p>
+          </div>
+        ),
+      })
+
       setSwitchRequestModalOpen(false)
       switchForm.resetFields()
+      setProductionDeployRegions([])
     })
   }
 
@@ -513,37 +545,79 @@ export default function Projects() {
       title: '项目',
       dataIndex: 'projectName',
       key: 'projectName',
+      width: 120,
     },
     {
       title: '版本切换',
       key: 'versionChange',
+      width: 180,
       render: (_: unknown, record: VersionSwitchRequest) => (
         <Space>
           <Tag>{record.fromVersionCodename}</Tag>
           <span>→</span>
-          <Tag color="blue">{record.toVersionCodename}</Tag>
+          <Tag color="green" icon={<RocketOutlined />}>{record.toVersionCodename}</Tag>
         </Space>
       ),
+    },
+    {
+      title: '部署区域',
+      key: 'deployRegions',
+      width: 150,
+      render: (_: unknown, record: VersionSwitchRequest) => {
+        if (record.deployRegions && record.deployRegions.length > 0) {
+          return (
+            <Space size={2} wrap>
+              {record.deployRegions.slice(0, 2).map(r => (
+                <Tag key={r} className="text-xs" icon={<GlobalOutlined />}>{r}</Tag>
+              ))}
+              {record.deployRegions.length > 2 && (
+                <Tooltip title={record.deployRegions.slice(2).join(', ')}>
+                  <Tag>+{record.deployRegions.length - 2}</Tag>
+                </Tooltip>
+              )}
+            </Space>
+          )
+        }
+        return <Text type="secondary">-</Text>
+      },
+    },
+    {
+      title: '部署策略',
+      key: 'deployStrategy',
+      width: 120,
+      render: (_: unknown, record: VersionSwitchRequest) => {
+        if (record.deployStrategy) {
+          const strategyLabels: Record<string, string> = {
+            'rolling': '滚动更新',
+            'blue-green': '蓝绿部署',
+            'canary': '金丝雀',
+          }
+          return <Tag>{strategyLabels[record.deployStrategy] || record.deployStrategy}</Tag>
+        }
+        return <Text type="secondary">-</Text>
+      },
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 100,
       render: (status: string) => {
-        const config: Record<string, { color: string; label: string }> = {
-          pending: { color: 'orange', label: '待审批' },
-          approved: { color: 'green', label: '已批准' },
-          rejected: { color: 'red', label: '已拒绝' },
-          completed: { color: 'blue', label: '已完成' },
+        const config: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
+          pending: { color: 'orange', label: '待审批', icon: <ClockCircleOutlined /> },
+          approved: { color: 'green', label: '已批准', icon: <CheckCircleOutlined /> },
+          rejected: { color: 'red', label: '已拒绝', icon: <ExclamationCircleOutlined /> },
+          completed: { color: 'blue', label: '已完成', icon: <CheckCircleOutlined /> },
         }
-        const { color, label } = config[status] || { color: 'default', label: status }
-        return <Tag color={color}>{label}</Tag>
+        const { color, label, icon } = config[status] || { color: 'default', label: status, icon: null }
+        return <Tag color={color} icon={icon}>{label}</Tag>
       },
     },
     {
       title: '申请人',
       dataIndex: 'requester',
       key: 'requester',
+      width: 100,
     },
     {
       title: '申请时间',
@@ -1192,47 +1266,184 @@ export default function Projects() {
         </Form>
       </Modal>
 
-      {/* 版本切换申请弹窗 */}
+      {/* 版本切换申请弹窗 - VC-003 增强 */}
       <Modal
-        title="申请切换生产版本"
+        title={
+          <Space>
+            <RocketOutlined style={{ color: '#52c41a' }} />
+            <span>申请上线到生产环境</span>
+          </Space>
+        }
         open={switchRequestModalOpen}
         onCancel={() => setSwitchRequestModalOpen(false)}
         onOk={handleSubmitSwitchRequest}
-        okText="提交申请"
-        width={600}
+        okText="提交上线申请"
+        width={750}
       >
         <Alert
-          message="切换生产版本需要 Admin 审批"
-          type="warning"
+          message={
+            <span>
+              <strong>📋 审批流程：</strong>提交申请 → Admin 审核 → 批准后自动部署到生产环境
+            </span>
+          }
+          type="info"
           showIcon
           className="mb-4"
         />
         <Form form={switchForm} layout="vertical">
-          <Form.Item label="项目" name="projectName">
-            <Input disabled />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="当前生产版本" name="fromVersionCodename">
-                <Input disabled />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="目标版本" name="toVersionCodename">
-                <Input disabled />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item
-            label="切换原因"
-            name="reason"
-            rules={[{ required: true, message: '请说明切换原因' }]}
-          >
-            <TextArea
-              rows={4}
-              placeholder="请详细说明为什么要切换到此版本，测试结果如何..."
-            />
-          </Form.Item>
+          {/* 项目和版本信息 */}
+          <Card size="small" title="版本信息" className="mb-4">
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item label="项目" name="projectName">
+                  <Input disabled />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="当前生产版本" name="fromVersionCodename">
+                  <Input disabled />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="目标版本" name="toVersionCodename">
+                  <Input disabled className="font-medium text-green-600" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item label="Git 分支" name="gitBranch">
+                  <Input disabled prefix={<GithubOutlined />} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="Git Commit" name="gitCommit">
+                  <Input disabled className="font-mono text-xs" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="镜像版本" name="imageVersion">
+                  <Input disabled className="font-mono text-xs" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="测试链接" name="testUrl">
+              <Input
+                disabled
+                prefix={<LinkOutlined />}
+                addonAfter={
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<ExportOutlined />}
+                    href={switchForm.getFieldValue('testUrl')}
+                    target="_blank"
+                  >
+                    打开
+                  </Button>
+                }
+              />
+            </Form.Item>
+          </Card>
+
+          {/* 部署配置 */}
+          <Card size="small" title="部署配置" className="mb-4">
+            <Form.Item
+              label="部署区域"
+              required
+              extra="选择要部署到生产环境的区域"
+            >
+              <Select
+                mode="multiple"
+                placeholder="选择生产部署区域"
+                value={productionDeployRegions}
+                onChange={setProductionDeployRegions}
+                style={{ width: '100%' }}
+                options={regions.map(r => ({
+                  value: r.id,
+                  label: (
+                    <Space>
+                      <GlobalOutlined />
+                      {r.name}
+                    </Space>
+                  ),
+                }))}
+              />
+            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="部署策略"
+                  name="deployStrategy"
+                  initialValue="rolling"
+                >
+                  <Select
+                    options={[
+                      { value: 'rolling', label: '滚动更新（推荐）' },
+                      { value: 'blue-green', label: '蓝绿部署' },
+                      { value: 'canary', label: '金丝雀发布' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="部署顺序"
+                  name="deployOrder"
+                  initialValue="sequential"
+                >
+                  <Select
+                    options={[
+                      { value: 'sequential', label: '依次部署（安全）' },
+                      { value: 'parallel', label: '同时部署（快速）' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* 上线说明 */}
+          <Card size="small" title="上线说明">
+            <Form.Item
+              label="变更内容"
+              name="changeSummary"
+              rules={[{ required: true, message: '请描述本次变更内容' }]}
+            >
+              <TextArea
+                rows={2}
+                placeholder="简要描述本次上线的主要变更内容..."
+              />
+            </Form.Item>
+            <Form.Item
+              label="测试结果"
+              name="testResults"
+              rules={[{ required: true, message: '请描述测试结果' }]}
+            >
+              <TextArea
+                rows={2}
+                placeholder="描述功能测试、性能测试等结果..."
+              />
+            </Form.Item>
+            <Form.Item
+              label="风险评估"
+              name="riskAssessment"
+            >
+              <TextArea
+                rows={2}
+                placeholder="潜在风险及应对措施（可选）"
+              />
+            </Form.Item>
+            <Form.Item
+              label="回滚方案"
+              name="rollbackPlan"
+            >
+              <TextArea
+                rows={2}
+                placeholder="如果出现问题，如何快速回滚（可选）"
+              />
+            </Form.Item>
+          </Card>
         </Form>
       </Modal>
 

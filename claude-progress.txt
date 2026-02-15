@@ -81,6 +81,44 @@
 
 ---
 
+### Session 4 - 2024-02-16 (VC-001 & VC-002 实现)
+**Focus**: Phase 1 Vibe Coding 功能实现
+
+**Completed**:
+1. VC-001: Projects 页面版本卡片增强
+   - 显示测试 URL（可复制、可打开）
+   - 显示部署区域列表
+   - 显示 Git 分支和 Commit 信息
+   - 显示 ArgoCD 应用链接
+   - 快速操作按钮：重新部署、申请上线
+
+2. VC-002: 创建版本流程优化
+   - 输入 Codename + Git 分支
+   - 自动生成测试环境 URL
+   - 部署区域多选器
+   - 触发 CI/CD 构建和部署（模拟）
+   - 显示部署进度（CI/CD → ArgoCD → 健康检查）
+   - 部署完成后通知 + 申请上线入口
+
+3. deploymentStore 增强
+   - 添加 regions 区域列表
+   - 支持按 codename 查询部署
+
+**Current State**:
+- 前端开发 85% 完成
+- 后端开发 10% 完成
+- MVP 未就绪
+- VC-001 ✓, VC-002 ✓
+
+**Next Actions**:
+1. VC-003: 申请上线流程
+2. VC-004: Dashboard 测试版本概览
+3. VC-005: WorldMap 按版本筛选
+
+**Blockers**: None
+
+---
+
 ## How to Use This File
 
 每次 session 开始时:

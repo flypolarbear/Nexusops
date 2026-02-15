@@ -47,6 +47,13 @@ export interface VersionSwitchRequest {
   approver: string | null
   createdAt: string
   approvedAt: string | null
+  // VC-003 新增字段
+  gitBranch?: string
+  gitCommit?: string
+  imageVersion?: string
+  deployRegions?: string[]
+  deployStrategy?: string
+  deployOrder?: string
 }
 
 // Mock 数据
