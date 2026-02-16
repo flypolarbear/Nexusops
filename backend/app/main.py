@@ -14,6 +14,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import agents, cicd, deployments, projects
+from app.api.ws_endpoint import router as ws_router
+from app.api.ws_endpoint import rest_router as ws_rest_router
 from app.core.config import settings
 from app.core.database import init_db, close_db
 
@@ -52,6 +54,23 @@ app.include_router(projects.router, prefix=settings.API_PREFIX)
 app.include_router(deployments.router, prefix=settings.API_PREFIX)
 app.include_router(agents.router, prefix=settings.API_PREFIX)
 app.include_router(cicd.router, prefix=settings.API_PREFIX)
+app.include_router(ws_rest_router, prefix=settings.API_PREFIX)
+
+# WebSocket endpoint (no prefix)
+app.include_router(ws_router)
+
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    """启动时初始化"""
+    # Start WebSocket ping task
+    from app.api.websocket import ws_manager
+    await ws_manager.start_ping_task(interval=30)
+
+    # Start demo task (for development)
+    if settings.DEBUG:
+        await ws_manager.start_demo_task()
 
 
 @app.get("/")
