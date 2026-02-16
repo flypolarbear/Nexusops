@@ -203,7 +203,7 @@
     {
       "name": "Phase 3.5: Agent 基础架构（新增）",
       "description": "为 Agent Market 预留扩展能力",
-      "status": "pending",
+      "status": "completed",
       "features": [
         {
           "id": "AGENT-001",
@@ -216,7 +216,7 @@
             "定义 AgentManifest 能力声明格式",
             "创建 src/types/agent.ts"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "AGENT-002",
@@ -228,7 +228,7 @@
             "支持项目/版本/区域/资源上下文",
             "上下文自动注入到 Agent 请求"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "AGENT-003",
@@ -241,7 +241,7 @@
             "支持建议操作按钮",
             "支持关联资源链接"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "AGENT-004",
@@ -254,7 +254,7 @@
             "部署分析改造为 nexusops.deploy Agent",
             "添加 Agent 选择器 UI"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "AGENT-005",
@@ -267,7 +267,7 @@
             "实现部署工具集（deploy, rollback, sync）",
             "工具权限控制预留"
           ],
-          "passes": false
+          "passes": true
         }
       ]
     },
@@ -391,10 +391,11 @@
     }
   ],
   "current_progress": {
-    "frontend_complete": "98%",
+    "frontend_complete": "99%",
     "backend_complete": "10%",
     "mvp_ready": true,
     "agent_market_ready": false,
+    "agent_infrastructure_ready": true,
     "completed_features": [
       "VC-001: Projects 页面版本卡片增强 ✓",
       "VC-002: 创建版本流程优化 ✓",
@@ -403,12 +404,17 @@
       "VC-005: WorldMap 按版本筛选 ✓",
       "OPS-001: 部署链追踪增强 ✓",
       "OPS-002: K8sGPT 诊断增强 ✓ (Agent Ready)",
-      "OPS-003: AI Assistant 快捷命令 ✓ (Agent Ready)"
+      "OPS-003: AI Assistant 快捷命令 ✓ (Agent Ready)",
+      "AGENT-001: Agent 类型系统 ✓",
+      "AGENT-002: Agent 上下文管理 ✓",
+      "AGENT-003: Agent 响应渲染器 ✓",
+      "AGENT-004: Agent 化改造 ✓",
+      "AGENT-005: Agent 工具层 ✓"
     ],
     "next_actions": [
       "Phase 3: 后端集成（预留 Agent 接口）",
-      "Phase 3.5: Agent 基础架构",
-      "Phase 4: 优化打磨"
+      "Phase 4: 优化打磨（性能、流式响应）",
+      "Phase 5: Agent Market（未来规划）"
     ]
   },
   "extension_points": {
