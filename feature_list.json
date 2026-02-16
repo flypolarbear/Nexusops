@@ -1,12 +1,18 @@
 {
   "project": "NexusOps",
-  "description": "AI Native Operations Platform - 支持 Vibe Coding 的运维平台",
-  "mvp_scope": "快速开发 + 快速迭代 + 快速上线",
-  "target_users": ["研发", "算法工程师", "业务开发"],
+  "description": "AI Native Operations Platform - 支持 Vibe Coding 和 Agent Market 的运维平台",
+  "mvp_scope": "快速开发 + 快速迭代 + 快速上线 + 开放式 Agent 扩展",
+  "target_users": ["研发", "算法工程师", "业务开发", "Agent 开发者"],
   "vibe_coding_workflow": {
     "quick_validate": "创建版本 → 自动部署测试 → 获取测试 URL → 验证功能",
     "quick_iterate": "发现问题 → 快速回滚/重新部署 → 迭代修复",
     "quick_release": "验证通过 → 申请上线 → Admin 审批 → 一键上线"
+  },
+  "agent_market_vision": {
+    "concept": "开放式 Agent 市场，支持第三方开发者创建和接入自定义 AI Agent",
+    "json_output_guarantee": ["JSON Schema + Few-shot", "Function Calling", "Outlines/Guidance 状态机", "Instructor 库", "JSON-Repair + 重传"],
+    "multi_language_sdk": ["Python", "Node.js", "Go", "Java"],
+    "integration_points": ["统一 JSON 接口规范", "Agent Gateway", "Agent Registry", "结构化输出渲染"]
   },
   "phases": [
     {
@@ -112,7 +118,8 @@
             "一键应用修复",
             "诊断结果与版本关联"
           ],
-          "passes": true
+          "passes": true,
+          "agent_ready": "可改造为 nexusops.k8sgpt Agent"
         },
         {
           "id": "OPS-003",
@@ -126,13 +133,14 @@
             "/logs <service> --tail 100",
             "/compare <v1> vs <v2>"
           ],
-          "passes": true
+          "passes": true,
+          "agent_ready": "可改造为 nexusops.chat Agent"
         }
       ]
     },
     {
       "name": "Phase 3: 后端集成",
-      "description": "对接真实数据源",
+      "description": "对接真实数据源（预留 Agent 接口）",
       "status": "pending",
       "features": [
         {
@@ -146,7 +154,8 @@
             "更新版本状态 API",
             "申请上线 API"
           ],
-          "passes": false
+          "passes": false,
+          "agent_extension": "API 设计需支持 Agent 调用，返回结构化 JSON"
         },
         {
           "id": "BE-002",
@@ -159,7 +168,8 @@
             "触发同步操作",
             "获取部署历史"
           ],
-          "passes": false
+          "passes": false,
+          "agent_extension": "可封装为 Agent Tool 供第三方 Agent 调用"
         },
         {
           "id": "BE-003",
@@ -171,13 +181,99 @@
             "获取构建状态",
             "获取构建日志"
           ],
+          "passes": false,
+          "agent_extension": "可封装为 Agent Tool 供第三方 Agent 调用"
+        },
+        {
+          "id": "BE-004",
+          "category": "backend",
+          "priority": "high",
+          "description": "Agent Gateway 基础",
+          "details": [
+            "统一 Agent 调用入口 /api/v1/agents/:agent_id/invoke",
+            "Agent 请求/响应标准化",
+            "JSON Schema 验证",
+            "错误处理与重试机制"
+          ],
+          "passes": false,
+          "agent_market_prep": true
+        }
+      ]
+    },
+    {
+      "name": "Phase 3.5: Agent 基础架构（新增）",
+      "description": "为 Agent Market 预留扩展能力",
+      "status": "pending",
+      "features": [
+        {
+          "id": "AGENT-001",
+          "category": "agent_infrastructure",
+          "priority": "high",
+          "description": "Agent 类型系统",
+          "details": [
+            "定义 AgentMessage, AgentAction 类型",
+            "定义 AgentRequest, AgentResponse 接口",
+            "定义 AgentManifest 能力声明格式",
+            "创建 src/types/agent.ts"
+          ],
+          "passes": false
+        },
+        {
+          "id": "AGENT-002",
+          "category": "agent_infrastructure",
+          "priority": "high",
+          "description": "Agent 上下文管理",
+          "details": [
+            "创建 AgentContextStore",
+            "支持项目/版本/区域/资源上下文",
+            "上下文自动注入到 Agent 请求"
+          ],
+          "passes": false
+        },
+        {
+          "id": "AGENT-003",
+          "category": "agent_infrastructure",
+          "priority": "high",
+          "description": "Agent 响应渲染器",
+          "details": [
+            "创建 AgentResponseRenderer 组件",
+            "支持结构化输出渲染（表格、状态、资源）",
+            "支持建议操作按钮",
+            "支持关联资源链接"
+          ],
+          "passes": false
+        },
+        {
+          "id": "AGENT-004",
+          "category": "agent_infrastructure",
+          "priority": "medium",
+          "description": "现有功能 Agent 化改造",
+          "details": [
+            "重构 AIAssistantDrawer 支持多 Agent",
+            "K8sGPT 诊断改造为 nexusops.k8sgpt Agent",
+            "部署分析改造为 nexusops.deploy Agent",
+            "添加 Agent 选择器 UI"
+          ],
+          "passes": false
+        },
+        {
+          "id": "AGENT-005",
+          "category": "agent_infrastructure",
+          "priority": "medium",
+          "description": "Agent 工具层",
+          "details": [
+            "定义 AgentTool 接口",
+            "实现 K8s 工具集（get_pod_logs, describe_resource）",
+            "实现部署工具集（deploy, rollback, sync）",
+            "工具权限控制预留"
+          ],
           "passes": false
         }
       ]
     },
     {
       "name": "Phase 4: 优化打磨",
-      "description": "性能、安全、用户体验优化",
+      "description": "性能、安全、用户体验优化（支持 Agent 流式响应）",
       "status": "pending",
       "features": [
         {
@@ -190,7 +286,8 @@
             "告警实时推送",
             "断线自动重连"
           ],
-          "passes": false
+          "passes": false,
+          "agent_extension": "支持 Agent 流式响应（SSE/WebSocket）"
         },
         {
           "id": "OPT-002",
@@ -203,6 +300,92 @@
             "懒加载组件"
           ],
           "passes": false
+        },
+        {
+          "id": "OPT-003",
+          "category": "optimization",
+          "priority": "medium",
+          "description": "JSON 输出保证",
+          "details": [
+            "集成 Instructor 库",
+            "JSON Schema 验证",
+            "自动修复 + 重传机制",
+            "响应格式标准化"
+          ],
+          "passes": false,
+          "agent_market_prep": true
+        }
+      ]
+    },
+    {
+      "name": "Phase 5: Agent Market（未来）",
+      "description": "开放式 Agent 市场",
+      "status": "planned",
+      "features": [
+        {
+          "id": "MK-001",
+          "category": "agent_market",
+          "priority": "high",
+          "description": "Agent 注册中心",
+          "details": [
+            "Agent 注册/注销",
+            "能力发现与搜索",
+            "版本管理",
+            "健康检查"
+          ],
+          "passes": false
+        },
+        {
+          "id": "MK-002",
+          "category": "agent_market",
+          "priority": "high",
+          "description": "Agent Gateway",
+          "details": [
+            "请求路由与负载均衡",
+            "认证/授权",
+            "限流控制",
+            "日志/监控"
+          ],
+          "passes": false
+        },
+        {
+          "id": "MK-003",
+          "category": "agent_market",
+          "priority": "medium",
+          "description": "Agent Store UI",
+          "details": [
+            "Agent 浏览/搜索",
+            "Agent 详情页",
+            "安装/卸载 Agent",
+            "Agent 评价系统"
+          ],
+          "passes": false
+        },
+        {
+          "id": "MK-004",
+          "category": "agent_market",
+          "priority": "medium",
+          "description": "Agent 开发 SDK",
+          "details": [
+            "Python SDK",
+            "Node.js SDK",
+            "Go SDK",
+            "Java SDK"
+          ],
+          "passes": false
+        },
+        {
+          "id": "MK-005",
+          "category": "agent_market",
+          "priority": "low",
+          "description": "Agent 开发文档",
+          "details": [
+            "Agent 开发指南",
+            "API 参考",
+            "最佳实践",
+            "示例 Agent"
+          ],
+          "passes": false
         }
       ]
     }
@@ -211,6 +394,7 @@
     "frontend_complete": "98%",
     "backend_complete": "10%",
     "mvp_ready": true,
+    "agent_market_ready": false,
     "completed_features": [
       "VC-001: Projects 页面版本卡片增强 ✓",
       "VC-002: 创建版本流程优化 ✓",
@@ -218,12 +402,32 @@
       "VC-004: Dashboard 测试版本概览 ✓",
       "VC-005: WorldMap 按版本筛选 ✓",
       "OPS-001: 部署链追踪增强 ✓",
-      "OPS-002: K8sGPT 诊断增强 ✓",
-      "OPS-003: AI Assistant 快捷命令 ✓"
+      "OPS-002: K8sGPT 诊断增强 ✓ (Agent Ready)",
+      "OPS-003: AI Assistant 快捷命令 ✓ (Agent Ready)"
     ],
     "next_actions": [
-      "Phase 3: 后端集成",
+      "Phase 3: 后端集成（预留 Agent 接口）",
+      "Phase 3.5: Agent 基础架构",
       "Phase 4: 优化打磨"
+    ]
+  },
+  "extension_points": {
+    "agent_integration": [
+      "AIAssistantDrawer → 多 Agent 架构",
+      "K8sGPT 分析 → nexusops.k8sgpt Agent",
+      "部署链分析 → nexusops.deploy Agent",
+      "告警分析 → nexusops.alert Agent"
+    ],
+    "api_design": [
+      "/api/v1/agents - Agent 列表",
+      "/api/v1/agents/:id/invoke - Agent 调用",
+      "/api/v1/agents/:id/stream - 流式调用",
+      "/api/v1/agents/:id/tools - 工具列表"
+    ],
+    "data_model": [
+      "agents 表 - Agent 注册",
+      "agent_invocations 表 - 调用日志",
+      "agent_tool_permissions 表 - 工具权限"
     ]
   }
 }
