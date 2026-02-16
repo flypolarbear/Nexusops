@@ -17,17 +17,16 @@ from app.api import agents, cicd, deployments, projects
 from app.api.ws_endpoint import router as ws_router
 from app.api.ws_endpoint import rest_router as ws_rest_router
 from app.core.config import settings
-from app.core.database import init_db, close_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
-    # Startup
-    await init_db()
+    # Startup - skip DB for demo
+    # await init_db()
     yield
     # Shutdown
-    await close_db()
+    # await close_db()
 
 
 app = FastAPI(

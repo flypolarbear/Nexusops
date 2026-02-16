@@ -200,7 +200,7 @@ class JenkinsProvider(CICDProvider):
 
     async def list_builds(self, project: str, limit: int = 10) -> list[BuildInfo]:
         """列出 Jenkins 构建历史"""
-        url = f"{self.base_url}/job/{project}/api/json?tree=builds[number,result,timestamp,duration]{&limit={limit}}"
+        url = f"{self.base_url}/job/{project}/api/json?tree=builds[number,result,timestamp,duration]&limit={limit}"
         response = await self._client.get(url)
 
         if response.status_code == 200:

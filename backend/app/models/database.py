@@ -56,7 +56,7 @@ class Project(Base, TimestampMixin):
 
     # Metadata
     production_version_id: Mapped[Optional[str]] = mapped_column(String(50))
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    extra_data: Mapped[Optional[dict]] = mapped_column(JSONB)
 
 
 class Version(Base, TimestampMixin):
