@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agents, deployments, projects
+from app.api import agents, cicd, deployments, projects
 from app.core.config import settings
 from app.core.database import init_db, close_db
 
@@ -51,6 +51,7 @@ app.add_middleware(
 app.include_router(projects.router, prefix=settings.API_PREFIX)
 app.include_router(deployments.router, prefix=settings.API_PREFIX)
 app.include_router(agents.router, prefix=settings.API_PREFIX)
+app.include_router(cicd.router, prefix=settings.API_PREFIX)
 
 
 @app.get("/")

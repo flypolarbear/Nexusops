@@ -141,7 +141,7 @@
     {
       "name": "Phase 3: 后端集成",
       "description": "对接真实数据源（预留 Agent 接口）",
-      "status": "pending",
+      "status": "completed",
       "features": [
         {
           "id": "BE-001",
@@ -154,7 +154,7 @@
             "更新版本状态 API",
             "申请上线 API"
           ],
-          "passes": false,
+          "passes": true,
           "agent_extension": "API 设计需支持 Agent 调用，返回结构化 JSON"
         },
         {
@@ -168,7 +168,7 @@
             "触发同步操作",
             "获取部署历史"
           ],
-          "passes": false,
+          "passes": true,
           "agent_extension": "可封装为 Agent Tool 供第三方 Agent 调用"
         },
         {
@@ -195,7 +195,7 @@
             "JSON Schema 验证",
             "错误处理与重试机制"
           ],
-          "passes": false,
+          "passes": true,
           "agent_market_prep": true
         }
       ]
