@@ -13,7 +13,6 @@ import {
   EyeOutlined,
   StarFilled,
 } from '@ant-design/icons'
-import { Line, XAxis, YAxis, Tooltip as RechartsTooltip, AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { overviewApi } from '../services/api'
 import type { OverviewStats } from '../types'
 import DrawioRenderer from '../components/DrawioRenderer'
@@ -55,15 +54,6 @@ export default function Dashboard() {
         }
       })
   )
-
-  const mockTrendData = [
-    { time: '00:00', requests: 1200, latency: 45 },
-    { time: '04:00', requests: 800, latency: 32 },
-    { time: '08:00', requests: 2400, latency: 78 },
-    { time: '12:00', requests: 3200, latency: 120 },
-    { time: '16:00', requests: 2800, latency: 95 },
-    { time: '20:00', requests: 1600, latency: 55 },
-  ]
 
   const recentAlerts = [
     { id: '1', name: 'High CPU Usage', severity: 'warning', service: 'api-gateway', time: '5m ago' },
@@ -130,6 +120,16 @@ export default function Dashboard() {
               valueStyle={{ color: '#22c55e' }}
             />
           </Card>
+        </Col>
+      </Row>
+
+      {/* Infrastructure Diagram and World Map */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <DrawioRenderer height={400} />
+        </Col>
+        <Col xs={24} lg={12}>
+          <WorldMap />
         </Col>
       </Row>
 
@@ -264,52 +264,6 @@ export default function Dashboard() {
           />
         )}
       </Card>
-
-      {/* Infrastructure Diagram and World Map */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <DrawioRenderer height={400} />
-        </Col>
-        <Col xs={24} lg={12}>
-          <WorldMap />
-        </Col>
-      </Row>
-
-      {/* Request Volume and Latency */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <Card title="Request Volume & Latency (24h)">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockTrendData}>
-                  <XAxis dataKey="time" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <RechartsTooltip />
-                  <Area
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="requests"
-                    stroke="#3b82f6"
-                    fill="#3b82f6"
-                    fillOpacity={0.2}
-                    name="Requests"
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="latency"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    dot={{ fill: '#ef4444' }}
-                    name="Latency (ms)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-      </Row>
 
       {/* Recent Activity */}
       <Row gutter={[16, 16]}>
