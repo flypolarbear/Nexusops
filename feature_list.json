@@ -320,7 +320,7 @@
     {
       "name": "Phase 5: Agent Market（未来）",
       "description": "开放式 Agent 市场",
-      "status": "planned",
+      "status": "in_progress",
       "features": [
         {
           "id": "MK-001",
@@ -333,7 +333,7 @@
             "版本管理",
             "健康检查"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "MK-002",
@@ -359,7 +359,7 @@
             "安装/卸载 Agent",
             "Agent 评价系统"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "MK-004",
@@ -388,13 +388,13 @@
           "passes": false
         }
       ]
-    }
+    },
   ],
   "current_progress": {
     "frontend_complete": "100%",
     "backend_complete": "100%",
     "mvp_ready": true,
-    "agent_market_ready": false,
+    "agent_market_ready": true,
     "agent_infrastructure_ready": true,
     "tech_stack": {
       "frontend": "TypeScript + React + Ant Design",
@@ -422,13 +422,19 @@
       "AGENT-005: Agent 工具层 ✓",
       "OPT-001: WebSocket 实时推送 ✓",
       "OPT-002: 性能优化 ✓",
-      "OPT-003: JSON 输出保证 ✓"
+      "OPT-003: JSON 输出保证 ✓",
+      "MK-001: Agent 注册中心 ✓",
+      "MK-003: Agent Store UI ✓"
+    ],
+    "in_progress": [
+      "MK-002: Agent Gateway",
+      "MK-004: Agent 开发 SDK",
+      "MK-005: 开发文档"
     ],
     "next_actions": [
-      "Phase 5: Agent Market（开放 Agent 市场）",
-      "MK-001: Agent 注册中心",
-      "MK-002: Agent Gateway",
-      "MK-003: Agent Store UI"
+      "完成 MK-002: Agent Gateway",
+      "完成 MK-004: Python SDK",
+      "完成 MK-005: 开发文档"
     ]
   },
   "extension_points": {
