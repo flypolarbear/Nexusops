@@ -60,11 +60,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
       label: 'Projects',
     },
     {
-      key: '/agent-store',
-      icon: <ShopOutlined />,
-      label: 'Agent Store',
-    },
-    {
       key: '/resources',
       icon: <ClusterOutlined />,
       label: 'Resources',
@@ -83,6 +78,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       key: '/tickets',
       icon: <SolutionOutlined />,
       label: 'Tickets',
+    },
+    {
+      key: '/agent-store',
+      icon: <ShopOutlined />,
+      label: 'Agent Store',
     },
   ]
 
