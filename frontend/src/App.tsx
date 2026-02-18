@@ -7,6 +7,7 @@ import Deployments from './pages/Deployments'
 import Alerts from './pages/Alerts'
 import Tickets from './pages/Tickets'
 import Projects from './pages/Projects'
+import AgentStore from './pages/AgentStore'
 import AIAssistant from './pages/AIAssistant'
 import Login from './pages/Login'
 import Settings from './pages/Settings'
@@ -40,6 +41,7 @@ function App() {
           <Route path="/tickets" element={<Tickets />} />
           <Route path="/tickets/:ticketId" element={<Tickets />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/agent-store" element={<AgentStore />} />
           <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -16,6 +16,7 @@ import {
   HomeOutlined,
   MessageOutlined,
   AppstoreOutlined,
+  ShopOutlined,
   StarFilled,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -57,6 +58,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       key: '/projects',
       icon: <AppstoreOutlined />,
       label: 'Projects',
+    },
+    {
+      key: '/agent-store',
+      icon: <ShopOutlined />,
+      label: 'Agent Store',
     },
     {
       key: '/resources',

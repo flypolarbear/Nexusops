@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agents, cicd, deployments, projects
+from app.api import agents, agent_market, cicd, deployments, projects
 from app.api.ws_endpoint import router as ws_router
 from app.api.ws_endpoint import rest_router as ws_rest_router
 from app.core.config import settings
@@ -53,6 +53,7 @@ app.include_router(projects.router, prefix=settings.API_PREFIX)
 app.include_router(deployments.router, prefix=settings.API_PREFIX)
 app.include_router(agents.router, prefix=settings.API_PREFIX)
 app.include_router(cicd.router, prefix=settings.API_PREFIX)
+app.include_router(agent_market.router, prefix=settings.API_PREFIX)
 app.include_router(ws_rest_router, prefix=settings.API_PREFIX)
 
 # WebSocket endpoint (no prefix)
