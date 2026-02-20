@@ -94,6 +94,7 @@ export default function Partners() {
   const loadPartners = async () => {
     try {
       const response = await fetch('/api/v1/partners')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setPartners(data)
     } catch {

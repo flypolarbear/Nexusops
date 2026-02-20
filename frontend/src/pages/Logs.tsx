@@ -101,6 +101,7 @@ export default function Logs() {
       }
 
       const response = await fetch(`/api/v1/logs?${params}`)
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setLogs(data.items || [])
       setStats(data.stats || null)

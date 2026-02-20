@@ -99,6 +99,7 @@ function GrafanaConfig() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/v1/integrations/grafana')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setConfig(data)
       form.setFieldsValue(data)
@@ -165,6 +166,7 @@ function ArgoCDConfig() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/v1/integrations/argocd')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setConfig(data)
       form.setFieldsValue(data)
@@ -231,6 +233,7 @@ function JenkinsConfig() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/v1/integrations/jenkins')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setConfig(data)
       form.setFieldsValue(data)
@@ -297,6 +300,7 @@ function GitLabConfig() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/v1/integrations/gitlab')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setConfig(data)
       form.setFieldsValue(data)
@@ -360,6 +364,7 @@ function GitHubConfig() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/v1/integrations/github')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setConfig(data)
       form.setFieldsValue(data)
@@ -421,6 +426,7 @@ function BitbucketConfig() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/v1/integrations/bitbucket')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setConfig(data)
       form.setFieldsValue(data)
@@ -503,6 +509,7 @@ export default function Settings() {
   const loadKubeconfigs = async () => {
     try {
       const response = await fetch('/api/v1/kubeconfig')
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setKubeconfigs(data)
     } catch {
@@ -652,6 +659,7 @@ export default function Settings() {
   const handleViewKubeconfigDetail = async (id: string) => {
     try {
       const response = await fetch(`/api/v1/kubeconfig/${id}`)
+      if (!response.ok) throw new Error("API error")
       const data = await response.json()
       setSelectedKubeconfig(data)
       setKubeconfigDetailVisible(true)

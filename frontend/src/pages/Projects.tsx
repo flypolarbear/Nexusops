@@ -149,7 +149,7 @@ export default function Projects() {
         if (progress < 33) {
           return { ...prev, step: 'building', progress: Math.round(progress), message: '正在构建 Docker 镜像...' }
         } else if (progress < 66) {
-          return { ...prev, step: 'deploying', progress: Math.round(progress), message: 'ArgoCD 正在部署到测试环境...' }
+          return { ...prev, step: 'deploying', progress: Math.round(progress), message: t('projects.deployingTest') }
         } else if (progress < 100) {
           return { ...prev, step: 'healthcheck', progress: Math.round(progress), message: '健康检查中...' }
         } else {
@@ -820,13 +820,13 @@ export default function Projects() {
                 <div className="mb-4">
                   <Space>
                     <Select
-                      placeholder="筛选项目"
+                      placeholder={t('projects.filterProject')}
                       allowClear
                       style={{ width: 200 }}
                       options={projects.map(p => ({ value: p.id, label: p.name }))}
                     />
                     <Select
-                      placeholder="筛选状态"
+                      placeholder={t('projects.filterStatus')}
                       allowClear
                       style={{ width: 150 }}
                       options={Object.entries(versionStatusConfig).map(([key, val]) => ({
@@ -881,14 +881,14 @@ export default function Projects() {
                         }
                       >
                         <Descriptions column={2} size="small">
-                          <Descriptions.Item label="当前生产版本">
+                          <Descriptions.Item label={t('projects.currentProdVersion')}>
                             {prodVersion && (
                               <Tag color="green" icon={<StarFilled />}>
                                 {prodVersion.codename}
                               </Tag>
                             )}
                           </Descriptions.Item>
-                          <Descriptions.Item label="负责人">
+                          <Descriptions.Item label={t('projects.owner')}>
                             {project.owner}
                           </Descriptions.Item>
                           <Descriptions.Item label="版本总数" span={2}>
@@ -969,14 +969,14 @@ export default function Projects() {
       <Modal
         title={
           <Space>
-            <span>版本详情</span>
+            <span>{t('projects.versionDetails')}</span>
             {selectedVersion && (
               <Tag color={versionStatusConfig[selectedVersion.status].color}>
                 {versionStatusConfig[selectedVersion.status].label}
               </Tag>
             )}
             {selectedVersion?.status === 'production' && (
-              <Tag color="gold" icon={<StarFilled />}>生产</Tag>
+              <Tag color="gold" icon={<StarFilled />}>{t('projects.production')}</Tag>
             )}
           </Space>
         }
@@ -1024,7 +1024,7 @@ export default function Projects() {
           <div className="space-y-4">
             {/* 基本信息 */}
             <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="版本代号">
+              <Descriptions.Item label={t('projects.versionCodename')}>
                 <span className="text-lg font-medium">{selectedVersion.codename}</span>
               </Descriptions.Item>
               <Descriptions.Item label="状态">
@@ -1032,12 +1032,12 @@ export default function Projects() {
                   {versionStatusConfig[selectedVersion.status].label}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="镜像版本">
+              <Descriptions.Item label={t('projects.imageVersion')}>
                 <code className="bg-gray-100 px-2 py-0.5 rounded text-sm">
                   {selectedVersion.imageUrl?.split(':').pop()}
                 </code>
               </Descriptions.Item>
-              <Descriptions.Item label="负责人">
+              <Descriptions.Item label={t('projects.owner')}>
                 <Space>
                   <UserOutlined />
                   {selectedVersion.owner}
@@ -1078,8 +1078,8 @@ export default function Projects() {
               if (versionDeps.length === 0) {
                 return (
                   <Alert
-                    message="此版本尚未部署到任何区域"
-                    description="请先触发 CI/CD 构建和部署"
+                    message="{t('projects.notDeployedAlert')}"
+                    description="{t('projects.triggerDeployDesc')}"
                     type="warning"
                     showIcon
                   />
@@ -1089,7 +1089,7 @@ export default function Projects() {
               return (
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Text strong>部署详情</Text>
+                    <Text strong>{t('projects.deployDetails')}</Text>
                     <Space>
                       <GlobalOutlined />
                       {regions.map(r => (
@@ -1107,14 +1107,14 @@ export default function Projects() {
                       expandedRowRender: (record) => (
                         <div className="p-2 bg-gray-50 space-y-2 text-xs">
                           <div className="flex items-center gap-4">
-                            <span className="text-gray-500 w-20">Git 仓库:</span>
+                            <span className="text-gray-500 w-20">{t('projects.gitRepo')}</span>
                             <a href={record.gitRepo} target="_blank" rel="noopener noreferrer">
                               <GithubOutlined className="mr-1" />
                               {record.gitRepo.replace('https://github.com/', '')}
                             </a>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-gray-500 w-20">分支/Commit:</span>
+                            <span className="text-gray-500 w-20">{t('projects.branchCommit')}</span>
                             <code className="bg-gray-200 px-2 py-0.5 rounded">{record.gitBranch}</code>
                             <span className="text-gray-400">@</span>
                             <a href={record.gitCommitUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500">
@@ -1129,13 +1129,13 @@ export default function Projects() {
                             </a>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-gray-500 w-20">镜像:</span>
+                            <span className="text-gray-500 w-20">{t('projects.image')}</span>
                             <code className="bg-gray-200 px-2 py-0.5 rounded">{record.imageVersion}</code>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-gray-500 w-20">资源:</span>
+                            <span className="text-gray-500 w-20">{t('projects.resources')}</span>
                             <span>{record.cpu} CPU / {record.memory} 内存</span>
-                            <span className="text-gray-400 ml-4">副本: {record.replicas}</span>
+                            <span className="text-gray-400 ml-4">{t('projects.replicas')} {record.replicas}</span>
                           </div>
                         </div>
                       ),
@@ -1147,11 +1147,11 @@ export default function Projects() {
             })()}
 
             {/* Git 信息 */}
-            <Card size="small" title="Git 信息">
+            <Card size="small" title={t('projects.gitInfo')}>
               <Space split={<Divider type="vertical" />}>
                 <span>
                   <GithubOutlined className="mr-1" />
-                  分支: <code className="bg-gray-100 px-2 py-0.5 rounded">{selectedVersion.gitBranch}</code>
+                  {t('projects.branch')} <code className="bg-gray-100 px-2 py-0.5 rounded">{selectedVersion.gitBranch}</code>
                 </span>
                 <span>
                   创建: {new Date(selectedVersion.createdAt).toLocaleString()}
@@ -1164,11 +1164,11 @@ export default function Projects() {
 
       {/* 新建版本弹窗 - 增强 */}
       <Modal
-        title="创建新版本"
+        title={t('projects.createNewVersion')}
         open={newVersionModalOpen}
         onCancel={() => setNewVersionModalOpen(false)}
         onOk={handleSubmitVersion}
-        okText="创建并部署"
+        okText={t('projects.createAndDeploy')}
         width={650}
       >
         <Alert
@@ -1182,7 +1182,7 @@ export default function Projects() {
           className="mb-4"
         />
         <Form form={versionForm} layout="vertical">
-          <Form.Item label="所属项目" name="projectName">
+          <Form.Item label={t('projects.belongProject')} name="projectName">
             <Input disabled />
           </Form.Item>
           <Form.Item name="projectCode" hidden>
@@ -1191,28 +1191,28 @@ export default function Projects() {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="版本代号"
+                label={t('projects.versionCodename')}
                 name="codename"
                 rules={[{ required: true, message: '请输入版本代号' }]}
-                extra="如: Phoenix, Titan, Nova"
+                extra="{t('projects.codenameExample')}"
               >
-                <Input placeholder="输入内部代号" />
+                <Input placeholder={t('projects.inputCodename')} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                label="负责人"
+                label={t('projects.owner')}
                 name="owner"
                 rules={[{ required: true }]}
               >
-                <Input placeholder="负责人姓名" />
+                <Input placeholder={t('projects.ownerPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="Git 分支"
+                label={t('projects.gitBranch')}
                 name="gitBranch"
                 rules={[{ required: true }]}
               >
@@ -1221,7 +1221,7 @@ export default function Projects() {
             </Col>
             <Col span={12}>
               <Form.Item
-                label="镜像地址"
+                label={t('projects.imageAddress')}
                 name="imageUrl"
                 rules={[{ required: true }]}
               >
@@ -1230,8 +1230,8 @@ export default function Projects() {
             </Col>
           </Row>
           <Form.Item
-            label="部署区域"
-            extra="选择要部署到的测试环境区域"
+            label={t('projects.deployRegions')}
+            extra="{t('projects.selectDeployRegions')}"
           >
             <Select
               mode="multiple"
@@ -1252,7 +1252,7 @@ export default function Projects() {
             />
           </Form.Item>
           <Form.Item
-            label="测试链接（自动生成）"
+            label="{t('projects.testLinkAuto')}"
             name="testUrl"
             extra="创建后将自动生成测试环境 URL"
           >
@@ -1263,7 +1263,7 @@ export default function Projects() {
               className="bg-gray-50"
             />
           </Form.Item>
-          <Form.Item label="描述" name="description">
+          <Form.Item label={t('projects.description')} name="description">
             <TextArea rows={2} placeholder="版本描述、主要变更等" />
           </Form.Item>
         </Form>
@@ -1274,13 +1274,13 @@ export default function Projects() {
         title={
           <Space>
             <RocketOutlined style={{ color: '#52c41a' }} />
-            <span>申请上线到生产环境</span>
+            <span>{t('projects.requestSwitchProd')}</span>
           </Space>
         }
         open={switchRequestModalOpen}
         onCancel={() => setSwitchRequestModalOpen(false)}
         onOk={handleSubmitSwitchRequest}
-        okText="提交上线申请"
+        okText={t('projects.submitRequest')}
         width={750}
       >
         <Alert
@@ -1295,7 +1295,7 @@ export default function Projects() {
         />
         <Form form={switchForm} layout="vertical">
           {/* 项目和版本信息 */}
-          <Card size="small" title="版本信息" className="mb-4">
+          <Card size="small" title={t('projects.versionInfo')} className="mb-4">
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item label="项目" name="projectName">
@@ -1303,19 +1303,19 @@ export default function Projects() {
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item label="当前生产版本" name="fromVersionCodename">
+                <Form.Item label={t('projects.currentProdVersion')} name="fromVersionCodename">
                   <Input disabled />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item label="目标版本" name="toVersionCodename">
+                <Form.Item label={t('projects.targetVersion')} name="toVersionCodename">
                   <Input disabled className="font-medium text-green-600" />
                 </Form.Item>
               </Col>
             </Row>
             <Row gutter={16}>
               <Col span={8}>
-                <Form.Item label="Git 分支" name="gitBranch">
+                <Form.Item label={t('projects.gitBranch')} name="gitBranch">
                   <Input disabled prefix={<GithubOutlined />} />
                 </Form.Item>
               </Col>
@@ -1325,12 +1325,12 @@ export default function Projects() {
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item label="镜像版本" name="imageVersion">
+                <Form.Item label={t('projects.imageVersion')} name="imageVersion">
                   <Input disabled className="font-mono text-xs" />
                 </Form.Item>
               </Col>
             </Row>
-            <Form.Item label="测试链接" name="testUrl">
+            <Form.Item label={t('projects.testLink')} name="testUrl">
               <Input
                 disabled
                 prefix={<LinkOutlined />}
@@ -1350,11 +1350,11 @@ export default function Projects() {
           </Card>
 
           {/* 部署配置 */}
-          <Card size="small" title="部署配置" className="mb-4">
+          <Card size="small" title={t('projects.deployConfig')} className="mb-4">
             <Form.Item
-              label="部署区域"
+              label={t('projects.deployRegions')}
               required
-              extra="选择要部署到生产环境的区域"
+              extra="{t('projects.selectProdRegions')}"
             >
               <Select
                 mode="multiple"
@@ -1376,29 +1376,29 @@ export default function Projects() {
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
-                  label="部署策略"
+                  label={t('projects.deployStrategy')}
                   name="deployStrategy"
                   initialValue="rolling"
                 >
                   <Select
                     options={[
-                      { value: 'rolling', label: '滚动更新（推荐）' },
-                      { value: 'blue-green', label: '蓝绿部署' },
-                      { value: 'canary', label: '金丝雀发布' },
+                      { value: 'rolling', label: t('projects.rollingUpdate') },
+                      { value: 'blue-green', label: t('projects.blueGreen') },
+                      { value: 'canary', label: t('projects.canary') },
                     ]}
                   />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
-                  label="部署顺序"
+                  label={t('projects.deployOrder')}
                   name="deployOrder"
                   initialValue="sequential"
                 >
                   <Select
                     options={[
-                      { value: 'sequential', label: '依次部署（安全）' },
-                      { value: 'parallel', label: '同时部署（快速）' },
+                      { value: 'sequential', label: t('projects.sequential') },
+                      { value: 'parallel', label: t('projects.parallel') },
                     ]}
                   />
                 </Form.Item>
@@ -1407,9 +1407,9 @@ export default function Projects() {
           </Card>
 
           {/* 上线说明 */}
-          <Card size="small" title="上线说明">
+          <Card size="small" title={t('projects.releaseNotes')}>
             <Form.Item
-              label="变更内容"
+              label={t('projects.changes')}
               name="changeSummary"
               rules={[{ required: true, message: '请描述本次变更内容' }]}
             >
@@ -1419,7 +1419,7 @@ export default function Projects() {
               />
             </Form.Item>
             <Form.Item
-              label="测试结果"
+              label={t('projects.testResults')}
               name="testResults"
               rules={[{ required: true, message: '请描述测试结果' }]}
             >
@@ -1429,7 +1429,7 @@ export default function Projects() {
               />
             </Form.Item>
             <Form.Item
-              label="风险评估"
+              label={t('projects.riskAssessment')}
               name="riskAssessment"
             >
               <TextArea
@@ -1438,7 +1438,7 @@ export default function Projects() {
               />
             </Form.Item>
             <Form.Item
-              label="回滚方案"
+              label={t('projects.rollbackPlan')}
               name="rollbackPlan"
             >
               <TextArea
@@ -1452,7 +1452,7 @@ export default function Projects() {
 
       {/* 新建项目弹窗 */}
       <Modal
-        title="新建项目"
+        title={t('projects.newProject')}
         open={newProjectModalOpen}
         onCancel={() => setNewProjectModalOpen(false)}
         onOk={() => {
@@ -1462,20 +1462,20 @@ export default function Projects() {
             projectForm.resetFields()
           })
         }}
-        okText="创建项目"
+        okText={t('projects.createProject')}
       >
         <Form form={projectForm} layout="vertical" className="mt-4">
-          <Form.Item label="项目名称" name="name" rules={[{ required: true }]}>
+          <Form.Item label={t('projects.projectName')} name="name" rules={[{ required: true }]}>
             <Input placeholder="Pipecat-App-B" />
           </Form.Item>
-          <Form.Item label="项目代码" name="code" rules={[{ required: true }]}>
+          <Form.Item label={t('projects.projectCode')} name="code" rules={[{ required: true }]}>
             <Input placeholder="pipecat-app-b" />
           </Form.Item>
-          <Form.Item label="描述" name="description">
+          <Form.Item label={t('projects.description')} name="description">
             <TextArea rows={2} />
           </Form.Item>
-          <Form.Item label="负责人" name="owner" rules={[{ required: true }]}>
-            <Input placeholder="负责人姓名" />
+          <Form.Item label={t('projects.owner')} name="owner" rules={[{ required: true }]}>
+            <Input placeholder={t('projects.ownerPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>
@@ -1485,7 +1485,7 @@ export default function Projects() {
         title={
           <Space>
             <RocketOutlined style={{ color: '#1890ff' }} />
-            <span>部署进度</span>
+            <span>{t('projects.deployProgress')}</span>
             {deploymentProgress && (
               <Tag color="blue">{deploymentProgress.codename}</Tag>
             )}
@@ -1558,22 +1558,22 @@ export default function Projects() {
               status={deploymentProgress.step === 'failed' ? 'error' : 'process'}
               items={[
                 {
-                  title: 'CI/CD 构建',
+                  title: t('projects.cicdBuild'),
                   icon: deploymentProgress.step === 'building' ? <LoadingOutlined /> : <CloudUploadOutlined />,
-                  description: deploymentProgress.step === 'building' ? '正在构建镜像...' : undefined,
+                  description: deploymentProgress.step === 'building' ? t('projects.buildingImage') : undefined,
                 },
                 {
-                  title: 'ArgoCD 部署',
+                  title: t('projects.argocdDeploy'),
                   icon: deploymentProgress.step === 'deploying' ? <LoadingOutlined /> : <RocketOutlined />,
-                  description: deploymentProgress.step === 'deploying' ? '正在部署到测试环境...' : undefined,
+                  description: deploymentProgress.step === 'deploying' ? t('projects.deployingTest') : undefined,
                 },
                 {
-                  title: '健康检查',
+                  title: t('projects.healthCheck'),
                   icon: deploymentProgress.step === 'healthcheck' ? <LoadingOutlined /> : <SafetyCertificateOutlined />,
-                  description: deploymentProgress.step === 'healthcheck' ? '检查服务健康状态...' : undefined,
+                  description: deploymentProgress.step === 'healthcheck' ? t('projects.checkingHealth') : undefined,
                 },
                 {
-                  title: '完成',
+                  title: t('projects.completed'),
                   icon: deploymentProgress.step === 'completed' ? <CheckCircleOutlined /> : undefined,
                 },
               ]}
@@ -1636,7 +1636,7 @@ export default function Projects() {
             {deploymentProgress.step === 'completed' && (
               <Result
                 status="success"
-                title="部署成功!"
+                title={t('projects.deploySuccess')}
                 subTitle={`版本 ${deploymentProgress.codename} 已成功部署到测试环境，可以开始验证功能了。`}
               />
             )}
