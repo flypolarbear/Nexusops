@@ -159,38 +159,40 @@ export default function MainLayout({ children }: MainLayoutProps) {
         trigger={null}
         collapsible
         collapsed={collapsed}
-        className="bg-white shadow-md flex flex-col"
+        className="bg-white shadow-md"
         width={240}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-gray-200">
-          {collapsed ? (
-            <span className="text-2xl font-bold text-primary-600">N</span>
-          ) : (
-            <span className="text-xl font-bold text-primary-600">NexusOps</span>
-          )}
-        </div>
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="h-16 flex items-center justify-center border-b border-gray-200">
+            {collapsed ? (
+              <span className="text-2xl font-bold text-primary-600">N</span>
+            ) : (
+              <span className="text-xl font-bold text-primary-600">NexusOps</span>
+            )}
+          </div>
 
-        {/* Main Menu - Takes remaining space */}
-        <div className="flex-1 overflow-auto">
-          <Menu
-            mode="inline"
-            selectedKeys={[getSelectedKey()]}
-            items={mainMenuItems}
-            onClick={handleMenuClick}
-            className="border-none"
-          />
-        </div>
+          {/* Main Menu - Takes remaining space */}
+          <div className="flex-1 overflow-auto">
+            <Menu
+              mode="inline"
+              selectedKeys={[getSelectedKey()]}
+              items={mainMenuItems}
+              onClick={handleMenuClick}
+              className="border-none"
+            />
+          </div>
 
-        {/* Bottom Menu - Fixed at bottom */}
-        <div className="border-t border-gray-200">
-          <Menu
-            mode="inline"
-            selectedKeys={[getSelectedKey()]}
-            items={bottomMenuItems}
-            onClick={handleMenuClick}
-            className="border-none"
-          />
+          {/* Bottom Menu - Fixed at bottom */}
+          <div className="mt-auto border-t border-gray-200">
+            <Menu
+              mode="inline"
+              selectedKeys={[getSelectedKey()]}
+              items={bottomMenuItems}
+              onClick={handleMenuClick}
+              className="border-none"
+            />
+          </div>
         </div>
       </Sider>
 
