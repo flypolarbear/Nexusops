@@ -160,6 +160,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         collapsible
         collapsed={collapsed}
         className="bg-white shadow-md"
+        style={{ overflow: 'auto', height: '100vh', position: 'sticky', left: 0, top: 0, bottom: 0 }}
         width={240}
       >
         <div className="flex flex-col h-full">

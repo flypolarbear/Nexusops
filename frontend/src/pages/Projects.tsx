@@ -514,24 +514,25 @@ export default function Projects() {
               详情
             </Button>
             {hasDeployments && (
-              <Tooltip title="重新部署">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<SyncOutlined />}
-                  onClick={() => handleRedeploy(record)}
-                />
-              </Tooltip>
+              <Button
+                type="link"
+                size="small"
+                icon={<SyncOutlined />}
+                onClick={() => handleRedeploy(record)}
+              >
+                重部
+              </Button>
             )}
             {record.status === 'testing' && !record.isProduction && hasDeployments && (
-              <Tooltip title="申请上线">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<RocketOutlined style={{ color: '#22c55e' }} />}
-                  onClick={() => handleRequestSwitch(project!, record)}
-                />
-              </Tooltip>
+              <Button
+                type="link"
+                size="small"
+                icon={<RocketOutlined style={{ color: '#22c55e' }} />}
+                onClick={() => handleRequestSwitch(project!, record)}
+                style={{ color: '#22c55e' }}
+              >
+                上线
+              </Button>
             )}
           </Space>
         )
