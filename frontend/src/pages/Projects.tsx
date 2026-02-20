@@ -77,14 +77,15 @@ interface DeploymentProgress {
 }
 
 // 版本状态配置
-const versionStatusConfig: Record<VersionStatus, { color: string; label: string; icon: React.ReactNode }> = {
-  testing: { color: 'orange', label: '测试版本', icon: <ClockCircleOutlined /> },
-  production: { color: 'green', label: '生产版本', icon: <StarFilled /> },
-  archived: { color: 'default', label: '已归档', icon: <HistoryOutlined /> },
-}
+const versionStatusConfig = (t: any): Record<VersionStatus, { color: string; label: string; icon: React.ReactNode }> => ({
+  testing: { color: 'orange', label: t('projects.testing'), icon: <ClockCircleOutlined /> },
+  production: { color: 'green', label: t('projects.production'), icon: <StarFilled /> },
+  archived: { color: 'default', label: t('projects.archived'), icon: <HistoryOutlined /> },
+})
 
 export default function Projects() {
   const { t } = useTranslation()
+  const vsc = versionStatusConfig(t)
   const [activeTab, setActiveTab] = useState('versions')
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null)
   const [versionDetailOpen, setVersionDetailOpen] = useState(false)
@@ -382,7 +383,7 @@ export default function Projects() {
             )}
             <span className="font-medium">{codename}</span>
             {health !== 'unknown' && (
-              <Tooltip title={`状态: ${health}`}>
+              <Tooltip title={`${t('projects.status')}: ${health}`}>
                 <span className={healthColors[health]}>●</span>
               </Tooltip>
             )}
@@ -396,7 +397,7 @@ export default function Projects() {
       key: 'status',
       width: 100,
       render: (status: VersionStatus) => {
-        const config = versionStatusConfig[status]
+        const config = vsc[status]
         return <Tag color={config.color} icon={config.icon}>{config.label}</Tag>
       },
     },
@@ -445,7 +446,7 @@ export default function Projects() {
             type="text"
             size="small"
             icon={<CopyOutlined />}
-            onClick={() => handleCopy(url, '测试链接')}
+            onClick={() => handleCopy(url, t('projects.testLink'))}
             style={{ padding: '0 4px' }}
           />
           <Button
@@ -515,27 +516,25 @@ export default function Projects() {
             >
               {t('projects.details')}
             </Button>
-            {hasDeployments && (
-              <Button
-                type="link"
-                size="small"
-                icon={<SyncOutlined />}
-                onClick={() => handleRedeploy(record)}
-              >
-                {t('projects.redeploy')}
-              </Button>
-            )}
-            {record.status === 'testing' && !record.isProduction && hasDeployments && (
-              <Button
-                type="link"
-                size="small"
-                icon={<RocketOutlined style={{ color: '#22c55e' }} />}
-                onClick={() => handleRequestSwitch(project!, record)}
-                style={{ color: '#22c55e' }}
-              >
-                {t('projects.requestOnline')}
-              </Button>
-            )}
+            <Button
+              type="link"
+              size="small"
+              icon={<SyncOutlined />}
+              onClick={() => handleRedeploy(record)}
+              disabled={!hasDeployments}
+            >
+              {t('projects.redeploy')}
+            </Button>
+            <Button
+              type="link"
+              size="small"
+              icon={<RocketOutlined style={record.status === 'testing' && !record.isProduction && hasDeployments ? { color: '#22c55e' } : undefined} />}
+              onClick={() => handleRequestSwitch(project!, record)}
+              disabled={!(record.status === 'testing' && !record.isProduction && hasDeployments)}
+              style={record.status === 'testing' && !record.isProduction && hasDeployments ? { color: '#22c55e' } : undefined}
+            >
+              {t('projects.requestOnline')}
+            </Button>
           </Space>
         )
       },
@@ -829,7 +828,7 @@ export default function Projects() {
                       placeholder={t('projects.filterStatus')}
                       allowClear
                       style={{ width: 150 }}
-                      options={Object.entries(versionStatusConfig).map(([key, val]) => ({
+                      options={Object.entries(vsc).map(([key, val]) => ({
                         value: key,
                         label: val.label,
                       }))}
@@ -921,7 +920,7 @@ export default function Projects() {
                                         className="ml-1"
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          handleCopy(v.testUrl!, '测试链接')
+                                          handleCopy(v.testUrl!, t('projects.testLink'))
                                         }}
                                       />
                                     )}
@@ -971,8 +970,8 @@ export default function Projects() {
           <Space>
             <span>{t('projects.versionDetails')}</span>
             {selectedVersion && (
-              <Tag color={versionStatusConfig[selectedVersion.status].color}>
-                {versionStatusConfig[selectedVersion.status].label}
+              <Tag color={vsc[selectedVersion.status].color}>
+                {vsc[selectedVersion.status].label}
               </Tag>
             )}
             {selectedVersion?.status === 'production' && (
@@ -985,36 +984,33 @@ export default function Projects() {
         footer={
           selectedVersion && (
             <Space>
-              {getVersionDeployments(selectedVersion).length > 0 && (
-                <Button
-                  icon={<SyncOutlined />}
-                  onClick={() => handleRedeploy(selectedVersion)}
-                >
-                  重新部署
-                </Button>
-              )}
-              {selectedVersion.testUrl && (
-                <Button
-                  icon={<ExportOutlined />}
-                  href={selectedVersion.testUrl}
-                  target="_blank"
-                >
-                  打开测试环境
-                </Button>
-              )}
-              {selectedVersion.status === 'testing' && getVersionDeployments(selectedVersion).length > 0 && (
-                <Button
-                  type="primary"
-                  icon={<RocketOutlined />}
-                  onClick={() => {
-                    const project = projects.find(p => p.id === selectedVersion.projectId)
-                    if (project) handleRequestSwitch(project, selectedVersion)
-                    setVersionDetailOpen(false)
-                  }}
-                >
-                  申请上线
-                </Button>
-              )}
+              <Button
+                icon={<SyncOutlined />}
+                onClick={() => handleRedeploy(selectedVersion)}
+                disabled={getVersionDeployments(selectedVersion).length === 0}
+              >
+                {t('projects.redeploy')}
+              </Button>
+              <Button
+                icon={<ExportOutlined />}
+                href={selectedVersion.testUrl || undefined}
+                target={selectedVersion.testUrl ? "_blank" : undefined}
+                disabled={!selectedVersion.testUrl}
+              >
+                {t('projects.openTestEnv')}
+              </Button>
+              <Button
+                type="primary"
+                icon={<RocketOutlined />}
+                onClick={() => {
+                  const project = projects.find(p => p.id === selectedVersion.projectId)
+                  if (project) handleRequestSwitch(project, selectedVersion)
+                  setVersionDetailOpen(false)
+                }}
+                disabled={!(selectedVersion.status === 'testing' && getVersionDeployments(selectedVersion).length > 0)}
+              >
+                {t('projects.requestOnline')}
+              </Button>
             </Space>
           )
         }
@@ -1027,9 +1023,9 @@ export default function Projects() {
               <Descriptions.Item label={t('projects.versionCodename')}>
                 <span className="text-lg font-medium">{selectedVersion.codename}</span>
               </Descriptions.Item>
-              <Descriptions.Item label="状态">
-                <Tag color={versionStatusConfig[selectedVersion.status].color}>
-                  {versionStatusConfig[selectedVersion.status].label}
+              <Descriptions.Item label={t('projects.status')}>
+                <Tag color={vsc[selectedVersion.status].color}>
+                  {vsc[selectedVersion.status].label}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t('projects.imageVersion')}>
@@ -1047,7 +1043,7 @@ export default function Projects() {
 
             {/* 测试链接 */}
             {selectedVersion.testUrl && (
-              <Card size="small" title="测试链接" className="bg-blue-50">
+              <Card size="small" title={t('projects.testLink')} className="bg-blue-50">
                 <Space>
                   <LinkOutlined />
                   <Link href={selectedVersion.testUrl} target="_blank">
@@ -1056,9 +1052,9 @@ export default function Projects() {
                   <Button
                     size="small"
                     icon={<CopyOutlined />}
-                    onClick={() => handleCopy(selectedVersion.testUrl!, '测试链接')}
+                    onClick={() => handleCopy(selectedVersion.testUrl!, t('projects.testLink'))}
                   >
-                    复制
+                    {t('projects.copy')}
                   </Button>
                   <Button
                     size="small"
@@ -1066,7 +1062,7 @@ export default function Projects() {
                     href={selectedVersion.testUrl}
                     target="_blank"
                   >
-                    打开
+                    {t('projects.open')}
                   </Button>
                 </Space>
               </Card>
@@ -1078,8 +1074,8 @@ export default function Projects() {
               if (versionDeps.length === 0) {
                 return (
                   <Alert
-                    message="{t('projects.notDeployedAlert')}"
-                    description="{t('projects.triggerDeployDesc')}"
+                    message={t('projects.notDeployedAlert')}
+                    description={t('projects.triggerDeployDesc')}
                     type="warning"
                     showIcon
                   />
@@ -1134,7 +1130,7 @@ export default function Projects() {
                           </div>
                           <div className="flex items-center gap-4">
                             <span className="text-gray-500 w-20">{t('projects.resources')}</span>
-                            <span>{record.cpu} CPU / {record.memory} 内存</span>
+                            <span>{record.cpu} CPU / {record.memory} Memory</span>
                             <span className="text-gray-400 ml-4">{t('projects.replicas')} {record.replicas}</span>
                           </div>
                         </div>
@@ -1154,7 +1150,7 @@ export default function Projects() {
                   {t('projects.branch')} <code className="bg-gray-100 px-2 py-0.5 rounded">{selectedVersion.gitBranch}</code>
                 </span>
                 <span>
-                  创建: {new Date(selectedVersion.createdAt).toLocaleString()}
+                  {t('projects.createdAt')} {new Date(selectedVersion.createdAt).toLocaleString()}
                 </span>
               </Space>
             </Card>
@@ -1231,7 +1227,7 @@ export default function Projects() {
           </Row>
           <Form.Item
             label={t('projects.deployRegions')}
-            extra="{t('projects.selectDeployRegions')}"
+            extra={t('projects.selectDeployRegions')}
           >
             <Select
               mode="multiple"
@@ -1252,8 +1248,7 @@ export default function Projects() {
             />
           </Form.Item>
           <Form.Item
-            label="{t('projects.testLinkAuto')}"
-            name="testUrl"
+            label={t('projects.testLinkAuto')}
             extra="创建后将自动生成测试环境 URL"
           >
             <Input
@@ -1264,7 +1259,7 @@ export default function Projects() {
             />
           </Form.Item>
           <Form.Item label={t('projects.description')} name="description">
-            <TextArea rows={2} placeholder="版本描述、主要变更等" />
+            <TextArea rows={2} />
           </Form.Item>
         </Form>
       </Modal>
@@ -1354,11 +1349,10 @@ export default function Projects() {
             <Form.Item
               label={t('projects.deployRegions')}
               required
-              extra="{t('projects.selectProdRegions')}"
+              extra={t('projects.selectProdRegions')}
             >
               <Select
                 mode="multiple"
-                placeholder="选择生产部署区域"
                 value={productionDeployRegions}
                 onChange={setProductionDeployRegions}
                 style={{ width: '100%' }}
@@ -1432,19 +1426,13 @@ export default function Projects() {
               label={t('projects.riskAssessment')}
               name="riskAssessment"
             >
-              <TextArea
-                rows={2}
-                placeholder="潜在风险及应对措施（可选）"
-              />
+              <TextArea rows={2} />
             </Form.Item>
             <Form.Item
               label={t('projects.rollbackPlan')}
               name="rollbackPlan"
             >
-              <TextArea
-                rows={2}
-                placeholder="如果出现问题，如何快速回滚（可选）"
-              />
+              <TextArea rows={2} />
             </Form.Item>
           </Card>
         </Form>
@@ -1506,14 +1494,13 @@ export default function Projects() {
                 href={deploymentProgress.testUrl}
                 target="_blank"
               >
-                打开测试环境
+                {t('projects.openTestEnv')}
               </Button>
               <Button
                 type="primary"
                 icon={<RocketOutlined />}
                 onClick={() => {
                   setDeploymentProgressModalOpen(false)
-                  // 找到刚创建的版本并打开申请上线弹窗
                   const version = allVersions.find(v => v.codename === deploymentProgress.codename)
                   if (version) {
                     const project = projects.find(p => p.id === version.projectId)
@@ -1523,7 +1510,7 @@ export default function Projects() {
                   }
                 }}
               >
-                申请上线
+                {t('projects.requestOnline')}
               </Button>
             </Space>
           ) : null
@@ -1605,7 +1592,7 @@ export default function Projects() {
             {/* 测试链接 */}
             {deploymentProgress.testUrl && (
               <div>
-                <Text type="secondary">测试链接:</Text>
+                <Text type="secondary">{t('projects.testLink')}</Text>
                 <div className="mt-2 flex items-center gap-2">
                   <Input
                     value={deploymentProgress.testUrl}
@@ -1614,9 +1601,9 @@ export default function Projects() {
                   />
                   <Button
                     icon={<CopyOutlined />}
-                    onClick={() => handleCopy(deploymentProgress!.testUrl, '测试链接')}
+                    onClick={() => handleCopy(deploymentProgress!.testUrl, t('projects.testLink'))}
                   >
-                    复制
+                    {t('projects.copy')}
                   </Button>
                   {deploymentProgress.step === 'completed' && (
                     <Button
@@ -1625,7 +1612,7 @@ export default function Projects() {
                       href={deploymentProgress.testUrl}
                       target="_blank"
                     >
-                      打开
+                      {t('projects.open')}
                     </Button>
                   )}
                 </div>
@@ -1637,7 +1624,7 @@ export default function Projects() {
               <Result
                 status="success"
                 title={t('projects.deploySuccess')}
-                subTitle={`版本 ${deploymentProgress.codename} 已成功部署到测试环境，可以开始验证功能了。`}
+                subTitle={`Version ${deploymentProgress.codename} ${t('projects.deploySuccessDesc')}`}
               />
             )}
           </div>
