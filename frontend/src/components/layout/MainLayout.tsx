@@ -249,7 +249,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         color={v.status === 'production' ? 'green' : 'orange'}
                         style={{ marginLeft: 4, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}
                       >
-                        {v.status === 'production' ? '生产' : '测试'}
+                        {v.status === 'production' ? 'Production' : 'Testing'}
                       </Tag>
                     </div>
                   </Select.Option>

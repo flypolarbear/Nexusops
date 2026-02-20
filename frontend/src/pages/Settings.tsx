@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Card,
   Typography,
@@ -17,7 +16,6 @@ import {
   Popconfirm,
   Tooltip,
   Descriptions,
-  Select,
 } from 'antd'
 import {
   SafetyOutlined,
@@ -38,7 +36,6 @@ import {
   UploadOutlined,
   LinkOutlined,
   SaveOutlined,
-  GlobalOutlined,
 } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { useAuthStore } from '../stores/authStore'
@@ -486,7 +483,6 @@ function BitbucketConfig() {
 // ============================================
 
 export default function Settings() {
-  const { i18n } = useTranslation()
   const { user } = useAuthStore()
   const { diagrams, activeDiagramId, setActiveDiagram, addDiagram, removeDiagram } = useDiagramStore()
   const [previewDiagram, setPreviewDiagram] = useState<DiagramConfig | null>(null)
@@ -813,34 +809,6 @@ export default function Settings() {
   // ============================================
 
   const tabItems = [
-    {
-      key: 'general',
-      label: (
-        <span>
-          <GlobalOutlined />
-          General
-        </span>
-      ),
-      children: (
-        <Space direction="vertical" className="w-full" size="large">
-          <Card title="System Preferences">
-            <Form layout="vertical">
-              <Form.Item label="Language / 语言" extra="Select the default language for the application interface.">
-                <Select
-                  value={i18n.language}
-                  onChange={(val) => i18n.changeLanguage(val)}
-                  style={{ width: 200 }}
-                  options={[
-                    { value: 'en', label: 'English' },
-                    { value: 'zh', label: '简体中文' },
-                  ]}
-                />
-              </Form.Item>
-            </Form>
-          </Card>
-        </Space>
-      ),
-    },
     {
       key: 'kubernetes',
       label: (

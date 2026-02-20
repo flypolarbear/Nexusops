@@ -134,7 +134,7 @@ export default function Projects() {
       progress: 0,
       testUrl,
       regions,
-      message: '开始 CI/CD 构建...',
+      message: 'Starting CI/CD build...',
     })
     setDeploymentProgressModalOpen(true)
 
@@ -148,25 +148,25 @@ export default function Projects() {
         if (!prev) return prev
 
         if (progress < 33) {
-          return { ...prev, step: 'building', progress: Math.round(progress), message: '正在构建 Docker 镜像...' }
+          return { ...prev, step: 'building', progress: Math.round(progress), message: 'Building Docker image...' }
         } else if (progress < 66) {
           return { ...prev, step: 'deploying', progress: Math.round(progress), message: t('projects.deployingTest') }
         } else if (progress < 100) {
-          return { ...prev, step: 'healthcheck', progress: Math.round(progress), message: '健康检查中...' }
+          return { ...prev, step: 'healthcheck', progress: Math.round(progress), message: 'Health checking...' }
         } else {
           clearInterval(progressInterval)
           // 部署完成通知
           notification.success({
-            message: '部署完成',
+            message: 'Deployment completed',
             description: (
               <div>
-                <p>版本 <strong>{codename}</strong> 已成功部署到测试环境</p>
+                <p>Version <strong>{codename}</strong> successfully deployed to test environment</p>
                 <p>测试链接: <a href={testUrl} target="_blank" rel="noopener noreferrer">{testUrl}</a></p>
               </div>
             ),
             duration: 10,
           })
-          return { ...prev, step: 'completed', progress: 100, message: '部署完成!' }
+          return { ...prev, step: 'completed', progress: 100, message: 'Deployment completed!' }
         }
       })
     }, 800)
@@ -218,7 +218,7 @@ export default function Projects() {
           selectedRegions
         )
       } else {
-        message.success(`版本 "${values.codename}" 创建成功!`)
+        message.success(`Version "${values.codename}" created successfully!`)
       }
     })
   }
@@ -248,7 +248,7 @@ export default function Projects() {
   const handleSubmitSwitchRequest = () => {
     switchForm.validateFields().then((values) => {
       if (productionDeployRegions.length === 0) {
-        message.error('请选择至少一个部署区域')
+        message.error('Please select at least one deploy region')
         return
       }
 
@@ -259,7 +259,7 @@ export default function Projects() {
         fromVersionCodename: values.fromVersionCodename,
         toVersionId: values.toVersionId,
         toVersionCodename: values.toVersionCodename,
-        reason: `${values.changeSummary}\n\n测试结果: ${values.testResults}${values.riskAssessment ? `\n\n风险评估: ${values.riskAssessment}` : ''}${values.rollbackPlan ? `\n\n回滚方案: ${values.rollbackPlan}` : ''}`,
+        reason: `${values.changeSummary}\n\nTest Results: ${values.testResults}${values.riskAssessment ? `\n\nRisk Assessment: ${values.riskAssessment}` : ''}${values.rollbackPlan ? `\n\nRollback Plan: ${values.rollbackPlan}` : ''}`,
         gitBranch: values.gitBranch,
         gitCommit: values.gitCommit,
         imageVersion: values.imageVersion,
@@ -271,12 +271,12 @@ export default function Projects() {
       })
 
       notification.success({
-        message: '上线申请已提交',
+        message: 'Prod request submitted',
         description: (
           <div>
-            <p>版本 <strong>{values.toVersionCodename}</strong> 的上线申请已提交</p>
-            <p>部署区域: {productionDeployRegions.length} 个</p>
-            <p>等待 Admin 审批</p>
+            <p>Prod request for version <strong>{values.toVersionCodename}</strong> submitted</p>
+            <p>Deploy regions: {productionDeployRegions.length}</p>
+            <p>Waiting for Admin approval</p>
           </div>
         ),
       })
@@ -290,27 +290,27 @@ export default function Projects() {
   // 重新部署
   const handleRedeploy = (version: Version) => {
     // TODO: 调用后端 API 触发重新部署
-    message.loading({ content: `正在触发 ${version.codename} 重新部署...`, key: 'redeploy' })
+    message.loading({ content: `Triggering redeploy for ${version.codename}...`, key: 'redeploy' })
     setTimeout(() => {
-      message.success({ content: `${version.codename} 重新部署已触发`, key: 'redeploy' })
+      message.success({ content: `Redeploy triggered for ${version.codename}`, key: 'redeploy' })
     }, 1500)
   }
 
   // 审批
   const handleApproveRequest = (requestId: string) => {
     approveSwitchRequest(requestId, 'Admin')
-    message.success('已批准版本切换!')
+    message.success('Version switch approved!')
   }
 
   const handleRejectRequest = (requestId: string) => {
     rejectSwitchRequest(requestId, 'Admin')
-    message.warning('已拒绝版本切换申请')
+    message.warning('Version switch request rejected')
   }
 
   // 复制到剪贴板
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
-    message.success(`${label}已复制`)
+    message.success(`${label} copied`)
   }
 
   // 获取版本的部署信息
@@ -377,7 +377,7 @@ export default function Projects() {
         return (
           <Space>
             {record.isProduction && (
-              <Tooltip title="当前生产版本">
+              <Tooltip title="Current production version">
                 <StarFilled className="text-yellow-500" />
               </Tooltip>
             )}
@@ -550,7 +550,7 @@ export default function Projects() {
       width: 120,
     },
     {
-      title: '版本切换',
+      title: 'Version Switch',
       key: 'versionChange',
       width: 180,
       render: (_: unknown, record: VersionSwitchRequest) => (
@@ -584,15 +584,15 @@ export default function Projects() {
       },
     },
     {
-      title: '部署策略',
+      title: 'Deploy Strategy',
       key: 'deployStrategy',
       width: 120,
       render: (_: unknown, record: VersionSwitchRequest) => {
         if (record.deployStrategy) {
           const strategyLabels: Record<string, string> = {
-            'rolling': '滚动更新',
-            'blue-green': '蓝绿部署',
-            'canary': '金丝雀',
+            'rolling': 'Rolling Update',
+            'blue-green': 'Blue-Green',
+            'canary': 'Canary',
           }
           return <Tag>{strategyLabels[record.deployStrategy] || record.deployStrategy}</Tag>
         }
@@ -606,23 +606,23 @@ export default function Projects() {
       width: 100,
       render: (status: string) => {
         const config: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
-          pending: { color: 'orange', label: '待审批', icon: <ClockCircleOutlined /> },
-          approved: { color: 'green', label: '已批准', icon: <CheckCircleOutlined /> },
-          rejected: { color: 'red', label: '已拒绝', icon: <ExclamationCircleOutlined /> },
-          completed: { color: 'blue', label: '已完成', icon: <CheckCircleOutlined /> },
+          pending: { color: 'orange', label: 'Pending', icon: <ClockCircleOutlined /> },
+          approved: { color: 'green', label: 'Approved', icon: <CheckCircleOutlined /> },
+          rejected: { color: 'red', label: 'Rejected', icon: <ExclamationCircleOutlined /> },
+          completed: { color: 'blue', label: 'Completed', icon: <CheckCircleOutlined /> },
         }
         const { color, label, icon } = config[status] || { color: 'default', label: status, icon: null }
         return <Tag color={color} icon={icon}>{label}</Tag>
       },
     },
     {
-      title: '申请人',
+      title: 'Requester',
       dataIndex: 'requester',
       key: 'requester',
       width: 100,
     },
     {
-      title: '申请时间',
+      title: 'Request Time',
       dataIndex: 'createdAt',
       key: 'createdAt',
     },
@@ -659,13 +659,13 @@ export default function Projects() {
   // 版本详情中的部署列表
   const versionDeploymentColumns = [
     {
-      title: '区域',
+      title: 'Region',
       dataIndex: 'regionName',
       key: 'regionName',
       width: 150,
     },
     {
-      title: '服务',
+      title: 'Service',
       dataIndex: 'serviceName',
       key: 'serviceName',
       width: 120,
@@ -1170,7 +1170,7 @@ export default function Projects() {
         <Alert
           message={
             <span>
-              <strong>🚀 Vibe Coding:</strong> 创建版本后自动触发 CI/CD 构建和部署到测试环境
+              <strong>🚀 Vibe Coding:</strong> Creating a version triggers CI/CD build and deploys to test env
             </span>
           }
           type="info"
@@ -1189,7 +1189,7 @@ export default function Projects() {
               <Form.Item
                 label={t('projects.versionCodename')}
                 name="codename"
-                rules={[{ required: true, message: '请输入版本代号' }]}
+                rules={[{ required: true, message: 'Please enter codename' }]}
                 extra="{t('projects.codenameExample')}"
               >
                 <Input placeholder={t('projects.inputCodename')} />
@@ -1212,7 +1212,7 @@ export default function Projects() {
                 name="gitBranch"
                 rules={[{ required: true }]}
               >
-                <Input placeholder="feature/xxx 或 main" prefix={<GithubOutlined />} />
+                <Input placeholder="feature/xxx or main" prefix={<GithubOutlined />} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1231,7 +1231,7 @@ export default function Projects() {
           >
             <Select
               mode="multiple"
-              placeholder="选择部署区域"
+              placeholder="Select deploy regions"
               value={selectedRegions}
               onChange={setSelectedRegions}
               style={{ width: '100%' }}
@@ -1249,7 +1249,7 @@ export default function Projects() {
           </Form.Item>
           <Form.Item
             label={t('projects.testLinkAuto')}
-            extra="创建后将自动生成测试环境 URL"
+            extra="Test URL will be auto-generated"
           >
             <Input
               prefix={<LinkOutlined />}
@@ -1281,7 +1281,7 @@ export default function Projects() {
         <Alert
           message={
             <span>
-              <strong>📋 审批流程：</strong>提交申请 → Admin 审核 → 批准后自动部署到生产环境
+              <strong>📋 Approval Process:</strong> Submit Request → Admin Review → Auto Deploy to Prod
             </span>
           }
           type="info"
@@ -1293,7 +1293,7 @@ export default function Projects() {
           <Card size="small" title={t('projects.versionInfo')} className="mb-4">
             <Row gutter={16}>
               <Col span={8}>
-                <Form.Item label="项目" name="projectName">
+                <Form.Item label="Project" name="projectName">
                   <Input disabled />
                 </Form.Item>
               </Col>
@@ -1405,21 +1405,21 @@ export default function Projects() {
             <Form.Item
               label={t('projects.changes')}
               name="changeSummary"
-              rules={[{ required: true, message: '请描述本次变更内容' }]}
+              rules={[{ required: true, message: 'Please describe changes' }]}
             >
               <TextArea
                 rows={2}
-                placeholder="简要描述本次上线的主要变更内容..."
+                placeholder="Briefly describe main changes..."
               />
             </Form.Item>
             <Form.Item
               label={t('projects.testResults')}
               name="testResults"
-              rules={[{ required: true, message: '请描述测试结果' }]}
+              rules={[{ required: true, message: 'Please describe test results' }]}
             >
               <TextArea
                 rows={2}
-                placeholder="描述功能测试、性能测试等结果..."
+                placeholder="Describe functional, performance test results..."
               />
             </Form.Item>
             <Form.Item
@@ -1445,7 +1445,7 @@ export default function Projects() {
         onCancel={() => setNewProjectModalOpen(false)}
         onOk={() => {
           projectForm.validateFields().then(() => {
-            message.success('项目创建成功!')
+            message.success('Project created successfully!')
             setNewProjectModalOpen(false)
             projectForm.resetFields()
           })
@@ -1579,7 +1579,7 @@ export default function Projects() {
 
             {/* 部署区域 */}
             <div>
-              <Text type="secondary">部署区域:</Text>
+              <Text type="secondary">Deploy Regions:</Text>
               <div className="mt-2">
                 <Space>
                   {deploymentProgress.regions.map(r => (

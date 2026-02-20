@@ -334,20 +334,20 @@ export default function Deployments() {
   // 强制同步
   const handleForceSync = (deployment: typeof mockDeployments[0]) => {
     setSyncing(true)
-    message.loading({ content: `正在触发 ${deployment.argocdApp} 强制同步...`, key: 'sync' })
+    message.loading({ content: `Triggering force sync for ${deployment.argocdApp}...`, key: 'sync' })
     setTimeout(() => {
       setSyncing(false)
-      message.success({ content: `${deployment.argocdApp} 强制同步已触发`, key: 'sync' })
+      message.success({ content: `Force sync triggered for ${deployment.argocdApp}`, key: 'sync' })
     }, 2000)
   }
 
   // 快速回滚
   const handleRollback = (deployment: typeof mockDeployments[0]) => {
     setRollingBack(true)
-    message.loading({ content: `正在回滚 ${deployment.argocdApp} 到上一版本...`, key: 'rollback' })
+    message.loading({ content: `Rolling back ${deployment.argocdApp} to previous version...`, key: 'rollback' })
     setTimeout(() => {
       setRollingBack(false)
-      message.success({ content: `${deployment.argocdApp} 已回滚到上一版本`, key: 'rollback' })
+      message.success({ content: `${deployment.argocdApp} rolled back to previous version`, key: 'rollback' })
     }, 2000)
   }
 

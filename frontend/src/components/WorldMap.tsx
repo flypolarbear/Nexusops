@@ -314,7 +314,7 @@ export default function WorldMap() {
       render: (name: string, record: VersionDeployment) => (
         <span>
           {name}
-          {record.projectId !== 'proj-1' && <Tag color="cyan" className="ml-1">外部</Tag>}
+          {record.projectId !== 'proj-1' && <Tag color="cyan" className="ml-1">External</Tag>}
         </span>
       ),
     },
@@ -371,7 +371,7 @@ export default function WorldMap() {
           <Space>
             {/* VC-005: 版本选择器 */}
             <Select
-              placeholder="筛选版本"
+              placeholder="Filter versions"
               allowClear
               style={{ width: 140 }}
               value={selectedCodename}
