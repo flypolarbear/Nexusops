@@ -20,6 +20,7 @@ import {
   FileSearchOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../stores/authStore'
 import { useVersionStore } from '../../stores/versionStore'
 import AIAssistantDrawer from '../AIAssistantDrawer'
@@ -43,6 +44,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
     setCurrentProject,
     setCurrentVersion,
   } = useVersionStore()
+  const { t, i18n } = useTranslation()
+
+  const toggleLanguage = () => {
+    const nextLang = i18n.language === 'en' ? 'zh' : 'en'
+    i18n.changeLanguage(nextLang)
+  }
 
   // 获取当前选中的项目和版本
   const currentProject = projects.find(p => p.id === currentProjectId)
@@ -53,32 +60,32 @@ export default function MainLayout({ children }: MainLayoutProps) {
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: t('layout.dashboard'),
     },
     {
       key: '/projects',
       icon: <AppstoreOutlined />,
-      label: 'Projects',
+      label: t('layout.projects'),
     },
     {
       key: '/resources',
       icon: <ClusterOutlined />,
-      label: 'Resources',
+      label: t('layout.resources'),
     },
     {
       key: '/deployments',
       icon: <RocketOutlined />,
-      label: 'Deployments',
+      label: t('layout.deployments'),
     },
     {
       key: '/partners',
       icon: <TeamOutlined />,
-      label: 'Partners',
+      label: t('layout.partners'),
     },
     {
       key: '/logs',
       icon: <FileSearchOutlined />,
-      label: 'Logs',
+      label: t('layout.logs'),
     },
   ]
 
@@ -87,12 +94,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
     {
       key: '/agent-store',
       icon: <ShopOutlined />,
-      label: 'Agent Store',
+      label: t('layout.agentStore'),
     },
     {
       key: '/settings',
       icon: <SettingOutlined />,
-      label: 'Settings',
+      label: t('layout.settings'),
     },
   ]
 
@@ -100,20 +107,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: 'Profile & Preferences',
+      label: t('layout.profile'),
       onClick: () => navigate('/profile'),
     },
     {
       key: 'ai-assistant',
       icon: <RobotOutlined />,
-      label: 'AI Assistant',
+      label: t('layout.aiAssistant'),
       onClick: () => setAiDrawerOpen(true),
     },
     { type: 'divider' as const },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: 'Logout',
+      label: t('layout.logout'),
       onClick: () => {
         logout()
         navigate('/login')
@@ -257,8 +264,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
           )}
 
           <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <Tooltip title="Switch Language">
+              <Button type="text" onClick={toggleLanguage} className="font-medium text-gray-500">
+                {i18n.language.startsWith('zh') ? 'EN' : '中'}
+              </Button>
+            </Tooltip>
+
             {/* AI Assistant Button */}
-            <Tooltip title="AI Assistant (Cmd+K)">
+            <Tooltip title={t('layout.aiAssistant') + " (Cmd+K)"}>
               <Button
                 type="primary"
                 ghost
@@ -266,7 +280,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 onClick={() => setAiDrawerOpen(true)}
                 className="flex items-center"
               >
-                Ask AI
+                {t('layout.askAi')}
               </Button>
             </Tooltip>
 

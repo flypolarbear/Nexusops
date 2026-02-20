@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Card,
   Table,
@@ -83,6 +84,7 @@ const versionStatusConfig: Record<VersionStatus, { color: string; label: string;
 }
 
 export default function Projects() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('versions')
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null)
   const [versionDetailOpen, setVersionDetailOpen] = useState(false)
@@ -347,7 +349,7 @@ export default function Projects() {
   // 版本列表列定义
   const versionColumns = [
     {
-      title: '项目',
+      title: t('projects.project'),
       dataIndex: 'projectName',
       key: 'projectName',
       width: 130,
@@ -359,7 +361,7 @@ export default function Projects() {
       ),
     },
     {
-      title: '版本代号',
+      title: t('projects.codename'),
       dataIndex: 'codename',
       key: 'codename',
       width: 130,
@@ -389,7 +391,7 @@ export default function Projects() {
       },
     },
     {
-      title: '状态',
+      title: t('projects.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -399,13 +401,13 @@ export default function Projects() {
       },
     },
     {
-      title: '部署区域',
+      title: t('projects.regions'),
       key: 'regions',
       width: 180,
       render: (_: unknown, record: Version) => {
         const regions = getVersionRegions(record)
         if (regions.length === 0) {
-          return <Text type="secondary">未部署</Text>
+          return <Text type="secondary">{t('projects.notDeployed')}</Text>
         }
         return (
           <Space size={2} wrap>
@@ -422,7 +424,7 @@ export default function Projects() {
       },
     },
     {
-      title: '测试链接',
+      title: t('projects.testUrl'),
       dataIndex: 'testUrl',
       key: 'testUrl',
       width: 160,
@@ -460,7 +462,7 @@ export default function Projects() {
       ),
     },
     {
-      title: 'Git',
+      title: t('projects.git'),
       key: 'git',
       width: 140,
       render: (_: unknown, record: Version) => {
@@ -487,13 +489,13 @@ export default function Projects() {
       },
     },
     {
-      title: '负责人',
+      title: t('projects.owner'),
       dataIndex: 'owner',
       key: 'owner',
       width: 80,
     },
     {
-      title: '操作',
+      title: t('projects.actions'),
       key: 'actions',
       width: 180,
       fixed: 'right' as const,
@@ -543,7 +545,7 @@ export default function Projects() {
   // 审批请求列定义
   const requestColumns = [
     {
-      title: '项目',
+      title: t('projects.project'),
       dataIndex: 'projectName',
       key: 'projectName',
       width: 120,
@@ -561,7 +563,7 @@ export default function Projects() {
       ),
     },
     {
-      title: '部署区域',
+      title: t('projects.regions'),
       key: 'deployRegions',
       width: 150,
       render: (_: unknown, record: VersionSwitchRequest) => {
@@ -599,7 +601,7 @@ export default function Projects() {
       },
     },
     {
-      title: '状态',
+      title: t('projects.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -626,7 +628,7 @@ export default function Projects() {
       key: 'createdAt',
     },
     {
-      title: '操作',
+      title: t('projects.actions'),
       key: 'actions',
       render: (_: unknown, record: VersionSwitchRequest) =>
         record.status === 'pending' ? (
@@ -670,7 +672,7 @@ export default function Projects() {
       width: 120,
     },
     {
-      title: '状态',
+      title: t('projects.status'),
       dataIndex: 'status',
       key: 'status',
       width: 80,
@@ -714,7 +716,7 @@ export default function Projects() {
       ),
     },
     {
-      title: '操作',
+      title: t('projects.actions'),
       key: 'actions',
       width: 80,
       render: () => (
@@ -731,9 +733,9 @@ export default function Projects() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">项目版本管理</Title>
+        <Title level={4} className="m-0">{t('projects.title')}</Title>
         <Space>
-          <Button icon={<HistoryOutlined />}>审计日志</Button>
+          <Button icon={<HistoryOutlined />}>{t('projects.auditLogs')}</Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -1076,7 +1078,7 @@ export default function Projects() {
               if (versionDeps.length === 0) {
                 return (
                   <Alert
-                    message="此版本尚未部署到任何区域"
+                    message="此版本尚{t('projects.notDeployed')}到任何区域"
                     description="请先触发 CI/CD 构建和部署"
                     type="warning"
                     showIcon

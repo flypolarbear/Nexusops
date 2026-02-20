@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Card, Row, Col, Statistic, Progress, Table, Tag, Typography, Space, Button } from 'antd'
 import {
   CloudServerOutlined,
   ClusterOutlined,
   AlertOutlined,
-  CheckCircleOutlined,
   WarningOutlined,
   ClockCircleOutlined,
   ThunderboltOutlined,
   GlobalOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import { overviewApi } from '../services/api'
 import type { OverviewStats } from '../types'
@@ -18,6 +19,7 @@ import WorldMap from '../components/WorldMap'
 const { Title, Text } = Typography
 
 export default function Dashboard() {
+  const { t } = useTranslation()
   const { data: overview, isLoading } = useQuery({
     queryKey: ['overview'],
     queryFn: async () => {
@@ -42,11 +44,11 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">Infrastructure Overview</Title>
+        <Title level={4} className="m-0">{t('dashboard.infrastructureOverview')}</Title>
         <Space>
           <Text type="secondary">
             <ClockCircleOutlined className="mr-1" />
-            Last updated: just now
+            {t('dashboard.lastUpdated')}
           </Text>
         </Space>
       </div>
@@ -56,7 +58,7 @@ export default function Dashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card loading={isLoading}>
             <Statistic
-              title="Total Services"
+              title={t('dashboard.totalServices')}
               value={overview?.services.total || 0}
               prefix={<CloudServerOutlined />}
             />
@@ -65,17 +67,17 @@ export default function Dashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card loading={isLoading}>
             <Statistic
-              title="Clusters"
+              title={t('dashboard.clusters')}
               value={overview?.clusters.total || 0}
               prefix={<ClusterOutlined />}
-              suffix={`/ ${overview?.clusters.healthy || 0} healthy`}
+              suffix={`/ ${overview?.clusters.healthy || 0} ${t('dashboard.healthy')}`}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card loading={isLoading}>
             <Statistic
-              title="Active Alerts"
+              title={t('dashboard.activeAlerts')}
               value={overview?.alerts.total || 0}
               prefix={<AlertOutlined />}
               valueStyle={{ color: (overview?.alerts.critical || 0) > 0 ? '#ef4444' : undefined }}
@@ -85,7 +87,7 @@ export default function Dashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="System Health"
+              title={t('dashboard.systemHealth')}
               value={85}
               suffix="%"
               valueStyle={{ color: '#22c55e' }}
@@ -108,8 +110,8 @@ export default function Dashboard() {
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
           <Card
-            title="Recent Alerts"
-            extra={<Button type="link" onClick={() => window.location.href = '/alerts'}>View All</Button>}
+            title={t('dashboard.recentAlerts')}
+            extra={<Button type="link" onClick={() => window.location.href = '/alerts'}>{t('dashboard.viewAll')}</Button>}
           >
             <Table
               dataSource={recentAlerts}
@@ -118,12 +120,12 @@ export default function Dashboard() {
               size="small"
               columns={[
                 {
-                  title: 'Alert',
+                  title: t('dashboard.alert'),
                   dataIndex: 'name',
                   key: 'name',
                 },
                 {
-                  title: 'Severity',
+                  title: t('dashboard.severity'),
                   dataIndex: 'severity',
                   key: 'severity',
                   render: (severity: string) => {
@@ -136,12 +138,12 @@ export default function Dashboard() {
                   },
                 },
                 {
-                  title: 'Service',
+                  title: t('dashboard.service'),
                   dataIndex: 'service',
                   key: 'service',
                 },
                 {
-                  title: 'Time',
+                  title: t('dashboard.time'),
                   dataIndex: 'time',
                   key: 'time',
                 },
@@ -151,8 +153,8 @@ export default function Dashboard() {
         </Col>
         <Col xs={24} lg={12}>
           <Card
-            title="Recent Deployments"
-            extra={<Button type="link" onClick={() => window.location.href = '/deployments'}>View All</Button>}
+            title={t('dashboard.recentDeployments')}
+            extra={<Button type="link" onClick={() => window.location.href = '/deployments'}>{t('dashboard.viewAll')}</Button>}
           >
             <Table
               dataSource={recentDeployments}
@@ -161,17 +163,17 @@ export default function Dashboard() {
               size="small"
               columns={[
                 {
-                  title: 'Service',
+                  title: t('dashboard.service'),
                   dataIndex: 'service',
                   key: 'service',
                 },
                 {
-                  title: 'Version',
+                  title: t('dashboard.version'),
                   dataIndex: 'version',
                   key: 'version',
                 },
                 {
-                  title: 'Status',
+                  title: t('dashboard.status'),
                   dataIndex: 'status',
                   key: 'status',
                   render: (status: string) => {
@@ -188,7 +190,7 @@ export default function Dashboard() {
                   },
                 },
                 {
-                  title: 'Time',
+                  title: t('dashboard.time'),
                   dataIndex: 'time',
                   key: 'time',
                 },
@@ -199,25 +201,25 @@ export default function Dashboard() {
       </Row>
 
       {/* Resource Usage */}
-      <Card title="Global Resource Usage">
+      <Card title={t('dashboard.globalResourceUsage')}>
         <Row gutter={16}>
           <Col span={6}>
-            <div className="text-center mb-2">CPU</div>
+            <div className="text-center mb-2">{t('dashboard.cpu')}</div>
             <Progress percent={65} status="active" strokeColor="#3b82f6" />
             <div className="text-center text-sm text-gray-500 mt-1">4,200 / 6,500 cores</div>
           </Col>
           <Col span={6}>
-            <div className="text-center mb-2">Memory</div>
+            <div className="text-center mb-2">{t('dashboard.memory')}</div>
             <Progress percent={78} strokeColor="#22c55e" />
             <div className="text-center text-sm text-gray-500 mt-1">12.5 / 16 TB</div>
           </Col>
           <Col span={6}>
-            <div className="text-center mb-2">Storage</div>
+            <div className="text-center mb-2">{t('dashboard.storage')}</div>
             <Progress percent={45} strokeColor="#eab308" />
             <div className="text-center text-sm text-gray-500 mt-1">4.5 / 10 TB</div>
           </Col>
           <Col span={6}>
-            <div className="text-center mb-2">Network</div>
+            <div className="text-center mb-2">{t('dashboard.network')}</div>
             <Progress percent={32} strokeColor="#8b5cf6" />
             <div className="text-center text-sm text-gray-500 mt-1">32 / 100 Gbps</div>
           </Col>
@@ -225,7 +227,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Quick Links */}
-      <Card title="Quick Links" size="small">
+      <Card title={t('dashboard.quickLinks')} size="small">
         <Space wrap>
           <Button icon={<GlobalOutlined />} href="https://grafana.example.com" target="_blank">
             Grafana Dashboards

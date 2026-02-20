@@ -9,6 +9,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Card,
   Typography,
@@ -495,6 +496,7 @@ const BUILTIN_AGENTS: Agent[] = [
 // ============================================
 
 export default function AgentStore() {
+  const { t } = useTranslation()
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
   const [agents, setAgents] = useState(BUILTIN_AGENTS)
@@ -531,7 +533,7 @@ export default function AgentStore() {
 
   const columns = [
     {
-      title: 'Agent',
+      title: t('agentStore.agent'),
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record: Agent) => (
@@ -549,13 +551,13 @@ export default function AgentStore() {
       ),
     },
     {
-      title: 'Description',
+      title: t('agentStore.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: 'Category',
+      title: t('agentStore.category'),
       dataIndex: 'category',
       key: 'category',
       render: (category: string) => (
@@ -563,7 +565,7 @@ export default function AgentStore() {
       ),
     },
     {
-      title: 'Skills',
+      title: t('agentStore.skills'),
       dataIndex: 'skills',
       key: 'skills',
       render: (skills: AgentSkill[]) => (
@@ -573,13 +575,13 @@ export default function AgentStore() {
       ),
     },
     {
-      title: 'Status',
+      title: t('agentStore.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string, record: Agent) => (
         <Space>
           <Tag color={status === 'builtin' ? 'green' : 'blue'}>
-            {status === 'builtin' ? 'Built-in' : 'Installed'}
+            {status === 'builtin' ? t('agentStore.builtin') : t('agentStore.installed')}
           </Tag>
           {record.enabled ? (
             <CheckCircleOutlined className="text-green-500" />
@@ -590,7 +592,7 @@ export default function AgentStore() {
       ),
     },
     {
-      title: 'Enabled',
+      title: t('agentStore.enabled'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record: Agent) => (
@@ -602,7 +604,7 @@ export default function AgentStore() {
       ),
     },
     {
-      title: 'Actions',
+      title: t('agentStore.actions'),
       key: 'actions',
       render: (_: unknown, record: Agent) => (
         <Space>
@@ -613,7 +615,7 @@ export default function AgentStore() {
               icon={<BookOutlined />}
               onClick={() => handleViewDetail(record)}
             >
-              Details
+              {t('agentStore.details')}
             </Button>
           </Tooltip>
           <Tooltip title="Configure">
@@ -622,7 +624,7 @@ export default function AgentStore() {
               size="small"
               icon={<SettingOutlined />}
             >
-              Config
+              {t('agentStore.config')}
             </Button>
           </Tooltip>
         </Space>
@@ -635,14 +637,14 @@ export default function AgentStore() {
       <div className="flex justify-between items-center">
         <Title level={4} className="m-0">
           <ShopOutlined className="mr-2" />
-          Agent Store
+          {t('agentStore.title')}
         </Title>
-        <Tag color="green">{agents.filter(a => a.enabled).length} Active</Tag>
+        <Tag color="green">{agents.filter(a => a.enabled).length} {t('agentStore.active')}</Tag>
       </div>
 
       <Alert
-        message="Built-in Agents"
-        description="以下 Agents 已内置在系统中，提供 Kubernetes 操作、日志查询、部署管理等核心功能。每个 Agent 通过 Skills 定义具体能力。"
+        message={t('agentStore.builtin') + " Agents"}
+        description={t('agentStore.builtinMessage')}
         type="info"
         showIcon
       />
@@ -674,21 +676,21 @@ export default function AgentStore() {
         {selectedAgent && (
           <Space direction="vertical" className="w-full" size="large">
             <Descriptions bordered size="small" column={2}>
-              <Descriptions.Item label="Category">
+              <Descriptions.Item label={t('agentStore.category')}>
                 <Tag color={getCategoryColor(selectedAgent.category)}>
                   {getCategoryLabel(selectedAgent.category)}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Status">
+              <Descriptions.Item label={t('agentStore.status')}>
                 <Tag color={selectedAgent.status === 'builtin' ? 'green' : 'blue'}>
-                  {selectedAgent.status === 'builtin' ? 'Built-in' : 'Installed'}
+                  {selectedAgent.status === 'builtin' ? t('agentStore.builtin') : t('agentStore.installed')}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Skills Count">
+              <Descriptions.Item label={t('agentStore.skills')}>
                 {selectedAgent.skills.length}
               </Descriptions.Item>
-              <Descriptions.Item label="Config Required">
-                {selectedAgent.config_required ? 'Yes' : 'No'}
+              <Descriptions.Item label={t('agentStore.configRequired')}>
+                {selectedAgent.config_required ? t('agentStore.yes') : t('agentStore.no')}
               </Descriptions.Item>
             </Descriptions>
 
