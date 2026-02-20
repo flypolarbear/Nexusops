@@ -513,7 +513,7 @@ export default function Projects() {
                 setVersionDetailOpen(true)
               }}
             >
-              详情
+              {t('projects.details')}
             </Button>
             {hasDeployments && (
               <Button
@@ -522,7 +522,7 @@ export default function Projects() {
                 icon={<SyncOutlined />}
                 onClick={() => handleRedeploy(record)}
               >
-                重部
+                {t('projects.redeploy')}
               </Button>
             )}
             {record.status === 'testing' && !record.isProduction && hasDeployments && (
@@ -533,7 +533,7 @@ export default function Projects() {
                 onClick={() => handleRequestSwitch(project!, record)}
                 style={{ color: '#22c55e' }}
               >
-                上线
+                {t('projects.requestOnline')}
               </Button>
             )}
           </Space>
@@ -634,20 +634,20 @@ export default function Projects() {
         record.status === 'pending' ? (
           <Space>
             <Popconfirm
-              title="确认批准此版本切换?"
-              description="批准后将切换生产版本"
+              title={t('projects.confirmApprove')}
+              description={t('projects.confirmApproveDesc')}
               onConfirm={() => handleApproveRequest(record.id)}
             >
               <Button type="link" size="small" style={{ color: '#22c55e' }}>
-                批准
+                {t('projects.approve')}
               </Button>
             </Popconfirm>
             <Popconfirm
-              title="确认拒绝此申请?"
+              title={t('projects.confirmReject')}
               onConfirm={() => handleRejectRequest(record.id)}
             >
               <Button type="link" size="small" danger>
-                拒绝
+                {t('projects.reject')}
               </Button>
             </Popconfirm>
           </Space>
@@ -721,7 +721,7 @@ export default function Projects() {
       width: 80,
       render: () => (
         <Space>
-          <Tooltip title="查看日志">
+          <Tooltip title={t('projects.viewLogs')}>
             <Button type="link" size="small" icon={<EyeOutlined />} />
           </Tooltip>
         </Space>
@@ -741,7 +741,7 @@ export default function Projects() {
             icon={<PlusOutlined />}
             onClick={() => setNewProjectModalOpen(true)}
           >
-            新建项目
+            {t('projects.newProject')}
           </Button>
         </Space>
       </div>
@@ -751,7 +751,7 @@ export default function Projects() {
         <Col span={6}>
           <Card size="small">
             <Statistic
-              title="项目总数"
+              title={t('projects.totalProjects')}
               value={projects.length}
               prefix={<BranchesOutlined />}
             />
@@ -760,7 +760,7 @@ export default function Projects() {
         <Col span={6}>
           <Card size="small">
             <Statistic
-              title="生产版本"
+              title={t('projects.prodVersions')}
               value={allVersions.filter(v => v.status === 'production').length}
               prefix={<StarFilled style={{ color: '#fbbf24' }} />}
               valueStyle={{ color: '#22c55e' }}
@@ -770,7 +770,7 @@ export default function Projects() {
         <Col span={6}>
           <Card size="small">
             <Statistic
-              title="测试版本"
+              title={t('projects.testVersions')}
               value={allVersions.filter(v => v.status === 'testing').length}
               prefix={<ClockCircleOutlined style={{ color: '#f97316' }} />}
               valueStyle={{ color: '#f97316' }}
@@ -780,7 +780,7 @@ export default function Projects() {
         <Col span={6}>
           <Card size="small">
             <Statistic
-              title="待审批"
+              title={t('projects.pendingApprovals')}
               value={switchRequests.filter(r => r.status === 'pending').length}
               prefix={<ExclamationCircleOutlined style={{ color: '#ef4444' }} />}
               valueStyle={{ color: switchRequests.filter(r => r.status === 'pending').length > 0 ? '#ef4444' : undefined }}
@@ -793,8 +793,8 @@ export default function Projects() {
       <Alert
         message={
           <span>
-            <strong>🚀 Vibe Coding 工作流：</strong>
-            创建版本 → 自动部署测试 → 获取测试 URL → 验证功能 → 申请上线 → Admin 审批 → 一键上线
+            <strong>{t('projects.workflowTipTitle')}</strong>
+            {t('projects.workflowTipDesc')}
           </span>
         }
         type="info"
@@ -812,7 +812,7 @@ export default function Projects() {
             label: (
               <span>
                 <BranchesOutlined />
-                版本列表
+                {t('projects.versionList')}
               </span>
             ),
             children: (
@@ -851,7 +851,7 @@ export default function Projects() {
             label: (
               <span>
                 <BranchesOutlined />
-                项目列表
+                {t('projects.projectList')}
               </span>
             ),
             children: (
@@ -876,7 +876,7 @@ export default function Projects() {
                             icon={<PlusOutlined />}
                             onClick={() => handleCreateVersion(project.id)}
                           >
-                            新建版本
+                            {t('projects.createNewVersion')}
                           </Button>
                         }
                       >
@@ -891,15 +891,15 @@ export default function Projects() {
                           <Descriptions.Item label={t('projects.owner')}>
                             {project.owner}
                           </Descriptions.Item>
-                          <Descriptions.Item label="版本总数" span={2}>
-                            {project.versions.length} 个版本
-                            (测试中: {testingVersions.length})
+                          <Descriptions.Item label={t('projects.totalVersions')} span={2}>
+                            {project.versions.length}{t('projects.versionsCount')}
+                            {t('projects.testingCount')}{testingVersions.length})
                           </Descriptions.Item>
                         </Descriptions>
 
                         {testingVersions.length > 0 && (
                           <div className="mt-4">
-                            <Text type="secondary" className="text-xs">测试版本:</Text>
+                            <Text type="secondary" className="text-xs">{t('projects.testVersionLabel')}</Text>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {testingVersions.map(v => {
                                 const regions = getVersionRegions(v)
@@ -915,7 +915,7 @@ export default function Projects() {
                                     }}
                                   >
                                     {v.codename}
-                                    {regions.length > 0 && <span className="ml-1">({regions.length}区)</span>}
+                                    {regions.length > 0 && <span className="ml-1">({regions.length}{t('projects.regionCount')}</span>}
                                     {v.testUrl && (
                                       <CopyOutlined
                                         className="ml-1"
@@ -943,7 +943,7 @@ export default function Projects() {
             label: (
               <span>
                 <ClockCircleOutlined />
-                切换审批
+                {t('projects.switchApproval')}
                 <Badge
                   count={switchRequests.filter(r => r.status === 'pending').length}
                   size="small"
