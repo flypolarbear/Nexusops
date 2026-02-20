@@ -1078,7 +1078,7 @@ export default function Projects() {
               if (versionDeps.length === 0) {
                 return (
                   <Alert
-                    message="此版本尚{t('projects.notDeployed')}到任何区域"
+                    message="此版本尚未部署到任何区域"
                     description="请先触发 CI/CD 构建和部署"
                     type="warning"
                     showIcon

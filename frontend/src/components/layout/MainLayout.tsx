@@ -44,12 +44,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     setCurrentProject,
     setCurrentVersion,
   } = useVersionStore()
-  const { t, i18n } = useTranslation()
-
-  const toggleLanguage = () => {
-    const nextLang = i18n.language === 'en' ? 'zh' : 'en'
-    i18n.changeLanguage(nextLang)
-  }
+  const { t } = useTranslation()
 
   // 获取当前选中的项目和版本
   const currentProject = projects.find(p => p.id === currentProjectId)
@@ -264,13 +259,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
           )}
 
           <div className="flex items-center gap-3">
-            {/* Language Switcher */}
-            <Tooltip title="Switch Language">
-              <Button type="text" onClick={toggleLanguage} className="font-medium text-gray-500">
-                {i18n.language.startsWith('zh') ? 'EN' : '中'}
-              </Button>
-            </Tooltip>
-
             {/* AI Assistant Button */}
             <Tooltip title={t('layout.aiAssistant') + " (Cmd+K)"}>
               <Button
