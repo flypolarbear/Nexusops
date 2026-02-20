@@ -1,687 +1,741 @@
 /**
  * Agent Store 页面
  *
- * MK-003: Agent Store UI
- * - Agent 浏览/搜索
- * - Agent 详情页
- * - 安装/卸载 Agent
- * - Agent 评价系统
+ * 内置 Agents:
+ * - Kubernetes Agent: 执行 K8s 相关命令
+ * - Log Agent: 查询云平台日志
+ * - Deploy Agent: 部署管理
+ * - Monitor Agent: 监控告警
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react'
 import {
   Card,
-  Row,
-  Col,
-  Input,
-  Select,
-  Tag,
-  Button,
-  Space,
   Typography,
   Table,
+  Button,
+  Space,
+  Tag,
   Modal,
   Descriptions,
-  Rate,
-  Form,
-  message,
-  Tabs,
   Badge,
-  Spin,
-  Empty,
   Avatar,
-  List,
+  Tooltip,
+  Alert,
+  Collapse,
   Divider,
-} from 'antd';
+  Switch,
+  message,
+} from 'antd'
 import {
-  SearchOutlined,
-  DownloadOutlined,
-  StarFilled,
   ShopOutlined,
-  AppstoreOutlined,
+  SafetyOutlined,
+  FileSearchOutlined,
+  RocketOutlined,
+  DashboardOutlined,
   ThunderboltOutlined,
-  ApiOutlined,
+  SettingOutlined,
   CheckCircleOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+  CloseCircleOutlined,
+  CodeOutlined,
+  BookOutlined,
+} from '@ant-design/icons'
 
-const { Title, Text, Paragraph } = Typography;
-const { Search } = Input;
+const { Title, Text } = Typography
 
 // ============================================
 // Types
 // ============================================
 
+interface AgentSkill {
+  id: string
+  name: string
+  description: string
+  command: string
+  parameters: string[]
+  example: string
+}
+
 interface Agent {
-  agent_id: string;
-  name: string;
-  version: string;
-  description?: string;
-  author?: string;
-  category: string;
-  tags: string[];
-  capabilities: string[];
-  tools_count: number;
-  visibility: string;
-  status: string;
-  endpoint?: string;
-  rating: number;
-  downloads: number;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  description: string
+  icon: React.ReactNode
+  category: 'infrastructure' | 'operations' | 'monitoring' | 'deployment'
+  status: 'builtin' | 'installed' | 'available'
+  version: string
+  skills: AgentSkill[]
+  config_required: boolean
+  enabled: boolean
 }
 
-interface AgentDetail extends Agent {
-  tools: any[];
-  input_schema?: any;
-  output_schema?: any;
-  endpoints?: any;
-  auth?: any;
-  pricing?: any;
-  metadata?: any;
-}
+// ============================================
+// Built-in Agents Definition
+// ============================================
 
-interface AgentReview {
-  id: string;
-  agent_id: string;
-  user_id: string;
-  rating: number;
-  comment?: string;
-  created_at: string;
-}
+const BUILTIN_AGENTS: Agent[] = [
+  {
+    id: 'agent-kubernetes',
+    name: 'Kubernetes Agent',
+    description: '执行 Kubernetes 集群操作命令，管理 pods、deployments、services 等资源',
+    icon: <SafetyOutlined />,
+    category: 'infrastructure',
+    status: 'builtin',
+    version: '1.0.0',
+    enabled: true,
+    config_required: true,
+    skills: [
+      {
+        id: 'k8s-get-pods',
+        name: '获取 Pod 列表',
+        description: '列出指定命名空间的 Pod',
+        command: 'kubectl get pods',
+        parameters: ['namespace', 'label_selector', 'field_selector'],
+        example: 'kubectl get pods -n production -l app=api-server',
+      },
+      {
+        id: 'k8s-describe-pod',
+        name: '查看 Pod 详情',
+        description: '获取 Pod 的详细信息和事件',
+        command: 'kubectl describe pod',
+        parameters: ['pod_name', 'namespace'],
+        example: 'kubectl describe pod api-server-1 -n production',
+      },
+      {
+        id: 'k8s-logs',
+        name: '获取 Pod 日志',
+        description: '查看 Pod 容器日志',
+        command: 'kubectl logs',
+        parameters: ['pod_name', 'namespace', 'container', 'tail_lines', 'follow'],
+        example: 'kubectl logs api-server-1 -n production --tail=100',
+      },
+      {
+        id: 'k8s-exec',
+        name: '执行容器命令',
+        description: '在 Pod 容器内执行命令',
+        command: 'kubectl exec',
+        parameters: ['pod_name', 'namespace', 'container', 'command'],
+        example: 'kubectl exec api-server-1 -n production -- ls /app',
+      },
+      {
+        id: 'k8s-apply',
+        name: '应用 YAML 配置',
+        description: '应用 Kubernetes YAML 配置文件',
+        command: 'kubectl apply',
+        parameters: ['manifest', 'namespace'],
+        example: 'kubectl apply -f deployment.yaml -n production',
+      },
+      {
+        id: 'k8s-scale',
+        name: '扩缩容 Deployment',
+        description: '调整 Deployment 副本数',
+        command: 'kubectl scale',
+        parameters: ['deployment_name', 'namespace', 'replicas'],
+        example: 'kubectl scale deployment api-server --replicas=3 -n production',
+      },
+      {
+        id: 'k8s-rollout',
+        name: '管理滚动更新',
+        description: '查看、回滚 Deployment 滚动更新',
+        command: 'kubectl rollout',
+        parameters: ['deployment_name', 'namespace', 'action'],
+        example: 'kubectl rollout status deployment/api-server -n production',
+      },
+      {
+        id: 'k8s-port-forward',
+        name: '端口转发',
+        description: '将本地端口转发到 Pod',
+        command: 'kubectl port-forward',
+        parameters: ['pod_name', 'namespace', 'local_port', 'remote_port'],
+        example: 'kubectl port-forward api-server-1 8080:80 -n production',
+      },
+    ],
+  },
+  {
+    id: 'agent-log',
+    name: 'Log Agent',
+    description: '查询云平台日志，支持多数据源、智能分析和告警',
+    icon: <FileSearchOutlined />,
+    category: 'operations',
+    status: 'builtin',
+    version: '1.0.0',
+    enabled: true,
+    config_required: true,
+    skills: [
+      {
+        id: 'log-query',
+        name: '日志查询',
+        description: '根据条件查询日志',
+        command: 'log query',
+        parameters: ['query', 'time_range', 'service', 'level', 'limit'],
+        example: 'log query "error AND api-server" --time-range 1h --level ERROR',
+      },
+      {
+        id: 'log-search',
+        name: '关键词搜索',
+        description: '在日志中搜索关键词',
+        command: 'log search',
+        parameters: ['keyword', 'time_range', 'case_sensitive'],
+        example: 'log search "OutOfMemoryError" --time-range 24h',
+      },
+      {
+        id: 'log-aggregate',
+        name: '日志聚合',
+        description: '按字段聚合统计日志',
+        command: 'log aggregate',
+        parameters: ['query', 'group_by', 'aggregation', 'time_range'],
+        example: 'log aggregate "*" --group-by service,level --sum count',
+      },
+      {
+        id: 'log-trace',
+        name: '链路追踪',
+        description: '根据 trace_id 追踪完整请求链路',
+        command: 'log trace',
+        parameters: ['trace_id', 'time_range'],
+        example: 'log trace abc-123-def --time-range 1h',
+      },
+      {
+        id: 'log-analyze',
+        name: '智能分析',
+        description: '使用 AI 分析日志模式和异常',
+        command: 'log analyze',
+        parameters: ['query', 'time_range', 'analysis_type'],
+        example: 'log analyze "service=api" --time-range 6h --type anomaly',
+      },
+      {
+        id: 'log-tail',
+        name: '实时日志流',
+        description: '实时查看日志流',
+        command: 'log tail',
+        parameters: ['service', 'level', 'filter'],
+        example: 'log tail --service api-server --level WARN',
+      },
+      {
+        id: 'log-export',
+        name: '导出日志',
+        description: '导出日志到文件',
+        command: 'log export',
+        parameters: ['query', 'time_range', 'format', 'output'],
+        example: 'log export "*" --time-range 24h --format json',
+      },
+    ],
+  },
+  {
+    id: 'agent-deploy',
+    name: 'Deploy Agent',
+    description: '管理应用部署流程，支持 GitOps、ArgoCD 集成',
+    icon: <RocketOutlined />,
+    category: 'deployment',
+    status: 'builtin',
+    version: '1.0.0',
+    enabled: true,
+    config_required: true,
+    skills: [
+      {
+        id: 'deploy-create',
+        name: '创建部署',
+        description: '创建新的部署任务',
+        command: 'deploy create',
+        parameters: ['project', 'version', 'environment', 'config'],
+        example: 'deploy create --project api --version v1.2.0 --env production',
+      },
+      {
+        id: 'deploy-status',
+        name: '查询状态',
+        description: '查询部署状态和进度',
+        command: 'deploy status',
+        parameters: ['deployment_id', 'follow'],
+        example: 'deploy status deploy-123 --follow',
+      },
+      {
+        id: 'deploy-rollback',
+        name: '回滚部署',
+        description: '回滚到指定版本',
+        command: 'deploy rollback',
+        parameters: ['deployment_id', 'target_version', 'reason'],
+        example: 'deploy rollback deploy-123 --version v1.1.0',
+      },
+      {
+        id: 'deploy-history',
+        name: '部署历史',
+        description: '查看部署历史记录',
+        command: 'deploy history',
+        parameters: ['project', 'environment', 'limit'],
+        example: 'deploy history --project api --env production --limit 20',
+      },
+      {
+        id: 'deploy-validate',
+        name: '配置验证',
+        description: '验证部署配置是否正确',
+        command: 'deploy validate',
+        parameters: ['config_path', 'environment'],
+        example: 'deploy validate --config ./deploy.yaml --env production',
+      },
+    ],
+  },
+  {
+    id: 'agent-monitor',
+    name: 'Monitor Agent',
+    description: '监控服务和基础设施，配置告警规则',
+    icon: <DashboardOutlined />,
+    category: 'monitoring',
+    status: 'builtin',
+    version: '1.0.0',
+    enabled: true,
+    config_required: true,
+    skills: [
+      {
+        id: 'monitor-metrics',
+        name: '获取指标',
+        description: '查询系统和服务指标',
+        command: 'monitor metrics',
+        parameters: ['service', 'metric_name', 'time_range', 'aggregation'],
+        example: 'monitor metrics --service api --name cpu_usage --time-range 1h',
+      },
+      {
+        id: 'monitor-health',
+        name: '健康检查',
+        description: '检查服务健康状态',
+        command: 'monitor health',
+        parameters: ['service', 'detailed'],
+        example: 'monitor health --service api-server --detailed',
+      },
+      {
+        id: 'monitor-alert',
+        name: '管理告警',
+        description: '创建和管理告警规则',
+        command: 'monitor alert',
+        parameters: ['action', 'rule_name', 'condition', 'severity'],
+        example: 'monitor alert create --name high-cpu --condition "cpu>80%" --severity warning',
+      },
+      {
+        id: 'monitor-dashboard',
+        name: '生成报表',
+        description: '生成监控报表',
+        command: 'monitor report',
+        parameters: ['time_range', 'services', 'format'],
+        example: 'monitor report --time-range 7d --services api,db --format pdf',
+      },
+    ],
+  },
+  {
+    id: 'agent-cost',
+    name: 'Cost Agent',
+    description: '云成本分析、资源优化建议、预算管理和成本告警',
+    icon: <ThunderboltOutlined />,
+    category: 'operations',
+    status: 'builtin',
+    version: '1.0.0',
+    enabled: true,
+    config_required: true,
+    skills: [
+      {
+        id: 'cost-overview',
+        name: '成本概览',
+        description: '获取云资源成本概览和趋势',
+        command: 'cost overview',
+        parameters: ['time_range', 'group_by', 'provider'],
+        example: 'cost overview --time-range 30d --group-by service --provider aws',
+      },
+      {
+        id: 'cost-breakdown',
+        name: '成本明细',
+        description: '按服务、资源类型分解成本',
+        command: 'cost breakdown',
+        parameters: ['time_range', 'service', 'resource_type'],
+        example: 'cost breakdown --time-range 7d --service ec2 --type compute',
+      },
+      {
+        id: 'cost-forecast',
+        name: '成本预测',
+        description: '预测未来成本趋势',
+        command: 'cost forecast',
+        parameters: ['time_range', 'forecast_days', 'service'],
+        example: 'cost forecast --time-range 90d --forecast 30 --service all',
+      },
+      {
+        id: 'cost-optimize',
+        name: '优化建议',
+        description: 'AI 分析并生成成本优化建议',
+        command: 'cost optimize',
+        parameters: ['service', 'threshold', 'min_savings'],
+        example: 'cost optimize --service ec2 --threshold 20% --min-savings 100',
+      },
+      {
+        id: 'cost-budget',
+        name: '预算管理',
+        description: '创建和管理预算及告警',
+        command: 'cost budget',
+        parameters: ['action', 'budget_name', 'amount', 'alert_threshold'],
+        example: 'cost budget create --name monthly-budget --amount 10000 --alert 80%',
+      },
+      {
+        id: 'cost-rid',
+        name: '闲置资源',
+        description: '识别未充分利用或闲置的资源',
+        command: 'cost idle',
+        parameters: ['resource_type', 'utilization_threshold', 'time_range'],
+        example: 'cost idle --type ec2 --threshold 5% --time-range 14d',
+      },
+      {
+        id: 'cost-tags',
+        name: '标签分析',
+        description: '按标签分组分析成本',
+        command: 'cost tags',
+        parameters: ['tag_key', 'time_range', 'sort_by'],
+        example: 'cost tags --key environment --time-range 30d --sort cost',
+      },
+      {
+        id: 'cost-export',
+        name: '成本导出',
+        description: '导出成本报告',
+        command: 'cost export',
+        parameters: ['time_range', 'format', 'group_by'],
+        example: 'cost export --time-range 30d --format csv --group-by service',
+      },
+    ],
+  },
+  {
+    id: 'agent-cicd',
+    name: 'CI/CD Agent',
+    description: 'CI/CD 流水线管理，支持 Jenkins、GitLab CI、GitHub Actions',
+    icon: <CodeOutlined />,
+    category: 'deployment',
+    status: 'builtin',
+    version: '1.0.0',
+    enabled: true,
+    config_required: true,
+    skills: [
+      {
+        id: 'cicd-pipeline-list',
+        name: '流水线列表',
+        description: '列出所有 CI/CD 流水线',
+        command: 'cicd list',
+        parameters: ['project', 'status', 'platform'],
+        example: 'cicd list --project api --status running --platform jenkins',
+      },
+      {
+        id: 'cicd-pipeline-trigger',
+        name: '触发流水线',
+        description: '手动触发 CI/CD 流水线',
+        command: 'cicd trigger',
+        parameters: ['pipeline_id', 'branch', 'parameters', 'environment'],
+        example: 'cicd trigger --pipeline api-build --branch main --env staging',
+      },
+      {
+        id: 'cicd-pipeline-status',
+        name: '流水线状态',
+        description: '查询流水线执行状态和详情',
+        command: 'cicd status',
+        parameters: ['build_id', 'follow', 'logs'],
+        example: 'cicd status --build build-123 --follow --logs',
+      },
+      {
+        id: 'cicd-pipeline-cancel',
+        name: '取消流水线',
+        description: '取消正在运行的流水线',
+        command: 'cicd cancel',
+        parameters: ['build_id', 'reason'],
+        example: 'cicd cancel --build build-123 --reason "Deployment frozen"',
+      },
+      {
+        id: 'cicd-pipeline-logs',
+        name: '构建日志',
+        description: '获取流水线构建日志',
+        command: 'cicd logs',
+        parameters: ['build_id', 'stage', 'tail_lines'],
+        example: 'cicd logs --build build-123 --stage deploy --tail 100',
+      },
+      {
+        id: 'cicd-pipeline-history',
+        name: '构建历史',
+        description: '查看流水线历史执行记录',
+        command: 'cicd history',
+        parameters: ['pipeline_id', 'time_range', 'status', 'limit'],
+        example: 'cicd history --pipeline api-build --time-range 7d --status failed --limit 20',
+      },
+      {
+        id: 'cicd-artifact-list',
+        name: '制品列表',
+        description: '列出构建产物和制品',
+        command: 'cicd artifacts',
+        parameters: ['build_id', 'type', 'name_pattern'],
+        example: 'cicd artifacts --build build-123 --type docker',
+      },
+      {
+        id: 'cicd-webhook-manage',
+        name: 'Webhook 管理',
+        description: '管理 CI/CD Webhooks',
+        command: 'cicd webhook',
+        parameters: ['action', 'pipeline_id', 'events', 'url'],
+        example: 'cicd webhook create --pipeline api-build --events push,pr',
+      },
+      {
+        id: 'cicd-template-apply',
+        name: '模板应用',
+        description: '应用预定义的流水线模板',
+        command: 'cicd template',
+        parameters: ['template_name', 'project', 'customize'],
+        example: 'cicd template apply --name nodejs-app --project api',
+      },
+      {
+        id: 'cicd-metrics',
+        name: 'CI/CD 指标',
+        description: '获取 CI/CD 性能指标和统计',
+        command: 'cicd metrics',
+        parameters: ['time_range', 'pipeline_id', 'metrics'],
+        example: 'cicd metrics --time-range 30d --metrics success_rate,duration',
+      },
+    ],
+  },
+]
 
 // ============================================
 // Agent Store Page
 // ============================================
 
-export default function AgentStorePage() {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>();
-  const [sortBy, setSortBy] = useState('popularity');
-  const [selectedAgent, setSelectedAgent] = useState<AgentDetail | null>(null);
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [reviews, setReviews] = useState<AgentReview[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
+export default function AgentStore() {
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [detailVisible, setDetailVisible] = useState(false)
+  const [agents, setAgents] = useState(BUILTIN_AGENTS)
 
-  // 加载 Agent 列表
-  const loadAgents = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('query', searchQuery);
-      if (categoryFilter) params.append('category', categoryFilter);
-      params.append('sort_by', sortBy);
+  const handleViewDetail = (agent: Agent) => {
+    setSelectedAgent(agent)
+    setDetailVisible(true)
+  }
 
-      const response = await fetch(`/api/v1/market?${params}`);
-      const data = await response.json();
-      setAgents(data.items || []);
-    } catch (error) {
-      console.error('Failed to load agents:', error);
-      // Use mock data for demo
-      setAgents(getMockAgents());
-    } finally {
-      setLoading(false);
+  const handleToggleAgent = (agentId: string, enabled: boolean) => {
+    setAgents(agents.map(a => a.id === agentId ? { ...a, enabled } : a))
+    message.success(`Agent ${enabled ? 'enabled' : 'disabled'}`)
+  }
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      infrastructure: 'blue',
+      operations: 'green',
+      monitoring: 'orange',
+      deployment: 'purple',
     }
-  };
+    return colors[category] || 'default'
+  }
 
-  useEffect(() => {
-    loadAgents();
-  }, [searchQuery, categoryFilter, sortBy]);
-
-  // 加载 Agent 详情
-  const loadAgentDetail = async (agentId: string) => {
-    try {
-      const response = await fetch(`/api/v1/market/${agentId}`);
-      const data = await response.json();
-      setSelectedAgent(data);
-      setDetailModalVisible(true);
-
-      // 加载评价
-      loadReviews(agentId);
-    } catch (error) {
-      console.error('Failed to load agent detail:', error);
-      // Use mock data
-      const mockAgent = getMockAgents().find(a => a.agent_id === agentId);
-      if (mockAgent) {
-        setSelectedAgent({
-          ...mockAgent,
-          tools: [
-            { name: 'get_status', description: 'Get status' },
-            { name: 'deploy', description: 'Deploy' },
-          ],
-        } as AgentDetail);
-        setDetailModalVisible(true);
-        setReviews(getMockReviews());
-      }
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      infrastructure: 'Infrastructure',
+      operations: 'Operations',
+      monitoring: 'Monitoring',
+      deployment: 'Deployment',
     }
-  };
+    return labels[category] || category
+  }
 
-  // 加载评价
-  const loadReviews = async (agentId: string) => {
-    setReviewsLoading(true);
-    try {
-      const response = await fetch(`/api/v1/market/${agentId}/reviews`);
-      const data = await response.json();
-      setReviews(data.items || []);
-    } catch (error) {
-      setReviews(getMockReviews());
-    } finally {
-      setReviewsLoading(false);
-    }
-  };
-
-  // 安装 Agent
-  const handleInstall = async (agentId: string) => {
-    message.success(`Agent ${agentId} installed successfully!`);
-    setDetailModalVisible(false);
-  };
-
-  // 提交评价
-  const handleSubmitReview = async (values: { rating: number; comment: string }) => {
-    if (!selectedAgent) return;
-
-    try {
-      await fetch(`/api/v1/market/${selectedAgent.agent_id}/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      });
-      message.success('Review submitted!');
-      loadReviews(selectedAgent.agent_id);
-    } catch (error) {
-      message.success('Review submitted! (demo)');
-    }
-  };
-
-  // 分类配置
-  const categories = [
-    { value: '', label: 'All Categories' },
-    { value: 'general', label: 'General' },
-    { value: 'diagnostics', label: 'Diagnostics' },
-    { value: 'deployment', label: 'Deployment' },
-    { value: 'infrastructure', label: 'Infrastructure' },
-    { value: 'security', label: 'Security' },
-    { value: 'monitoring', label: 'Monitoring' },
-    { value: 'automation', label: 'Automation' },
-  ];
-
-  // 排序配置
-  const sortOptions = [
-    { value: 'popularity', label: 'Most Popular' },
-    { value: 'rating', label: 'Highest Rated' },
-    { value: 'newest', label: 'Newest' },
-  ];
+  const columns = [
+    {
+      title: 'Agent',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name: string, record: Agent) => (
+        <Space>
+          <Avatar
+            style={{ backgroundColor: record.enabled ? '#1890ff' : '#d9d9d9' }}
+            icon={record.icon}
+          />
+          <div>
+            <Text strong>{name}</Text>
+            <br />
+            <Text type="secondary" className="text-xs">v{record.version}</Text>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      key: 'category',
+      render: (category: string) => (
+        <Tag color={getCategoryColor(category)}>{getCategoryLabel(category)}</Tag>
+      ),
+    },
+    {
+      title: 'Skills',
+      dataIndex: 'skills',
+      key: 'skills',
+      render: (skills: AgentSkill[]) => (
+        <Badge count={skills.length} showZero color="#1890ff">
+          <Tag icon={<CodeOutlined />}>{skills.length} skills</Tag>
+        </Badge>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string, record: Agent) => (
+        <Space>
+          <Tag color={status === 'builtin' ? 'green' : 'blue'}>
+            {status === 'builtin' ? 'Built-in' : 'Installed'}
+          </Tag>
+          {record.enabled ? (
+            <CheckCircleOutlined className="text-green-500" />
+          ) : (
+            <CloseCircleOutlined className="text-gray-400" />
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: 'Enabled',
+      dataIndex: 'enabled',
+      key: 'enabled',
+      render: (enabled: boolean, record: Agent) => (
+        <Switch
+          checked={enabled}
+          onChange={(checked) => handleToggleAgent(record.id, checked)}
+          size="small"
+        />
+      ),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_: unknown, record: Agent) => (
+        <Space>
+          <Tooltip title="View Details & Skills">
+            <Button
+              type="link"
+              size="small"
+              icon={<BookOutlined />}
+              onClick={() => handleViewDetail(record)}
+            >
+              Details
+            </Button>
+          </Tooltip>
+          <Tooltip title="Configure">
+            <Button
+              type="link"
+              size="small"
+              icon={<SettingOutlined />}
+            >
+              Config
+            </Button>
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <Title level={4} className="m-0">
           <ShopOutlined className="mr-2" />
           Agent Store
         </Title>
-        <Space>
-          <Text type="secondary">
-            {agents.length} agents available
-          </Text>
-        </Space>
+        <Tag color="green">{agents.filter(a => a.enabled).length} Active</Tag>
       </div>
 
-      {/* Search & Filters */}
-      <Card>
-        <Row gutter={16} align="middle">
-          <Col flex="auto">
-            <Search
-              placeholder="Search agents by name, capability, or tag..."
-              allowClear
-              enterButton={<SearchOutlined />}
-              onSearch={setSearchQuery}
-              size="large"
-            />
-          </Col>
-          <Col>
-            <Select
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              options={categories}
-              style={{ width: 180 }}
-              size="large"
-            />
-          </Col>
-          <Col>
-            <Select
-              value={sortBy}
-              onChange={setSortBy}
-              options={sortOptions}
-              style={{ width: 150 }}
-              size="large"
-            />
-          </Col>
-        </Row>
-      </Card>
+      <Alert
+        message="Built-in Agents"
+        description="以下 Agents 已内置在系统中，提供 Kubernetes 操作、日志查询、部署管理等核心功能。每个 Agent 通过 Skills 定义具体能力。"
+        type="info"
+        showIcon
+      />
 
-      {/* Agent Grid */}
-      <Spin spinning={loading}>
-        {agents.length === 0 ? (
-          <Empty description="No agents found" />
-        ) : (
-          <Row gutter={[16, 16]}>
-            {agents.map((agent) => (
-              <Col xs={24} sm={12} lg={8} xl={6} key={agent.agent_id}>
-                <AgentCard
-                  agent={agent}
-                  onClick={() => loadAgentDetail(agent.agent_id)}
-                />
-              </Col>
-            ))}
-          </Row>
-        )}
-      </Spin>
+      {/* Agent List */}
+      <Card>
+        <Table
+          dataSource={agents}
+          columns={columns}
+          rowKey="id"
+          pagination={false}
+        />
+      </Card>
 
       {/* Agent Detail Modal */}
       <Modal
         title={
           <Space>
-            <Avatar
-              style={{ backgroundColor: '#722ed1' }}
-              icon={<AppstoreOutlined />}
-            />
+            {selectedAgent?.icon}
             <span>{selectedAgent?.name}</span>
-            <Tag color="purple">{selectedAgent?.version}</Tag>
+            <Tag>v{selectedAgent?.version}</Tag>
           </Space>
         }
-        open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
+        open={detailVisible}
+        onCancel={() => setDetailVisible(false)}
         footer={null}
-        width={800}
+        width={900}
       >
         {selectedAgent && (
-          <AgentDetailContent
-            agent={selectedAgent}
-            reviews={reviews}
-            reviewsLoading={reviewsLoading}
-            onInstall={() => handleInstall(selectedAgent.agent_id)}
-            onSubmitReview={handleSubmitReview}
-          />
+          <Space direction="vertical" className="w-full" size="large">
+            <Descriptions bordered size="small" column={2}>
+              <Descriptions.Item label="Category">
+                <Tag color={getCategoryColor(selectedAgent.category)}>
+                  {getCategoryLabel(selectedAgent.category)}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={selectedAgent.status === 'builtin' ? 'green' : 'blue'}>
+                  {selectedAgent.status === 'builtin' ? 'Built-in' : 'Installed'}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Skills Count">
+                {selectedAgent.skills.length}
+              </Descriptions.Item>
+              <Descriptions.Item label="Config Required">
+                {selectedAgent.config_required ? 'Yes' : 'No'}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider className="my-4">Skills</Divider>
+
+            <Collapse
+              accordion
+              items={selectedAgent.skills.map(skill => ({
+                key: skill.id,
+                label: (
+                  <Space>
+                    <ThunderboltOutlined className="text-primary-500" />
+                    <Text strong>{skill.name}</Text>
+                    <Text type="secondary" className="text-xs">({skill.command})</Text>
+                  </Space>
+                ),
+                children: (
+                  <Space direction="vertical" className="w-full">
+                    <div>
+                      <Text strong>Description: </Text>
+                      <Text>{skill.description}</Text>
+                    </div>
+                    <div>
+                      <Text strong>Command: </Text>
+                      <Text code>{skill.command}</Text>
+                    </div>
+                    <div>
+                      <Text strong>Parameters: </Text>
+                      <Space wrap>
+                        {skill.parameters.map(p => (
+                          <Tag key={p}>{p}</Tag>
+                        ))}
+                      </Space>
+                    </div>
+                    <div>
+                      <Text strong>Example:</Text>
+                      <pre className="bg-gray-50 p-2 rounded text-xs mt-2 overflow-auto">
+                        {skill.example}
+                      </pre>
+                    </div>
+                  </Space>
+                ),
+              }))}
+            />
+          </Space>
         )}
       </Modal>
     </div>
-  );
-}
-
-// ============================================
-// Agent Card Component
-// ============================================
-
-function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
-  const categoryColors: Record<string, string> = {
-    general: 'blue',
-    diagnostics: 'orange',
-    deployment: 'green',
-    infrastructure: 'cyan',
-    security: 'red',
-    monitoring: 'purple',
-    automation: 'geekblue',
-  };
-
-  return (
-    <Card
-      hoverable
-      onClick={onClick}
-      className="h-full"
-    >
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Text strong className="text-lg">{agent.name}</Text>
-              {agent.status === 'active' && (
-                <CheckCircleOutlined className="text-green-500" />
-              )}
-            </div>
-            <Text type="secondary" className="text-xs">
-              by {agent.author || 'Unknown'}
-            </Text>
-          </div>
-          <Tag color={categoryColors[agent.category] || 'default'}>
-            {agent.category}
-          </Tag>
-        </div>
-
-        {/* Description */}
-        <Paragraph
-          ellipsis={{ rows: 2 }}
-          className="text-gray-600 mb-3"
-        >
-          {agent.description || 'No description available'}
-        </Paragraph>
-
-        {/* Capabilities */}
-        <div className="mb-3">
-          <div className="flex flex-wrap gap-1">
-            {agent.capabilities.slice(0, 3).map((cap) => (
-              <Tag key={cap} className="text-xs">{cap}</Tag>
-            ))}
-            {agent.capabilities.length > 3 && (
-              <Tag className="text-xs">+{agent.capabilities.length - 3}</Tag>
-            )}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="mt-auto pt-3 border-t flex justify-between items-center">
-          <Space>
-            <StarFilled className="text-yellow-500" />
-            <Text>{agent.rating.toFixed(1)}</Text>
-          </Space>
-          <Space>
-            <DownloadOutlined />
-            <Text>{agent.downloads}</Text>
-          </Space>
-          <Badge count={agent.tools_count} showZero style={{ backgroundColor: '#722ed1' }}>
-            <ApiOutlined className="text-lg text-gray-400" />
-          </Badge>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-// ============================================
-// Agent Detail Content
-// ============================================
-
-function AgentDetailContent({
-  agent,
-  reviews,
-  reviewsLoading,
-  onInstall,
-  onSubmitReview,
-}: {
-  agent: AgentDetail;
-  reviews: AgentReview[];
-  reviewsLoading: boolean;
-  onInstall: () => void;
-  onSubmitReview: (values: { rating: number; comment: string }) => void;
-}) {
-  const [reviewForm] = Form.useForm();
-
-  return (
-    <Tabs defaultActiveKey="overview">
-      <Tabs.TabPane tab="Overview" key="overview">
-        <Space direction="vertical" className="w-full" size="large">
-          {/* Description */}
-          <div>
-            <Title level={5}>Description</Title>
-            <Paragraph>
-              {agent.description || 'No description available'}
-            </Paragraph>
-          </div>
-
-          {/* Details */}
-          <Descriptions bordered size="small" column={2}>
-            <Descriptions.Item label="Agent ID">
-              <code>{agent.agent_id}</code>
-            </Descriptions.Item>
-            <Descriptions.Item label="Version">{agent.version}</Descriptions.Item>
-            <Descriptions.Item label="Author">{agent.author || 'Unknown'}</Descriptions.Item>
-            <Descriptions.Item label="Category">{agent.category}</Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Tag color={agent.status === 'active' ? 'green' : 'red'}>
-                {agent.status}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Tools">{agent.tools_count}</Descriptions.Item>
-          </Descriptions>
-
-          {/* Capabilities */}
-          <div>
-            <Title level={5}>Capabilities</Title>
-            <Space wrap>
-              {agent.capabilities.map((cap) => (
-                <Tag key={cap} icon={<ThunderboltOutlined />}>{cap}</Tag>
-              ))}
-            </Space>
-          </div>
-
-          {/* Tools */}
-          <div>
-            <Title level={5}>Tools ({agent.tools.length})</Title>
-            <Table
-              dataSource={agent.tools}
-              rowKey="name"
-              size="small"
-              pagination={false}
-              columns={[
-                { title: 'Name', dataIndex: 'name', key: 'name' },
-                { title: 'Description', dataIndex: 'description', key: 'description' },
-              ]}
-            />
-          </div>
-
-          {/* Install Button */}
-          <Button
-            type="primary"
-            size="large"
-            icon={<DownloadOutlined />}
-            onClick={onInstall}
-            block
-          >
-            Install Agent
-          </Button>
-        </Space>
-      </Tabs.TabPane>
-
-      <Tabs.TabPane tab="Reviews" key="reviews">
-        <Spin spinning={reviewsLoading}>
-          {/* Rating Summary */}
-          <div className="text-center mb-6">
-            <Rate disabled value={agent.rating} allowHalf />
-            <Title level={3}>{agent.rating.toFixed(1)}</Title>
-            <Text type="secondary">{reviews.length} reviews</Text>
-          </div>
-
-          <Divider />
-
-          {/* Review List */}
-          <List
-            dataSource={reviews}
-            renderItem={(review) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<Avatar icon={<UserOutlined />} />}
-                  title={
-                    <Space>
-                      <Rate disabled value={review.rating} className="text-sm" />
-                      <Text type="secondary" className="text-xs">
-                        {new Date(review.created_at).toLocaleDateString()}
-                      </Text>
-                    </Space>
-                  }
-                  description={review.comment}
-                />
-              </List.Item>
-            )}
-            locale={{ emptyText: 'No reviews yet' }}
-          />
-
-          <Divider />
-
-          {/* Submit Review */}
-          <Title level={5}>Write a Review</Title>
-          <Form form={reviewForm} onFinish={onSubmitReview} layout="vertical">
-            <Form.Item name="rating" label="Rating" rules={[{ required: true }]}>
-              <Rate />
-            </Form.Item>
-            <Form.Item name="comment" label="Comment">
-              <Input.TextArea rows={3} placeholder="Share your experience..." />
-            </Form.Item>
-            <Button type="primary" htmlType="submit">
-              Submit Review
-            </Button>
-          </Form>
-        </Spin>
-      </Tabs.TabPane>
-
-      <Tabs.TabPane tab="Schema" key="schema">
-        <Space direction="vertical" className="w-full" size="large">
-          <div>
-            <Title level={5}>Input Schema</Title>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto text-xs">
-              {JSON.stringify(agent.input_schema || {}, null, 2)}
-            </pre>
-          </div>
-          <div>
-            <Title level={5}>Output Schema</Title>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto text-xs">
-              {JSON.stringify(agent.output_schema || {}, null, 2)}
-            </pre>
-          </div>
-        </Space>
-      </Tabs.TabPane>
-    </Tabs>
-  );
-}
-
-// ============================================
-// Mock Data
-// ============================================
-
-function getMockAgents(): Agent[] {
-  return [
-    {
-      agent_id: 'nexusops.chat',
-      name: 'AI Assistant',
-      version: '1.0.0',
-      description: 'General AI assistant with quick commands support',
-      author: 'NexusOps',
-      category: 'general',
-      tags: ['chat', 'assistant', 'commands'],
-      capabilities: ['chat', 'quick_commands', 'deployment_info'],
-      tools_count: 2,
-      visibility: 'public',
-      status: 'active',
-      rating: 4.8,
-      downloads: 1250,
-      created_at: '2024-01-01',
-      updated_at: '2024-02-15',
-    },
-    {
-      agent_id: 'nexusops.dns',
-      name: 'DNS Operations Agent',
-      version: '1.0.0',
-      description: 'DNS record management, domain generation, Cloudflare configuration',
-      author: 'NexusOps',
-      category: 'infrastructure',
-      tags: ['dns', 'cloudflare', 'domains'],
-      capabilities: ['dns_record_create', 'dns_record_delete', 'random_domain_generate'],
-      tools_count: 3,
-      visibility: 'public',
-      status: 'active',
-      rating: 4.5,
-      downloads: 856,
-      created_at: '2024-01-15',
-      updated_at: '2024-02-10',
-    },
-    {
-      agent_id: 'nexusops.k8s',
-      name: 'Kubernetes Agent',
-      version: '1.0.0',
-      description: 'Kubernetes resource management and deployment operations',
-      author: 'NexusOps',
-      category: 'deployment',
-      tags: ['kubernetes', 'k8s', 'deployment'],
-      capabilities: ['k8s_deploy', 'k8s_scale', 'k8s_logs'],
-      tools_count: 4,
-      visibility: 'public',
-      status: 'active',
-      rating: 4.7,
-      downloads: 1100,
-      created_at: '2024-01-10',
-      updated_at: '2024-02-12',
-    },
-    {
-      agent_id: 'nexusops.deploy',
-      name: 'Deployment Orchestrator',
-      version: '1.0.0',
-      description: 'Deployment workflow orchestration, multi-region deployment',
-      author: 'NexusOps',
-      category: 'deployment',
-      tags: ['deployment', 'orchestration', 'gitops'],
-      capabilities: ['deploy_create', 'deploy_rollback', 'deploy_status'],
-      tools_count: 3,
-      visibility: 'public',
-      status: 'active',
-      rating: 4.6,
-      downloads: 980,
-      created_at: '2024-01-05',
-      updated_at: '2024-02-14',
-    },
-    {
-      agent_id: 'third-party.jenkins',
-      name: 'Jenkins Integration',
-      version: '0.9.0',
-      description: 'Trigger and monitor Jenkins builds',
-      author: 'Community',
-      category: 'automation',
-      tags: ['jenkins', 'ci', 'build'],
-      capabilities: ['jenkins_trigger', 'jenkins_status'],
-      tools_count: 2,
-      visibility: 'public',
-      status: 'active',
-      rating: 3.9,
-      downloads: 234,
-      created_at: '2024-02-01',
-      updated_at: '2024-02-10',
-    },
-    {
-      agent_id: 'third-party.slack',
-      name: 'Slack Notifications',
-      version: '1.1.0',
-      description: 'Send notifications to Slack channels',
-      author: 'Community',
-      category: 'automation',
-      tags: ['slack', 'notifications', 'alerts'],
-      capabilities: ['slack_send', 'slack_webhook'],
-      tools_count: 2,
-      visibility: 'public',
-      status: 'active',
-      rating: 4.2,
-      downloads: 567,
-      created_at: '2024-01-20',
-      updated_at: '2024-02-08',
-    },
-  ];
-}
-
-function getMockReviews(): AgentReview[] {
-  return [
-    {
-      id: '1',
-      agent_id: 'test',
-      user_id: 'user1',
-      rating: 5,
-      comment: 'Great agent! Works perfectly for our use case.',
-      created_at: '2024-02-10',
-    },
-    {
-      id: '2',
-      agent_id: 'test',
-      user_id: 'user2',
-      rating: 4,
-      comment: 'Good but could use better documentation.',
-      created_at: '2024-02-08',
-    },
-    {
-      id: '3',
-      agent_id: 'test',
-      user_id: 'user3',
-      rating: 5,
-      comment: 'Excellent capabilities and fast response.',
-      created_at: '2024-02-05',
-    },
-  ];
+  )
 }
