@@ -4,8 +4,6 @@ import {
   DashboardOutlined,
   ClusterOutlined,
   RocketOutlined,
-  AlertOutlined,
-  SolutionOutlined,
   RobotOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -16,8 +14,10 @@ import {
   HomeOutlined,
   MessageOutlined,
   AppstoreOutlined,
-  ShopOutlined,
   StarFilled,
+  TeamOutlined,
+  ShopOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
@@ -48,7 +48,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const currentProject = projects.find(p => p.id === currentProjectId)
   const isProductionVersion = currentProject?.productionVersionId === currentVersionId
 
-  const menuItems = [
+  // Main menu items
+  const mainMenuItems = [
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
@@ -70,28 +71,37 @@ export default function MainLayout({ children }: MainLayoutProps) {
       label: 'Deployments',
     },
     {
-      key: '/alerts',
-      icon: <AlertOutlined />,
-      label: 'Alerts',
+      key: '/partners',
+      icon: <TeamOutlined />,
+      label: 'Partners',
     },
     {
-      key: '/tickets',
-      icon: <SolutionOutlined />,
-      label: 'Tickets',
+      key: '/logs',
+      icon: <FileSearchOutlined />,
+      label: 'Logs',
     },
+  ]
+
+  // Bottom menu items (Settings & Agent Store)
+  const bottomMenuItems = [
     {
       key: '/agent-store',
       icon: <ShopOutlined />,
       label: 'Agent Store',
     },
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: 'Settings',
+    },
   ]
 
   const userMenuItems = [
     {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      onClick: () => navigate('/settings'),
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Profile & Preferences',
+      onClick: () => navigate('/profile'),
     },
     {
       key: 'ai-assistant',
@@ -117,7 +127,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const getSelectedKey = () => {
     const path = location.pathname
-    const matchedItem = menuItems.find((item) => path.startsWith(item.key))
+    const allItems = [...mainMenuItems, ...bottomMenuItems]
+    const matchedItem = allItems.find((item) => path.startsWith(item.key))
     return matchedItem?.key || '/dashboard'
   }
 
@@ -129,10 +140,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       '/projects': 'Projects',
       '/resources': 'Resources',
       '/deployments': 'Deployments',
-      '/alerts': 'Alerts',
-      '/tickets': 'Tickets',
+      '/partners': 'Partners',
+      '/logs': 'Logs',
       '/settings': 'Settings',
-      '/ai-assistant': 'AI Assistant',
+      '/profile': 'Profile',
+      '/agent-store': 'Agent Store',
     }
     const currentPath = '/' + location.pathname.split('/')[1]
     if (pathMap[currentPath] && currentPath !== '/dashboard') {
@@ -147,9 +159,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         trigger={null}
         collapsible
         collapsed={collapsed}
-        className="bg-white shadow-md"
+        className="bg-white shadow-md flex flex-col"
         width={240}
       >
+        {/* Logo */}
         <div className="h-16 flex items-center justify-center border-b border-gray-200">
           {collapsed ? (
             <span className="text-2xl font-bold text-primary-600">N</span>
@@ -157,14 +170,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <span className="text-xl font-bold text-primary-600">NexusOps</span>
           )}
         </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[getSelectedKey()]}
-          items={menuItems}
-          onClick={handleMenuClick}
-          className="border-none"
-        />
+
+        {/* Main Menu - Takes remaining space */}
+        <div className="flex-1 overflow-auto">
+          <Menu
+            mode="inline"
+            selectedKeys={[getSelectedKey()]}
+            items={mainMenuItems}
+            onClick={handleMenuClick}
+            className="border-none"
+          />
+        </div>
+
+        {/* Bottom Menu - Fixed at bottom */}
+        <div className="border-t border-gray-200">
+          <Menu
+            mode="inline"
+            selectedKeys={[getSelectedKey()]}
+            items={bottomMenuItems}
+            onClick={handleMenuClick}
+            className="border-none"
+          />
+        </div>
       </Sider>
+
       <Layout>
         <Header className="bg-white px-4 shadow-sm flex items-center justify-between h-14">
           <div className="flex items-center gap-4">

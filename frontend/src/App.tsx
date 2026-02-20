@@ -4,13 +4,13 @@ import MainLayout from './components/layout/MainLayout'
 import Dashboard from './pages/Dashboard'
 import Resources from './pages/ResourcesK8sGPT'
 import Deployments from './pages/Deployments'
-import Alerts from './pages/Alerts'
-import Tickets from './pages/Tickets'
 import Projects from './pages/Projects'
+import Partners from './pages/Partners'
+import Logs from './pages/Logs'
 import AgentStore from './pages/AgentStore'
-import AIAssistant from './pages/AIAssistant'
 import Login from './pages/Login'
 import Settings from './pages/Settings'
+import ProfileSettings from './pages/ProfileSettings'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -37,13 +37,12 @@ function App() {
           <Route path="/resources/:regionId/:clusterId" element={<Resources />} />
           <Route path="/deployments" element={<Deployments />} />
           <Route path="/deployments/:serviceId" element={<Deployments />} />
-          <Route path="/alerts" element={<Alerts />} />
-          <Route path="/tickets" element={<Tickets />} />
-          <Route path="/tickets/:ticketId" element={<Tickets />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/partners" element={<Partners />} />
+          <Route path="/logs" element={<Logs />} />
           <Route path="/agent-store" element={<AgentStore />} />
-          <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<ProfileSettings />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </MainLayout>
