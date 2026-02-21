@@ -18,7 +18,6 @@ import {
   Alert,
   Result,
   Steps,
-  Menu,
 } from 'antd'
 import {
   AppstoreOutlined,
@@ -27,7 +26,6 @@ import {
   HistoryOutlined,
   StarFilled,
   GithubOutlined,
-  ProjectOutlined,
 } from '@ant-design/icons'
 import { useVersionStore, type Service, type Version, type VersionStatus } from '../stores/versionStore'
 import { useDeploymentStore } from '../stores/deploymentStore'
@@ -333,138 +331,149 @@ export default function Projects() {
   ]
 
   return (
-    <div className="h-[calc(100vh-64px)] flex bg-white" style={{ margin: '-24px', padding: 0 }}>
-      {/* Sidebar - Project List */}
-      <div className="w-64 border-r border-gray-200 flex flex-col bg-gray-50 shrink-0 h-full">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
-          <Text strong>Projects</Text>
-          <Button type="text" size="small" icon={<PlusOutlined />} onClick={() => setNewProjectModalOpen(true)} />
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <Menu
-            mode="inline"
-            className="border-none bg-transparent"
-            selectedKeys={[currentProjectId || '']}
-            onClick={(e) => setCurrentProject(e.key)}
-            items={projects.map(p => ({
-              key: p.id,
-              icon: <ProjectOutlined />,
-              label: p.name,
-            }))}
-          />
-        </div>
+    <div className="p-2 md:p-6 bg-white max-w-7xl mx-auto space-y-6">
+      {/* Header & Project Selector */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <Space size="large">
+          <Space>
+            <Text type="secondary">Current Project:</Text>
+            <Select
+              value={currentProjectId}
+              onChange={setCurrentProject}
+              style={{ width: 250 }}
+              options={projects.map(p => ({ label: p.name, value: p.id }))}
+            />
+          </Space>
+          <Button type="link" icon={<PlusOutlined />} onClick={() => setNewProjectModalOpen(true)}>
+            New Project
+          </Button>
+        </Space>
+        <Space>
+          <Button icon={<HistoryOutlined />}>Audit Logs</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setNewServiceModalOpen(true)}>
+            New Service
+          </Button>
+        </Space>
       </div>
 
-      {/* Main Content - Services & Versions */}
-      <div className="flex-1 overflow-auto p-6 bg-white min-w-0">
-        {currentProject && (
-          <div className="space-y-6 max-w-6xl mx-auto">
-            <div className="flex justify-between items-start">
-              <div>
-                <Title level={3} className="m-0 mb-1">{currentProject.name}</Title>
-                <Text type="secondary">{currentProject.description}</Text>
-              </div>
-              <Space>
-                <Button icon={<HistoryOutlined />}>Audit Logs</Button>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setNewServiceModalOpen(true)}>
-                  New Service
-                </Button>
-              </Space>
-            </div>
+      {/* Vibe Coding Guide */}
+      <Alert
+        message={<Text strong className="text-base">🚀 Vibe Coding Ops Workflow</Text>}
+        description={
+          <Steps
+            className="mt-4"
+            size="small"
+            items={[
+              { title: 'Create Service', description: 'Bind Git Repo' },
+              { title: 'New Version', description: 'Auto CI/CD to Test Env' },
+              { title: 'Test & Verify', description: 'Preview URL & Tests' },
+              { title: 'Request Prod', description: 'Submit Release Notes' },
+              { title: 'Admin Approval', description: 'One-click to Production' }
+            ]}
+          />
+        }
+        type="info"
+        className="bg-blue-50/50 border-blue-100"
+      />
 
-            {/* Pending Approvals Alert */}
-            {switchRequests.filter(r => r.status === 'pending').length > 0 && (
-              <Alert
-                message="Pending Version Switch Approvals"
-                description={
-                  <ul className="pl-4 mt-2 mb-0 space-y-1">
-                    {switchRequests.filter(r => r.status === 'pending').map(req => (
-                      <li key={req.id} className="flex justify-between items-center">
-                        <span>
-                          <strong>{req.serviceName}</strong>: <Tag>{req.fromVersionCodename}</Tag> → <Tag color="green">{req.toVersionCodename}</Tag>
-                        </span>
-                        <Space size="small">
-                          <Button size="small" type="link" onClick={() => approveSwitchRequest(req.id, 'Admin')} style={{color: '#22c55e'}}>Approve</Button>
-                          <Button size="small" type="link" danger onClick={() => rejectSwitchRequest(req.id, 'Admin')}>Reject</Button>
-                        </Space>
-                      </li>
-                    ))}
-                  </ul>
-                }
-                type="warning"
-                showIcon
-                className="mb-4"
-              />
-            )}
-
-            {/* Services List */}
-            <div className="space-y-6">
-              {currentProject.services.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 border border-dashed rounded-lg">
-                  <Text type="secondary">No services created yet in this project.</Text>
-                </div>
-              ) : (
-                currentProject.services.map(svc => {
-                  const prodVer = svc.versions.find(v => v.id === svc.productionVersionId)
-                  const testVers = svc.versions.filter(v => v.status === 'testing')
-                  
-                  return (
-                    <Card 
-                      key={svc.id} 
-                      className="shadow-sm border border-gray-200 overflow-hidden"
-                      bodyStyle={{ padding: 0 }}
-                    >
-                      <div className="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center">
-                        <Space>
-                          <AppstoreOutlined className="text-xl text-primary-500" />
-                          <Title level={5} className="m-0">{svc.name}</Title>
-                          <a href={svc.gitRepo} target="_blank" rel="noreferrer" className="text-xs text-gray-500 flex items-center ml-2"><GithubOutlined className="mr-1"/> Repository</a>
-                        </Space>
-                        <Button type="primary" ghost size="small" icon={<PlusOutlined />} onClick={() => handleCreateVersion(svc)}>
-                          Create Version
-                        </Button>
-                      </div>
-                      
-                      <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white border-b border-gray-100">
-                        <div>
-                          <Text type="secondary" className="text-xs uppercase block mb-1">Production</Text>
-                          {prodVer ? (
-                            <Tag color="green" icon={<StarFilled />}>{prodVer.codename}</Tag>
-                          ) : <Text type="secondary" className="text-sm">-</Text>}
-                        </div>
-                        <div className="md:col-span-2">
-                          <Text type="secondary" className="text-xs uppercase block mb-1">Testing Environments</Text>
-                          {testVers.length > 0 ? (
-                            <Space wrap size={4}>
-                              {testVers.map(v => (
-                                <Tag key={v.id} color="orange" className="cursor-pointer" onClick={() => { setSelectedService(svc); setSelectedVersion(v); setVersionDetailOpen(true) }}>
-                                  {v.codename}
-                                </Tag>
-                              ))}
-                            </Space>
-                          ) : <Text type="secondary" className="text-sm">No versions in testing</Text>}
-                        </div>
-                        <div>
-                          <Text type="secondary" className="text-xs uppercase block mb-1">Total Versions</Text>
-                          <Text className="text-lg font-medium">{svc.versions.length}</Text>
-                        </div>
-                      </div>
-
-                      <Table
-                        dataSource={svc.versions.slice().reverse()} // Show newest first
-                        columns={versionColumns}
-                        rowKey="id"
-                        pagination={false}
-                        size="small"
-                        onRow={() => ({
-                          onMouseEnter: () => setSelectedService(svc) // Ensure context is correct when hovering actions
-                        })}
-                      />
-                    </Card>
-                  )
-                })
+      {/* Pending Approvals (Admin) */}
+      {switchRequests.filter(r => r.status === 'pending').length > 0 && (
+        <Card 
+          title={<Space><RocketOutlined className="text-orange-500" /><span>Pending Production Approvals</span></Space>}
+          className="border-orange-200 shadow-sm"
+          headStyle={{ backgroundColor: '#fff7ed', borderBottomColor: '#fed7aa' }}
+          bodyStyle={{ padding: 0 }}
+        >
+          <Table 
+            dataSource={switchRequests.filter(r => r.status === 'pending')}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            columns={[
+              { title: 'Service', dataIndex: 'serviceName', key: 'serviceName', render: (t) => <Text strong>{t}</Text> },
+              { title: 'Current Prod', dataIndex: 'fromVersionCodename', key: 'fromVersion', render: (t) => <Tag>{t || 'None'}</Tag> },
+              { title: 'Target Version', dataIndex: 'toVersionCodename', key: 'toVersion', render: (t) => <Tag color="green">{t}</Tag> },
+              { title: 'Request Reason & Notes', dataIndex: 'reason', key: 'reason', render: (t) => <Text type="secondary" ellipsis style={{ maxWidth: 400 }}>{t}</Text> },
+              { title: 'Actions', key: 'actions', render: (_, record) => (
+                <Space>
+                  <Button type="primary" size="small" onClick={() => approveSwitchRequest(record.id, 'Admin')}>Approve & Deploy</Button>
+                  <Button danger size="small" onClick={() => rejectSwitchRequest(record.id, 'Admin')}>Reject</Button>
+                </Space>
               )}
-            </div>
+            ]}
+          />
+        </Card>
+      )}
+
+      {/* Services List */}
+      <div>
+        {currentProject && (
+          <div className="space-y-6">
+            {currentProject.services.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 border border-dashed rounded-lg">
+                <Text type="secondary">No services created yet in this project.</Text>
+              </div>
+            ) : (
+              currentProject.services.map(svc => {
+                const prodVer = svc.versions.find(v => v.id === svc.productionVersionId)
+                const testVers = svc.versions.filter(v => v.status === 'testing')
+                
+                return (
+                  <Card 
+                    key={svc.id} 
+                    className="shadow-sm border border-gray-200 overflow-hidden"
+                    bodyStyle={{ padding: 0 }}
+                  >
+                    <div className="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center">
+                      <Space>
+                        <AppstoreOutlined className="text-xl text-primary-500" />
+                        <Title level={5} className="m-0">{svc.name}</Title>
+                        <a href={svc.gitRepo} target="_blank" rel="noreferrer" className="text-xs text-gray-500 flex items-center ml-2"><GithubOutlined className="mr-1"/> Repository</a>
+                      </Space>
+                      <Button type="primary" ghost size="small" icon={<PlusOutlined />} onClick={() => handleCreateVersion(svc)}>
+                        Create Version
+                      </Button>
+                    </div>
+                    
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white border-b border-gray-100">
+                      <div>
+                        <Text type="secondary" className="text-xs uppercase block mb-1">Production</Text>
+                        {prodVer ? (
+                          <Tag color="green" icon={<StarFilled />}>{prodVer.codename}</Tag>
+                        ) : <Text type="secondary" className="text-sm">-</Text>}
+                      </div>
+                      <div className="md:col-span-2">
+                        <Text type="secondary" className="text-xs uppercase block mb-1">Testing Environments</Text>
+                        {testVers.length > 0 ? (
+                          <Space wrap size={4}>
+                            {testVers.map(v => (
+                              <Tag key={v.id} color="orange" className="cursor-pointer" onClick={() => { setSelectedService(svc); setSelectedVersion(v); setVersionDetailOpen(true) }}>
+                                {v.codename}
+                              </Tag>
+                            ))}
+                          </Space>
+                        ) : <Text type="secondary" className="text-sm">No versions in testing</Text>}
+                      </div>
+                      <div>
+                        <Text type="secondary" className="text-xs uppercase block mb-1">Total Versions</Text>
+                        <Text className="text-lg font-medium">{svc.versions.length}</Text>
+                      </div>
+                    </div>
+
+                    <Table
+                      dataSource={svc.versions.slice().reverse()} // Show newest first
+                      columns={versionColumns}
+                      rowKey="id"
+                      pagination={false}
+                      size="small"
+                      onRow={() => ({
+                        onMouseEnter: () => setSelectedService(svc) // Ensure context is correct when hovering actions
+                      })}
+                    />
+                  </Card>
+                )
+              })
+            )}
           </div>
         )}
       </div>
