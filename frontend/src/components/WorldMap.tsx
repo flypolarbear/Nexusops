@@ -66,11 +66,11 @@ export default function WorldMap() {
   // 获取版本详情（用于 tooltip）
   const getVersionInfo = (codename: string) => {
     for (const project of projects) {
-      const version = project.versions.find(v => v.codename === codename)
+      const version = project.services.flatMap(s => s.versions).find(v => v.codename === codename)
       if (version) {
         return {
           testUrl: version.testUrl,
-          gitBranch: version.gitBranch,
+          gitBranch: project.services.find(s => s.id === version.serviceId)?.gitBranch || "",
           owner: version.owner,
         }
       }

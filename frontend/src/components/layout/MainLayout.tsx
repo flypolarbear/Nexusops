@@ -14,7 +14,6 @@ import {
   HomeOutlined,
   MessageOutlined,
   AppstoreOutlined,
-  StarFilled,
   TeamOutlined,
   ShopOutlined,
   FileSearchOutlined,
@@ -48,7 +47,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   // 获取当前选中的项目和版本
   const currentProject = projects.find(p => p.id === currentProjectId)
-  const isProductionVersion = currentProject?.productionVersionId === currentVersionId
 
   // Main menu items
   const mainMenuItems = [
@@ -236,14 +234,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 }}
                 style={{ width: 130 }}
                 size="small"
-                className={isProductionVersion ? 'bg-green-50' : 'bg-orange-50'}
+                className="bg-gray-50"
               >
-                {currentProject?.versions.map(v => (
+                {currentProject?.services.flatMap(s => s.versions).map(v => (
                   <Select.Option key={v.id} value={v.id}>
                     <div className="flex items-center gap-1">
-                      {currentProject.productionVersionId === v.id && (
-                        <StarFilled className="text-yellow-500 text-xs" />
-                      )}
                       <span>{v.codename}</span>
                       <Tag
                         color={v.status === 'production' ? 'green' : 'orange'}
