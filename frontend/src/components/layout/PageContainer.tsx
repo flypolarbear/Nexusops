@@ -5,6 +5,7 @@ const { Title } = Typography
 
 interface PageContainerProps {
   title?: ReactNode
+  icon?: ReactNode
   extra?: ReactNode
   children: ReactNode
   className?: string
@@ -15,6 +16,7 @@ interface PageContainerProps {
 
 export default function PageContainer({
   title,
+  icon,
   extra,
   children,
   className = '',
@@ -31,7 +33,8 @@ export default function PageContainer({
         <div className="flex justify-between items-center shrink-0 mb-4 px-1">
           <div className="flex items-center gap-3">
             {typeof title === 'string' ? (
-              <Title level={4} className="!m-0">
+              <Title level={4} className="!m-0 flex items-center gap-2">
+                {icon && <span className="flex items-center text-primary-500">{icon}</span>}
                 {title}
               </Title>
             ) : (

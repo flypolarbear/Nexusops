@@ -124,7 +124,7 @@ export default function Resources() {
   ]
 
   return (
-    <PageContainer title="Resources" transparent>
+    <PageContainer title="Resources" icon={<ClusterOutlined />} transparent>
       <div className="flex gap-6">
         {/* Region/Cluster Tree */}
         <Card className="w-80 shrink-0" title="Regions & Clusters">

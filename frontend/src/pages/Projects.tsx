@@ -333,9 +333,11 @@ export default function Projects() {
 
   return (
     <PageContainer
+      title="Projects"
+      icon={<AppstoreOutlined />}
       transparent
       className="max-w-7xl mx-auto"
-      title={
+      extra={
         <Space size="large">
           <Space>
             <Text type="secondary">Current Project:</Text>
@@ -349,10 +351,6 @@ export default function Projects() {
           <Button type="link" icon={<PlusOutlined />} onClick={() => setNewProjectModalOpen(true)}>
             New Project
           </Button>
-        </Space>
-      }
-      extra={
-        <Space>
           <Button icon={<HistoryOutlined />}>Audit Logs</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setNewServiceModalOpen(true)}>
             New Service

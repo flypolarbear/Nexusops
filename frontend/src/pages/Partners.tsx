@@ -308,12 +308,8 @@ export default function Partners() {
 
   return (
     <PageContainer
-      title={
-        <Space>
-          <TeamOutlined />
-          Partners & Vendors
-        </Space>
-      }
+      title="Partners & Vendors"
+      icon={<TeamOutlined />}
       transparent
       extra={
         <Space>

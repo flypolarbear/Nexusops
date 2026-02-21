@@ -635,12 +635,8 @@ export default function AgentStore() {
 
   return (
     <PageContainer
-      title={
-        <Space>
-          <ShopOutlined />
-          {t('agentStore.title')}
-        </Space>
-      }
+      title={t('agentStore.title')}
+      icon={<ShopOutlined />}
       transparent
       extra={<Tag color="green">{agents.filter(a => a.enabled).length} {t('agentStore.active')}</Tag>}
     >

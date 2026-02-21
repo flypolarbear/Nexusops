@@ -149,7 +149,7 @@ export default function Alerts() {
   ]
 
   return (
-    <PageContainer title="Alerts" transparent>
+    <PageContainer title="Alerts" icon={<WarningOutlined />} transparent>
       <div className="space-y-6">
 
       <Card>

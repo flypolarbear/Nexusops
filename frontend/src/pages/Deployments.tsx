@@ -645,6 +645,7 @@ export default function Deployments() {
   return (
     <PageContainer
       title="Deployments"
+      icon={<RocketOutlined />}
       transparent
       extra={
         <Space>

@@ -296,18 +296,8 @@ export default function Resources() {
 
   return (
     <PageContainer
-      title={
-        <div>
-          <Title level={4} className="mb-1">Resources</Title>
-          <Breadcrumb
-            items={[
-              { title: 'Home' },
-              { title: 'Resources' },
-              { title: selectedCluster || 'All Clusters' },
-            ]}
-          />
-        </div>
-      }
+      title="Resources"
+      icon={<ClusterOutlined />}
       transparent
       fullHeight={viewMode !== 'table'}
       extra={

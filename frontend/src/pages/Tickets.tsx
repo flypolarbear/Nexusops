@@ -173,6 +173,7 @@ export default function Tickets() {
   return (
     <PageContainer
       title="Tickets"
+      icon={<EditOutlined />}
       transparent
       extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>

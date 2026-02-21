@@ -964,12 +964,8 @@ export default function Settings() {
 
   return (
     <PageContainer
-      title={
-        <Space>
-          <SettingOutlined />
-          Global Settings
-        </Space>
-      }
+      title="Global Settings"
+      icon={<SettingOutlined />}
       transparent
       extra={<Tag color="blue">Team Configuration</Tag>}
     >

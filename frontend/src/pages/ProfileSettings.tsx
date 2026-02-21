@@ -46,12 +46,8 @@ export default function ProfileSettings() {
 
   return (
     <PageContainer
-      title={
-        <Space>
-          <UserOutlined />
-          Personal Settings
-        </Space>
-      }
+      title="Personal Settings"
+      icon={<UserOutlined />}
       transparent
       className="max-w-3xl mx-auto"
     >

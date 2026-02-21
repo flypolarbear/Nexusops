@@ -44,6 +44,7 @@ export default function Dashboard() {
   return (
     <PageContainer
       title={t('dashboard.infrastructureOverview')}
+      icon={<GlobalOutlined />}
       transparent
       extra={
         <Space>
