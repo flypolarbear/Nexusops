@@ -3,7 +3,7 @@ import * as echarts from 'echarts'
 import { Card, Tooltip as AntTooltip, Modal, Descriptions, Tag, Table, Typography, Select, Space } from 'antd'
 import { CheckCircleOutlined, WarningOutlined, ExclamationCircleOutlined, GithubOutlined, LinkOutlined, FilterOutlined } from '@ant-design/icons'
 import { useDeploymentStore } from '../stores/deploymentStore'
-import { useVersionStore, type Service } from '../stores/versionStore'
+import { useVersionStore } from '../stores/versionStore'
 import type { VersionDeployment } from '../types'
 
 const { Text } = Typography
@@ -66,11 +66,11 @@ export default function WorldMap() {
   // 获取版本详情（用于 tooltip）
   const getVersionInfo = (codename: string) => {
     for (const project of projects) {
-      const version = project.services.flatMap(s => s.versions).find(v => v.codename === codename)
+      const version = project.versions.find(v => v.codename === codename)
       if (version) {
         return {
           testUrl: version.testUrl,
-          gitBranch: project.services.find(s => s.id === version.serviceId)?.gitBranch || "",
+          gitBranch: version.gitBranch,
           owner: version.owner,
         }
       }

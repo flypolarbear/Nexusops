@@ -1,52 +1,42 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-// 版本状态类型
+// 版本状态类型 - 简化为只有测试和生产
 export type VersionStatus = 'testing' | 'production' | 'archived'
 
-// Version Definition (Now sits under a Service)
+// 版本定义
 export interface Version {
   id: string
-  serviceId: string          // Which service this version belongs to
-  codename: string           // e.g. "Phoenix"
-  description: string
-  imageUrl: string           // e.g. "harbor.local/auth-service:phoenix-rc3"
-  owner: string
-  status: VersionStatus
-  testUrl?: string
-  environments: string[]
+  projectId: string
+  codename: string           // 内部代号，如 "Phoenix"
+  description: string        // 描述/备注
+  gitBranch: string          // Git 分支/tag
+  imageUrl: string           // 镜像地址
+  owner: string              // 负责人
+  status: VersionStatus      // 状态
+  testUrl?: string           // 测试 URL (测试版本专用)
+  environments: string[]     // 已部署的环境 ['dev', 'staging']
   createdAt: string
   updatedAt: string
 }
 
-// Service Definition (Now sits under a Project)
-export interface Service {
+// 项目定义
+export interface Project {
   id: string
-  projectId: string
-  name: string               // e.g. "auth-service"
-  gitRepo: string            // Repository URL bound to the service
-  gitBranch: string          // Default branch
+  name: string               // 项目名称，如 "Pipecat-App-A"
+  code: string               // 项目代码，如 "pipecat-app-a"
+  description: string
   owner: string
-  productionVersionId: string | null  // The version currently running in production
+  productionVersionId: string | null  // 当前生产版本 ID
   versions: Version[]
   createdAt: string
 }
 
-// Project Definition (Top Level)
-export interface Project {
-  id: string
-  name: string               // e.g. "E-Commerce Core"
-  code: string               // e.g. "ecommerce-core"
-  description: string
-  owner: string
-  services: Service[]        // A project has multiple microservices
-  createdAt: string
-}
-
+// 版本切换申请
 export interface VersionSwitchRequest {
   id: string
-  serviceId: string
-  serviceName: string
+  projectId: string
+  projectName: string
   fromVersionId: string
   fromVersionCodename: string
   toVersionId: string
@@ -57,6 +47,7 @@ export interface VersionSwitchRequest {
   approver: string | null
   createdAt: string
   approvedAt: string | null
+  // VC-003 新增字段
   gitBranch?: string
   gitCommit?: string
   imageVersion?: string
@@ -65,278 +56,282 @@ export interface VersionSwitchRequest {
   deployOrder?: string
 }
 
+// Mock 数据
 const mockProjects: Project[] = [
   {
     id: 'proj-1',
-    name: 'Pipecat-Platform',
-    code: 'pipecat-platform',
-    description: 'Main communication platform',
+    name: 'Pipecat-App-A',
+    code: 'pipecat-app-a',
+    description: 'Main chat application service',
     owner: 'John Doe',
-    createdAt: '2023-01-01',
-    services: [
+    productionVersionId: 'ver-1',
+    versions: [
       {
-        id: 'svc-1',
+        id: 'ver-1',
         projectId: 'proj-1',
-        name: 'auth-service',
-        gitRepo: 'https://github.com/company/auth-service.git',
+        codename: 'legacy',
+        description: 'Original stable version',
         gitBranch: 'main',
+        imageUrl: 'harbor.local/pipecat-app-a:legacy-v2.3.1',
         owner: 'John Doe',
-        productionVersionId: 'ver-1',
-        createdAt: '2023-01-01',
-        versions: [
-          {
-            id: 'ver-1',
-            serviceId: 'svc-1',
-            codename: 'legacy',
-            description: 'Stable v1',
-            imageUrl: 'harbor.local/auth-service:v1.0.0',
-            owner: 'John Doe',
-            status: 'production',
-            environments: ['production'],
-            createdAt: '2023-06-15',
-            updatedAt: '2024-01-10',
-          },
-          {
-            id: 'ver-2',
-            serviceId: 'svc-1',
-            codename: 'Phoenix',
-            description: 'OAuth2 refactor',
-            imageUrl: 'harbor.local/auth-service:phoenix-rc3',
-            owner: 'Jane Smith',
-            status: 'testing',
-            testUrl: 'https://auth-phoenix.test.pipecat.internal',
-            environments: ['testing'],
-            createdAt: '2024-01-05',
-            updatedAt: '2024-01-15',
-          }
-        ]
+        status: 'production',
+        environments: ['dev', 'staging', 'production'],
+        createdAt: '2023-06-15',
+        updatedAt: '2024-01-10',
       },
       {
-        id: 'svc-2',
+        id: 'ver-2',
         projectId: 'proj-1',
-        name: 'chat-engine',
-        gitRepo: 'https://github.com/company/chat-engine.git',
-        gitBranch: 'main',
+        codename: 'Phoenix',
+        description: 'Refactored architecture with new chat engine',
+        gitBranch: 'feature/phoenix-refactor',
+        imageUrl: 'harbor.local/pipecat-app-a:phoenix-rc3',
+        owner: 'Jane Smith',
+        status: 'testing',
+        testUrl: 'https://phoenix.test.pipecat.internal',
+        environments: ['dev', 'staging'],
+        createdAt: '2024-01-05',
+        updatedAt: '2024-01-15',
+      },
+      {
+        id: 'ver-3',
+        projectId: 'proj-1',
+        codename: 'Titan',
+        description: 'New feature: Real-time translation',
+        gitBranch: 'feature/titan-translation',
+        imageUrl: 'harbor.local/pipecat-app-a:titan-beta2',
+        owner: 'Bob Wilson',
+        status: 'testing',
+        testUrl: 'https://titan.test.pipecat.internal',
+        environments: ['dev'],
+        createdAt: '2024-01-12',
+        updatedAt: '2024-01-15',
+      },
+      {
+        id: 'ver-4',
+        projectId: 'proj-1',
+        codename: 'Nova',
+        description: 'Next generation architecture',
+        gitBranch: 'feature/nova-next-gen',
+        imageUrl: 'harbor.local/pipecat-app-a:nova-dev1',
         owner: 'Alice Chen',
-        productionVersionId: 'ver-3',
-        createdAt: '2023-02-01',
-        versions: [
-          {
-            id: 'ver-3',
-            serviceId: 'svc-2',
-            codename: 'stable',
-            description: 'v2.1 chat engine',
-            imageUrl: 'harbor.local/chat-engine:v2.1.0',
-            owner: 'Alice Chen',
-            status: 'production',
-            environments: ['production'],
-            createdAt: '2023-11-15',
-            updatedAt: '2024-01-10',
-          },
-          {
-            id: 'ver-4',
-            serviceId: 'svc-2',
-            codename: 'Titan',
-            description: 'WebRTC optimization',
-            imageUrl: 'harbor.local/chat-engine:titan-beta',
-            owner: 'Bob Wilson',
-            status: 'testing',
-            testUrl: 'https://chat-titan.test.pipecat.internal',
-            environments: ['testing'],
-            createdAt: '2024-01-12',
-            updatedAt: '2024-01-15',
-          }
-        ]
-      }
-    ]
+        status: 'testing',
+        testUrl: 'https://nova.test.pipecat.internal',
+        environments: ['dev'],
+        createdAt: '2024-01-14',
+        updatedAt: '2024-01-15',
+      },
+    ],
+    createdAt: '2023-06-15',
   },
   {
     id: 'proj-2',
-    name: 'E-Commerce Core',
-    code: 'ecommerce-core',
-    description: 'Shopping platform backend',
-    owner: 'Mark Johnson',
-    createdAt: '2023-05-01',
-    services: [
+    name: 'Chat-Platform',
+    code: 'chat-platform',
+    description: 'Core chat infrastructure',
+    owner: 'Jane Smith',
+    productionVersionId: 'ver-5',
+    versions: [
       {
-        id: 'svc-3',
+        id: 'ver-5',
         projectId: 'proj-2',
-        name: 'payment-gateway',
-        gitRepo: 'https://github.com/company/payment-gateway.git',
+        codename: 'stable',
+        description: 'Current production version',
         gitBranch: 'main',
-        owner: 'Mark Johnson',
-        productionVersionId: 'ver-5',
-        createdAt: '2023-05-01',
-        versions: [
-          {
-            id: 'ver-5',
-            serviceId: 'svc-3',
-            codename: 'v3-stable',
-            description: 'Stripe integration',
-            imageUrl: 'harbor.local/payment-gateway:v3.0.0',
-            owner: 'Mark Johnson',
-            status: 'production',
-            environments: ['production'],
-            createdAt: '2023-12-01',
-            updatedAt: '2024-01-10',
-          }
-        ]
-      }
-    ]
-  }
+        imageUrl: 'harbor.local/chat-platform:v2.0.3',
+        owner: 'Jane Smith',
+        status: 'production',
+        environments: ['dev', 'staging', 'production'],
+        createdAt: '2023-08-20',
+        updatedAt: '2024-01-08',
+      },
+      {
+        id: 'ver-6',
+        projectId: 'proj-2',
+        codename: 'Aurora',
+        description: 'High-performance message queue',
+        gitBranch: 'feature/aurora-mq',
+        imageUrl: 'harbor.local/chat-platform:aurora-beta1',
+        owner: 'Bob Wilson',
+        status: 'testing',
+        testUrl: 'https://aurora.test.chat.internal',
+        environments: ['dev', 'staging'],
+        createdAt: '2024-01-10',
+        updatedAt: '2024-01-14',
+      },
+    ],
+    createdAt: '2023-08-20',
+  },
+]
+
+const mockSwitchRequests: VersionSwitchRequest[] = [
+  {
+    id: 'req-1',
+    projectId: 'proj-1',
+    projectName: 'Pipecat-App-A',
+    fromVersionId: 'ver-1',
+    fromVersionCodename: 'legacy',
+    toVersionId: 'ver-2',
+    toVersionCodename: 'Phoenix',
+    reason: 'Phoenix version passed all tests, ready for production',
+    status: 'pending',
+    requester: 'Jane Smith',
+    approver: null,
+    createdAt: '2024-01-15 14:00',
+    approvedAt: null,
+  },
 ]
 
 interface VersionState {
   projects: Project[]
   switchRequests: VersionSwitchRequest[]
   currentProjectId: string | null
-  currentServiceId: string | null
   currentVersionId: string | null
-  
-  setCurrentProject: (id: string | null) => void
-  setCurrentService: (id: string | null) => void
-  setCurrentVersion: (id: string | null) => void
-  
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'services'>) => void
-  addService: (projectId: string, service: Omit<Service, 'id' | 'createdAt' | 'versions' | 'projectId' | 'productionVersionId'>) => void
-  addVersion: (projectId: string, serviceId: string, version: Omit<Version, 'id' | 'createdAt' | 'updatedAt' | 'serviceId' | 'status'>) => void
-  
-  createSwitchRequest: (req: Omit<VersionSwitchRequest, 'id' | 'createdAt' | 'approvedAt' | 'status' | 'approver'>) => void
-  approveSwitchRequest: (id: string, approver: string) => void
-  rejectSwitchRequest: (id: string, approver: string) => void
+
+  // Actions
+  setCurrentProject: (projectId: string | null) => void
+  setCurrentVersion: (versionId: string | null) => void
+  getCurrentProject: () => Project | null
+  getCurrentVersion: () => Version | null
+  addVersion: (projectId: string, version: Omit<Version, 'id' | 'projectId' | 'createdAt' | 'updatedAt' | 'status'>) => void
+  updateVersionStatus: (projectId: string, versionId: string, status: VersionStatus) => void
+  createSwitchRequest: (request: Omit<VersionSwitchRequest, 'id' | 'status' | 'approver' | 'approvedAt'>) => void
+  approveSwitchRequest: (requestId: string, approver: string) => void
+  rejectSwitchRequest: (requestId: string, approver: string) => void
 }
 
 export const useVersionStore = create<VersionState>()(
   persist(
     (set, get) => ({
       projects: mockProjects,
-      switchRequests: [],
-      currentProjectId: mockProjects[0].id,
-      currentServiceId: null,
-      currentVersionId: null,
+      switchRequests: mockSwitchRequests,
+      currentProjectId: mockProjects[0]?.id || null,
+      currentVersionId: mockProjects[0]?.productionVersionId || null,
 
-      setCurrentProject: (id) => set({ currentProjectId: id, currentServiceId: null, currentVersionId: null }),
-      setCurrentService: (id) => set({ currentServiceId: id, currentVersionId: null }),
-      setCurrentVersion: (id) => set({ currentVersionId: id }),
-
-      addProject: (project) => set((state) => ({
-        projects: [
-          ...state.projects,
-          {
-            ...project,
-            id: `proj-${Date.now()}`,
-            services: [],
-            createdAt: new Date().toISOString().split('T')[0],
-          }
-        ]
-      })),
-
-      addService: (projectId, service) => set((state) => ({
-        projects: state.projects.map(p => {
-          if (p.id !== projectId) return p;
+      setCurrentProject: (projectId) =>
+        set((state) => {
+          const project = state.projects.find(p => p.id === projectId)
           return {
-            ...p,
-            services: [
-              ...p.services,
-              {
-                ...service,
-                id: `svc-${Date.now()}`,
-                projectId,
-                productionVersionId: null,
-                versions: [],
-                createdAt: new Date().toISOString().split('T')[0]
-              }
-            ]
+            currentProjectId: projectId,
+            currentVersionId: project?.productionVersionId || project?.versions[0]?.id || null,
           }
-        })
-      })),
+        }),
 
-      addVersion: (projectId, serviceId, versionData) => set((state) => ({
-        projects: state.projects.map(p => {
-          if (p.id !== projectId) return p;
-          return {
-            ...p,
-            services: p.services.map(s => {
-              if (s.id !== serviceId) return s;
-              return {
-                ...s,
-                versions: [
-                  ...s.versions,
-                  {
-                    ...versionData,
-                    id: `ver-${Date.now()}`,
-                    serviceId,
-                    status: 'testing',
-                    createdAt: new Date().toISOString().split('T')[0],
-                    updatedAt: new Date().toISOString().split('T')[0],
-                  }
-                ]
-              }
-            })
-          }
-        })
-      })),
+      setCurrentVersion: (versionId) =>
+        set({ currentVersionId: versionId }),
 
-      createSwitchRequest: (req) => set((state) => ({
-        switchRequests: [
-          {
-            ...req,
-            id: `req-${Date.now()}`,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            approver: null,
-            approvedAt: null,
-          },
-          ...state.switchRequests,
-        ],
-      })),
+      getCurrentProject: () => {
+        const state = get()
+        return state.projects.find(p => p.id === state.currentProjectId) || null
+      },
 
-      approveSwitchRequest: (id, approver) => set((state) => {
-        const req = state.switchRequests.find(r => r.id === id)
-        if (!req) return state
+      getCurrentVersion: () => {
+        const state = get()
+        const project = state.projects.find(p => p.id === state.currentProjectId)
+        return project?.versions.find(v => v.id === state.currentVersionId) || null
+      },
 
-        // Switch the production version in the target service
-        const newProjects = state.projects.map(p => ({
-          ...p,
-          services: p.services.map(s => {
-            if (s.id !== req.serviceId) return s;
-            return {
-              ...s,
-              productionVersionId: req.toVersionId,
-              versions: s.versions.map(v => {
-                if (v.id === req.toVersionId) return { ...v, status: 'production' as const }
-                if (v.id === req.fromVersionId) return { ...v, status: 'archived' as const }
-                return v
-              })
-            }
-          })
-        }))
-
-        return {
-          projects: newProjects,
-          switchRequests: state.switchRequests.map(r =>
-            r.id === id ? { ...r, status: 'approved', approver, approvedAt: new Date().toISOString() } : r
+      addVersion: (projectId, versionData) =>
+        set((state) => ({
+          projects: state.projects.map(p =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  versions: [
+                    ...p.versions,
+                    {
+                      ...versionData,
+                      status: 'testing', // 新版本默认为测试状态
+                      id: `ver-${Date.now()}`,
+                      projectId,
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                    },
+                  ],
+                }
+              : p
           ),
-        }
-      }),
+        })),
 
-      rejectSwitchRequest: (id, approver) => set((state) => ({
-        switchRequests: state.switchRequests.map(r =>
-          r.id === id ? { ...r, status: 'rejected', approver, approvedAt: new Date().toISOString() } : r
-        ),
-      })),
+      updateVersionStatus: (projectId, versionId, status) =>
+        set((state) => ({
+          projects: state.projects.map(p =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  versions: p.versions.map(v =>
+                    v.id === versionId
+                      ? { ...v, status, updatedAt: new Date().toISOString() }
+                      : v
+                  ),
+                }
+              : p
+          ),
+        })),
+
+      createSwitchRequest: (requestData) =>
+        set((state) => ({
+          switchRequests: [
+            ...state.switchRequests,
+            {
+              ...requestData,
+              id: `req-${Date.now()}`,
+              status: 'pending',
+              approver: null,
+              approvedAt: null,
+            },
+          ],
+        })),
+
+      approveSwitchRequest: (requestId, approver) =>
+        set((state) => {
+          const request = state.switchRequests.find(r => r.id === requestId)
+          if (!request) return state
+
+          return {
+            switchRequests: state.switchRequests.map(r =>
+              r.id === requestId
+                ? { ...r, status: 'approved', approver, approvedAt: new Date().toISOString() }
+                : r
+            ),
+            projects: state.projects.map(p =>
+              p.id === request.projectId
+                ? {
+                    ...p,
+                    productionVersionId: request.toVersionId,
+                    versions: p.versions.map(v =>
+                      v.id === request.toVersionId
+                        ? { ...v, status: 'production' as VersionStatus }
+                        : v.id === request.fromVersionId
+                        ? { ...v, status: 'archived' as VersionStatus }
+                        : v
+                    ),
+                  }
+                : p
+            ),
+          }
+        }),
+
+      rejectSwitchRequest: (requestId, approver) =>
+        set((state) => ({
+          switchRequests: state.switchRequests.map(r =>
+            r.id === requestId
+              ? { ...r, status: 'rejected', approver, approvedAt: new Date().toISOString() }
+              : r
+          ),
+        })),
     }),
     {
       name: 'nexusops-versions',
-      version: 4, // Bumped version to flush old localstorage state
+      version: 2, // 版本号，改变后会触发迁移
       migrate: (persistedState, version) => {
-        if (version < 4) {
+        // 如果版本号低于2，使用默认数据
+        if (version < 2) {
           return {
             projects: mockProjects,
-            switchRequests: [],
+            switchRequests: mockSwitchRequests,
             currentProjectId: mockProjects[0]?.id || null,
-            currentServiceId: null,
-            currentVersionId: null,
+            currentVersionId: mockProjects[0]?.productionVersionId || null,
           }
         }
         return persistedState as unknown as VersionState
