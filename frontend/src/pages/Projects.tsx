@@ -18,6 +18,7 @@ import {
   Alert,
   Result,
   Steps,
+  Popconfirm,
 } from 'antd'
 import {
   AppstoreOutlined,
@@ -26,6 +27,7 @@ import {
   HistoryOutlined,
   StarFilled,
   GithubOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import { useVersionStore, type Service, type Version, type VersionStatus } from '../stores/versionStore'
 import { useDeploymentStore } from '../stores/deploymentStore'
@@ -77,6 +79,7 @@ export default function Projects() {
     currentProjectId,
     setCurrentProject,
     addProject,
+    removeProject,
     addService,
     addVersion,
     createSwitchRequest,
@@ -134,7 +137,22 @@ export default function Projects() {
       setNewProjectModalOpen(false)
       projectForm.resetFields()
       message.success('Project created successfully!')
+      
+      // Ensure the newly created project gets selected
+      setCurrentProject(newProjectId)
     } catch (e) { }
+  }
+
+  const handleDeleteProject = (projectId: string) => {
+    removeProject(projectId)
+    
+    // Remove from auth store if not admin
+    if (user && user.role !== 'admin' && user.allowedProjects?.includes(projectId)) {
+      const updatedProjects = user.allowedProjects.filter(id => id !== projectId)
+      useAuthStore.getState().updateUser({ allowedProjects: updatedProjects })
+    }
+    
+    message.success('Project deleted successfully')
   }
 
   const handleCreateService = async () => {
@@ -372,6 +390,11 @@ export default function Projects() {
               style={{ width: 250 }}
               options={projects.map(p => ({ label: p.name, value: p.id }))}
             />
+            {currentProjectId && (
+              <Popconfirm title="Delete this project?" onConfirm={() => handleDeleteProject(currentProjectId)}>
+                <Button type="text" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            )}
           </Space>
           <Button type="link" icon={<PlusOutlined />} onClick={() => setNewProjectModalOpen(true)}>
             New Project
