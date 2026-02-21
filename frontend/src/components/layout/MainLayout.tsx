@@ -211,14 +211,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
           <div className="flex items-center gap-3">
             {/* Global Project Selector */}
-            <Space className="mr-4 px-2 py-1 bg-gray-50 rounded-md border border-gray-200">
-              <Text type="secondary" className="text-xs font-medium uppercase tracking-wider">Scope:</Text>
+            <div className="hidden sm:flex items-center bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200 rounded-md h-8 mr-2 overflow-hidden shrink-0">
+              <div className="px-3 bg-gray-100/80 border-r border-gray-200 h-full flex items-center">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Scope</span>
+              </div>
               <Select
                 value={globalSelectedProjectId}
                 onChange={setGlobalSelectedProjectId}
-                style={{ width: 180 }}
+                style={{ width: 160 }}
                 variant="borderless"
                 size="small"
+                className="font-medium"
+                popupMatchSelectWidth={false}
                 options={[
                   { label: 'All Projects', value: 'all' },
                   ...projects
@@ -226,7 +230,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     .map(p => ({ label: p.name, value: p.id }))
                 ]}
               />
-            </Space>
+            </div>
 
             {/* AI Assistant Button */}
             <Tooltip title={t('layout.aiAssistant') + " (Cmd+K)"}>
