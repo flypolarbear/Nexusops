@@ -6,6 +6,7 @@ export interface User {
   fullName: string
   role: 'admin' | 'internal' | 'vendor'
   isActive: boolean
+  allowedProjects: string[] // List of project IDs the user has access to
 }
 
 // Project types

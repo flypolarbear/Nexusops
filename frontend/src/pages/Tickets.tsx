@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Card, Table, Tag, Button, Modal, Form, Input, Select, Space, message } from 'antd'
 import { PlusOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const { TextArea } = Input
@@ -13,7 +15,7 @@ const mockTickets = [
     type: 'bug',
     status: 'open',
     priority: 'high',
-    project: 'Platform',
+    projectId: 'pipecat-app-a',
     reporter: 'John Doe',
     assignee: 'Jane Smith',
     createdAt: '2024-01-15 10:00:00',
@@ -25,7 +27,7 @@ const mockTickets = [
     type: 'request',
     status: 'in_progress',
     priority: 'medium',
-    project: 'Chat',
+    projectId: 'chat-platform',
     reporter: 'Bob Wilson',
     assignee: 'Alice Chen',
     createdAt: '2024-01-14 15:30:00',
@@ -37,7 +39,7 @@ const mockTickets = [
     type: 'change',
     status: 'open',
     priority: 'critical',
-    project: 'Chat',
+    projectId: 'chat-platform',
     reporter: 'Alice Chen',
     assignee: null,
     createdAt: '2024-01-15 09:00:00',
@@ -49,7 +51,7 @@ const mockTickets = [
     type: 'vendor_task',
     status: 'resolved',
     priority: 'high',
-    project: 'Platform',
+    projectId: 'infra-core',
     reporter: 'Jane Smith',
     assignee: 'External Vendor',
     createdAt: '2024-01-13 14:00:00',
@@ -57,6 +59,8 @@ const mockTickets = [
 ]
 
 export default function Tickets() {
+  const { user } = useAuthStore()
+  const { projects, globalSelectedProjectId } = useProjectStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedTicket, setSelectedTicket] = useState<typeof mockTickets[0] | null>(null)
   const [form] = Form.useForm()
@@ -80,6 +84,15 @@ export default function Tickets() {
       setIsModalOpen(false)
     })
   }
+
+  const filteredTickets = mockTickets.filter((t) => {
+    const hasProjectPermission = user?.role === 'admin' || user?.allowedProjects?.includes(t.projectId)
+    if (!hasProjectPermission) return false
+    
+    if (globalSelectedProjectId !== 'all' && t.projectId !== globalSelectedProjectId) return false
+    
+    return true
+  })
 
   const columns = [
     {
@@ -142,8 +155,12 @@ export default function Tickets() {
     },
     {
       title: 'Project',
-      dataIndex: 'project',
-      key: 'project',
+      dataIndex: 'projectId',
+      key: 'projectId',
+      render: (projectId: string) => {
+        const project = projects.find(p => p.id === projectId)
+        return project ? project.name : projectId
+      }
     },
     {
       title: 'Assignee',
@@ -185,7 +202,7 @@ export default function Tickets() {
 
       <Card>
         <Table
-          dataSource={mockTickets}
+          dataSource={filteredTickets}
           columns={columns}
           rowKey="id"
           pagination={{ pageSize: 10 }}
@@ -229,13 +246,9 @@ export default function Tickets() {
             </Form.Item>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="project" label="Project" rules={[{ required: true }]}>
+            <Form.Item name="projectId" label="Project" rules={[{ required: true }]}>
               <Select
-                options={[
-                  { value: 'Platform', label: 'Platform' },
-                  { value: 'Chat', label: 'Chat' },
-                  { value: 'Infrastructure', label: 'Infrastructure' },
-                ]}
+                options={projects.map(p => ({ value: p.id, label: p.name }))}
               />
             </Form.Item>
             <Form.Item name="assignee" label="Assignee">
@@ -276,7 +289,7 @@ export default function Tickets() {
                 <span className="font-medium">Status:</span> {selectedTicket.status}
               </div>
               <div>
-                <span className="font-medium">Project:</span> {selectedTicket.project}
+                <span className="font-medium">Project:</span> {projects.find(p => p.id === selectedTicket.projectId)?.name || selectedTicket.projectId}
               </div>
               <div>
                 <span className="font-medium">Reporter:</span> {selectedTicket.reporter}

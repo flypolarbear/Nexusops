@@ -16,9 +16,11 @@ export interface Environment {
 interface ProjectState {
   projects: Project[]
   currentProject: Project | null
+  globalSelectedProjectId: string | 'all'
   currentEnvironment: Environment | null
   setProjects: (projects: Project[]) => void
   setCurrentProject: (project: Project | null) => void
+  setGlobalSelectedProjectId: (id: string | 'all') => void
   setCurrentEnvironment: (environment: Environment | null) => void
 }
 
@@ -55,6 +57,7 @@ export const useProjectStore = create<ProjectState>()(
     (set) => ({
       projects: mockProjects,
       currentProject: mockProjects[0],
+      globalSelectedProjectId: 'all',
       currentEnvironment: mockProjects[0]?.environments[0] || null,
       setProjects: (projects) => set({ projects }),
       setCurrentProject: (project) =>
@@ -62,6 +65,7 @@ export const useProjectStore = create<ProjectState>()(
           currentProject: project,
           currentEnvironment: project?.environments[0] || null,
         }),
+      setGlobalSelectedProjectId: (id) => set({ globalSelectedProjectId: id }),
       setCurrentEnvironment: (environment) => set({ currentEnvironment: environment }),
     }),
     {

@@ -19,6 +19,7 @@ export default function Login() {
           fullName: values.username,
           role: 'admin',
           isActive: true,
+          allowedProjects: values.username === 'admin' ? ['pipecat-app-a', 'chat-platform', 'infra-core'] : ['pipecat-app-a'], // Mock permissions
         },
         'mock-jwt-token'
       )

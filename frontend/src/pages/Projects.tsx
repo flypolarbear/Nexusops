@@ -29,6 +29,8 @@ import {
 } from '@ant-design/icons'
 import { useVersionStore, type Service, type Version, type VersionStatus } from '../stores/versionStore'
 import { useDeploymentStore } from '../stores/deploymentStore'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const { Title, Text } = Typography
@@ -67,8 +69,10 @@ export default function Projects() {
   const [serviceForm] = Form.useForm()
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
 
+  const { user } = useAuthStore()
+  const { globalSelectedProjectId } = useProjectStore()
   const {
-    projects,
+    projects: allProjects,
     switchRequests,
     currentProjectId,
     setCurrentProject,
@@ -83,6 +87,20 @@ export default function Projects() {
   const {
     regions,
   } = useDeploymentStore()
+
+  const projects = useMemo(() => {
+    return allProjects.filter(p => {
+      // Check user permissions
+      if (user?.role !== 'admin' && !user?.allowedProjects?.includes(p.id)) {
+        return false
+      }
+      // Check global selector
+      if (globalSelectedProjectId !== 'all' && globalSelectedProjectId !== p.id) {
+        return false
+      }
+      return true
+    })
+  }, [allProjects, user, globalSelectedProjectId])
 
   const currentProject = useMemo(() => {
     return projects.find(p => p.id === currentProjectId) || projects[0]

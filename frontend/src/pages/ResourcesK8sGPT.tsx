@@ -17,6 +17,8 @@ import {
 import type { DataNode } from 'antd/es/tree'
 import ResourceChatPanel from '../components/ResourceChatPanel'
 import type { AnalyzedResource } from '../components/ResourceChatPanel'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const { Text } = Typography
@@ -37,16 +39,18 @@ const mockClusters = [
 ]
 
 const mockServices = [
-  { id: 'svc-1', name: 'api-gateway', namespace: 'production', cluster: 'Production Cluster', replicas: 3, status: 'running', cpu: 450, cpuLimit: 500, memory: 920, memoryLimit: 1024, restarts: 0, insight: 'Memory at 90%', codename: 'Phoenix', versionId: 'ver-2' },
-  { id: 'svc-2', name: 'chat-gateway', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 200, cpuLimit: 500, memory: 256, memoryLimit: 512, restarts: 0, insight: 'Healthy', codename: 'Aurora', versionId: 'ver-6' },
-  { id: 'svc-3', name: 'auth-service', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 100, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy', codename: 'Legacy', versionId: 'ver-1' },
-  { id: 'svc-4', name: 'grafana', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 50, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy', codename: '-', versionId: null },
-  { id: 'svc-5', name: 'prometheus', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 200, cpuLimit: 500, memory: 512, memoryLimit: 1024, restarts: 0, insight: 'Healthy', codename: '-', versionId: null },
-  { id: 'svc-6', name: 'test-api', namespace: 'default', cluster: 'Development Cluster', replicas: 1, status: 'error', cpu: 0, cpuLimit: 200, memory: 0, memoryLimit: 256, restarts: 15, insight: 'CrashLoopBackOff', codename: 'Test', versionId: 'ver-test' },
-  { id: 'svc-7', name: 'worker', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 850, cpuLimit: 1000, memory: 890, memoryLimit: 1024, restarts: 3, insight: 'OOM risk', codename: 'Titan', versionId: 'ver-3' },
+  { id: 'svc-1', name: 'api-gateway', projectId: 'pipecat-app-a', namespace: 'production', cluster: 'Production Cluster', replicas: 3, status: 'running', cpu: 450, cpuLimit: 500, memory: 920, memoryLimit: 1024, restarts: 0, insight: 'Memory at 90%', codename: 'Phoenix', versionId: 'ver-2' },
+  { id: 'svc-2', name: 'chat-gateway', projectId: 'chat-platform', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 200, cpuLimit: 500, memory: 256, memoryLimit: 512, restarts: 0, insight: 'Healthy', codename: 'Aurora', versionId: 'ver-6' },
+  { id: 'svc-3', name: 'auth-service', projectId: 'pipecat-app-a', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 100, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy', codename: 'Legacy', versionId: 'ver-1' },
+  { id: 'svc-4', name: 'grafana', projectId: 'infra-core', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 50, cpuLimit: 200, memory: 128, memoryLimit: 256, restarts: 0, insight: 'Healthy', codename: '-', versionId: null },
+  { id: 'svc-5', name: 'prometheus', projectId: 'infra-core', namespace: 'monitoring', cluster: 'Production Cluster', replicas: 1, status: 'running', cpu: 200, cpuLimit: 500, memory: 512, memoryLimit: 1024, restarts: 0, insight: 'Healthy', codename: '-', versionId: null },
+  { id: 'svc-6', name: 'test-api', projectId: 'pipecat-app-a', namespace: 'default', cluster: 'Development Cluster', replicas: 1, status: 'error', cpu: 0, cpuLimit: 200, memory: 0, memoryLimit: 256, restarts: 15, insight: 'CrashLoopBackOff', codename: 'Test', versionId: 'ver-test' },
+  { id: 'svc-7', name: 'worker', projectId: 'pipecat-app-a', namespace: 'production', cluster: 'Production Cluster', replicas: 2, status: 'running', cpu: 850, cpuLimit: 1000, memory: 890, memoryLimit: 1024, restarts: 3, insight: 'OOM risk', codename: 'Titan', versionId: 'ver-3' },
 ]
 
 export default function Resources() {
+  const { user } = useAuthStore()
+  const { globalSelectedProjectId } = useProjectStore()
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null)
   const [searchText, setSearchText] = useState('')
   const [selectedResource, setSelectedResource] = useState<AnalyzedResource | null>(null)
@@ -81,6 +85,13 @@ export default function Resources() {
   }))
 
   const filteredServices = mockServices.filter((service) => {
+    // Project Level Permissions
+    const hasProjectPermission = user?.role === 'admin' || user?.allowedProjects?.includes(service.projectId)
+    if (!hasProjectPermission) return false
+    
+    // Global Project Selection
+    if (globalSelectedProjectId !== 'all' && service.projectId !== globalSelectedProjectId) return false
+
     const matchesSearch =
       service.name.toLowerCase().includes(searchText.toLowerCase()) ||
       service.namespace.toLowerCase().includes(searchText.toLowerCase())

@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react'
-import { Layout, Menu, Avatar, Dropdown, Badge, Breadcrumb, Button, Tooltip } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Badge, Breadcrumb, Button, Tooltip, Select, Space, Typography } from 'antd'
 import {
   DashboardOutlined,
   ClusterOutlined,
@@ -24,7 +24,10 @@ import { useAuthStore } from '../../stores/authStore'
 import { useVersionStore } from '../../stores/versionStore'
 import AIAssistantDrawer from '../AIAssistantDrawer'
 
+import { useProjectStore } from '../../stores/projectStore'
+
 const { Header, Sider, Content } = Layout
+const { Text } = Typography
 
 interface MainLayoutProps {
   children: ReactNode
@@ -36,6 +39,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const { projects, globalSelectedProjectId, setGlobalSelectedProjectId } = useProjectStore()
   useVersionStore()
   const { t } = useTranslation()
 
@@ -206,6 +210,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Global Project Selector */}
+            <Space className="mr-4 px-2 py-1 bg-gray-50 rounded-md border border-gray-200">
+              <Text type="secondary" className="text-xs font-medium uppercase tracking-wider">Scope:</Text>
+              <Select
+                value={globalSelectedProjectId}
+                onChange={setGlobalSelectedProjectId}
+                style={{ width: 180 }}
+                variant="borderless"
+                size="small"
+                options={[
+                  { label: 'All Projects', value: 'all' },
+                  ...projects
+                    .filter(p => user?.allowedProjects?.includes(p.id) || user?.role === 'admin')
+                    .map(p => ({ label: p.name, value: p.id }))
+                ]}
+              />
+            </Space>
+
             {/* AI Assistant Button */}
             <Tooltip title={t('layout.aiAssistant') + " (Cmd+K)"}>
               <Button

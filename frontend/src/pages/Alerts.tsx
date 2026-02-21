@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Card, Table, Tag, Select, Space, Badge, Modal, Descriptions } from 'antd'
 import { ExclamationCircleOutlined, InfoCircleOutlined, WarningOutlined } from '@ant-design/icons'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const mockAlerts = [
@@ -11,7 +13,7 @@ const mockAlerts = [
     severity: 'warning',
     status: 'firing',
     service: 'api-gateway',
-    project: 'Platform',
+    projectId: 'pipecat-app-a',
     summary: 'CPU usage above 80% for more than 5 minutes',
     description: 'Current CPU usage is at 85%. Consider scaling the deployment.',
     firedAt: '2024-01-15 14:30:00',
@@ -24,7 +26,7 @@ const mockAlerts = [
     severity: 'critical',
     status: 'firing',
     service: 'chat-service',
-    project: 'Chat',
+    projectId: 'chat-platform',
     summary: 'Memory usage above 90%',
     description: 'Memory usage is at 92%. OOM kills may occur.',
     firedAt: '2024-01-15 14:25:00',
@@ -37,7 +39,7 @@ const mockAlerts = [
     severity: 'critical',
     status: 'firing',
     service: 'worker',
-    project: 'Platform',
+    projectId: 'pipecat-app-a',
     summary: 'Pod has restarted 5 times in the last 10 minutes',
     description: 'Check logs for crash reason.',
     firedAt: '2024-01-15 14:00:00',
@@ -50,7 +52,7 @@ const mockAlerts = [
     severity: 'warning',
     status: 'resolved',
     service: 'node-1',
-    project: 'Infrastructure',
+    projectId: 'infra-core',
     summary: 'Disk usage above 85%',
     description: 'Consider cleaning up old logs or expanding storage.',
     firedAt: '2024-01-15 10:00:00',
@@ -63,7 +65,7 @@ const mockAlerts = [
     severity: 'info',
     status: 'firing',
     service: 'api-gateway',
-    project: 'Platform',
+    projectId: 'pipecat-app-a',
     summary: 'P95 latency above 500ms',
     description: 'Current P95 latency is 650ms.',
     firedAt: '2024-01-15 13:45:00',
@@ -72,11 +74,20 @@ const mockAlerts = [
 ]
 
 export default function Alerts() {
+  const { user } = useAuthStore()
+  const { projects, globalSelectedProjectId } = useProjectStore()
   const [severityFilter, setSeverityFilter] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [selectedAlert, setSelectedAlert] = useState<typeof mockAlerts[0] | null>(null)
 
   const filteredAlerts = mockAlerts.filter((alert) => {
+    // Project permissions
+    const hasProjectPermission = user?.role === 'admin' || user?.allowedProjects?.includes(alert.projectId)
+    if (!hasProjectPermission) return false
+    
+    // Global filter
+    if (globalSelectedProjectId !== 'all' && alert.projectId !== globalSelectedProjectId) return false
+
     if (severityFilter && alert.severity !== severityFilter) return false
     if (statusFilter && alert.status !== statusFilter) return false
     return true
@@ -123,8 +134,12 @@ export default function Alerts() {
     },
     {
       title: 'Project',
-      dataIndex: 'project',
-      key: 'project',
+      dataIndex: 'projectId',
+      key: 'projectId',
+      render: (projectId: string) => {
+        const project = projects.find(p => p.id === projectId)
+        return project ? project.name : projectId
+      }
     },
     {
       title: 'Summary',
@@ -204,7 +219,7 @@ export default function Alerts() {
             </Descriptions.Item>
             <Descriptions.Item label="Source">{selectedAlert.source}</Descriptions.Item>
             <Descriptions.Item label="Service">{selectedAlert.service}</Descriptions.Item>
-            <Descriptions.Item label="Project">{selectedAlert.project}</Descriptions.Item>
+            <Descriptions.Item label="Project">{projects.find(p => p.id === selectedAlert.projectId)?.name || selectedAlert.projectId}</Descriptions.Item>
             <Descriptions.Item label="Fired At">{selectedAlert.firedAt}</Descriptions.Item>
             <Descriptions.Item label="Summary" span={2}>{selectedAlert.summary}</Descriptions.Item>
             <Descriptions.Item label="Description" span={2}>{selectedAlert.description}</Descriptions.Item>

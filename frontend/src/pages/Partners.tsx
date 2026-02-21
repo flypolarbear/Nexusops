@@ -32,6 +32,8 @@ import {
   EyeOutlined,
   CopyOutlined,
 } from '@ant-design/icons'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const { Text } = Typography
@@ -51,6 +53,7 @@ interface Partner {
   status: 'active' | 'inactive' | 'pending'
   access_level: 'read_only' | 'limited' | 'standard'
   permissions: string[]
+  allowed_projects: string[] // Added project-level authorization
   expires_at: string | null
   created_at: string
   last_login: string | null
@@ -81,7 +84,9 @@ const ACCESS_LEVELS = [
 // ============================================
 
 export default function Partners() {
-  const [partners, setPartners] = useState<Partner[]>([])
+  const { user } = useAuthStore()
+  const { projects, globalSelectedProjectId } = useProjectStore()
+  const [allPartners, setAllPartners] = useState<Partner[]>([])
   const [modalVisible, setModalVisible] = useState(false)
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
@@ -97,11 +102,23 @@ export default function Partners() {
       const response = await fetch('/api/v1/partners')
       if (!response.ok) throw new Error("API error")
       const data = await response.json()
-      setPartners(data)
+      setAllPartners(data)
     } catch {
-      setPartners(getMockPartners())
+      setAllPartners(getMockPartners())
     }
   }
+
+  const partners = allPartners.filter(p => {
+    // Project Level Permissions
+    const hasProjectPermission = user?.role === 'admin' || p.allowed_projects?.some(proj => user?.allowedProjects?.includes(proj))
+    if (!hasProjectPermission) return false
+    
+    // Global Project Selection
+    if (globalSelectedProjectId !== 'all') {
+      return p.allowed_projects?.includes(globalSelectedProjectId)
+    }
+    return true
+  })
 
   const openModal = (partner?: Partner) => {
     if (partner) {
@@ -373,7 +390,15 @@ export default function Partners() {
             <Select options={ACCESS_LEVELS.map(l => ({ value: l.value, label: `${l.label} - ${l.description}` }))} />
           </Form.Item>
 
-          <Form.Item name="permissions" label="Permissions" rules={[{ required: true }]}>
+          <Form.Item name="allowed_projects" label="Project Permissions">
+            <Select 
+              mode="multiple" 
+              placeholder="Select allowed projects" 
+              options={projects.map(p => ({ label: p.name, value: p.id }))}
+            />
+          </Form.Item>
+
+          <Form.Item name="permissions" label="Feature Permissions" rules={[{ required: true }]}>
             <Checkbox.Group className="w-full">
               <div className="grid grid-cols-2 gap-2">
                 {AVAILABLE_PERMISSIONS.map(perm => (
@@ -438,7 +463,19 @@ export default function Partners() {
               <Descriptions.Item label="Expires">{selectedPartner.expires_at ? new Date(selectedPartner.expires_at).toLocaleDateString() : 'No expiry'}</Descriptions.Item>
             </Descriptions>
 
-            <Card size="small" title="Granted Permissions">
+            <Card size="small" title="Granted Projects">
+              <Space wrap>
+                {selectedPartner.allowed_projects?.map(projId => {
+                  const proj = projects.find(p => p.id === projId)
+                  return <Tag color="purple" key={projId}>{proj?.name || projId}</Tag>
+                })}
+                {(!selectedPartner.allowed_projects || selectedPartner.allowed_projects.length === 0) && (
+                  <Text type="secondary">No projects assigned</Text>
+                )}
+              </Space>
+            </Card>
+
+            <Card size="small" title="Feature Permissions">
               <List
                 grid={{ gutter: 8, column: 2 }}
                 dataSource={selectedPartner.permissions}
@@ -492,6 +529,7 @@ function getMockPartners(): Partner[] {
       status: 'active',
       access_level: 'standard',
       permissions: ['dashboard', 'projects', 'resources', 'deployments'],
+      allowed_projects: ['pipecat-app-a'],
       expires_at: '2025-12-31',
       created_at: '2024-01-15',
       last_login: new Date().toISOString(),
@@ -509,6 +547,7 @@ function getMockPartners(): Partner[] {
       status: 'active',
       access_level: 'limited',
       permissions: ['dashboard', 'projects', 'agent_store'],
+      allowed_projects: ['chat-platform', 'infra-core'],
       expires_at: '2025-06-30',
       created_at: '2024-02-01',
       last_login: new Date(Date.now() - 86400000).toISOString(),
@@ -526,6 +565,7 @@ function getMockPartners(): Partner[] {
       status: 'pending',
       access_level: 'read_only',
       permissions: ['dashboard', 'resources'],
+      allowed_projects: ['infra-core'],
       expires_at: null,
       created_at: '2024-03-01',
       last_login: null,

@@ -33,6 +33,8 @@ import {
   LoadingOutlined,
   UserOutlined,
 } from '@ant-design/icons'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const { Text } = Typography
@@ -247,6 +249,7 @@ const mockDeploymentChains: Record<string, DeploymentChainStep[]> = {
 const mockDeployments = [
   {
     id: 'dep-1',
+    projectId: 'pipecat-app-a',
     service: 'api-gateway',
     codename: 'Phoenix',
     version: 'v1.2.3-rc3',
@@ -263,60 +266,57 @@ const mockDeployments = [
   },
   {
     id: 'dep-2',
+    projectId: 'chat-platform',
     service: 'chat-gateway',
     codename: 'Aurora',
-    version: 'v2.0.1-beta1',
-    commit: 'e4f5g6h',
-    branch: 'main',
-    region: 'US East',
+    version: 'v2.0.1',
+    commit: 'b2c3d4e',
+    branch: 'release/v2',
+    region: 'US West',
     status: 'running',
-    syncStatus: 'out-of-sync',
+    syncStatus: 'synced',
     healthStatus: 'progressing',
-    deployedAt: '2024-01-15 13:00:00',
+    deployedAt: '2024-01-15 14:00:00',
     deployedBy: 'Jane Smith',
     argocdApp: 'chat-gateway-prod',
     argocdUrl: 'https://argocd.example.com/applications/chat-gateway-prod',
   },
   {
     id: 'dep-3',
+    projectId: 'infra-core',
     service: 'auth-service',
     codename: 'Legacy',
     version: 'v1.1.0',
-    commit: 'i7j8k9l',
-    branch: 'release/1.1',
+    commit: 'c3d4e5f',
+    branch: 'main',
     region: 'EU West',
     status: 'failed',
-    syncStatus: 'unknown',
+    syncStatus: 'out-of-sync',
     healthStatus: 'degraded',
-    deployedAt: '2024-01-15 10:00:00',
-    deployedBy: 'Bob Wilson',
+    deployedAt: '2024-01-15 13:15:00',
+    deployedBy: 'System',
     argocdApp: 'auth-service-prod',
     argocdUrl: 'https://argocd.example.com/applications/auth-service-prod',
-  },
-  {
-    id: 'dep-4',
-    service: 'worker',
-    codename: 'Titan',
-    version: 'v1.2.4-beta2',
-    commit: 'g7h8i9j',
-    branch: 'feature/titan-translation',
-    region: 'US East',
-    status: 'success',
-    syncStatus: 'synced',
-    healthStatus: 'healthy',
-    deployedAt: '2024-01-14 15:00:00',
-    deployedBy: 'Bob Wilson',
-    argocdApp: 'worker-prod',
-    argocdUrl: 'https://argocd.example.com/applications/worker-prod',
   },
 ]
 
 export default function Deployments() {
+  const { user } = useAuthStore()
+  const { globalSelectedProjectId } = useProjectStore()
   const [selectedDeployment, setSelectedDeployment] = useState<string | null>(null)
   const [chainModalOpen, setChainModalOpen] = useState(false)
   const [selectedDeploymentData, setSelectedDeploymentData] = useState<typeof mockDeployments[0] | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [rollingBack, setRollingBack] = useState(false)
+
+  const filteredDeployments = mockDeployments.filter((d) => {
+    const hasProjectPermission = user?.role === 'admin' || user?.allowedProjects?.includes(d.projectId)
+    if (!hasProjectPermission) return false
+    
+    if (globalSelectedProjectId !== 'all' && d.projectId !== globalSelectedProjectId) return false
+    
+    return true
+  })
 
   // 获取部署链
   const getDeploymentChain = (depId: string): DeploymentChainStep[] => {
@@ -661,7 +661,7 @@ export default function Deployments() {
             <CheckCircleOutlined className="text-green-500 text-xl" />
             <div>
               <div className="text-2xl font-bold">
-                {mockDeployments.filter(d => d.status === 'success').length}
+                {filteredDeployments.filter(d => d.status === 'success').length}
               </div>
               <div className="text-xs text-gray-500">Successful</div>
             </div>
@@ -672,7 +672,7 @@ export default function Deployments() {
             <LoadingOutlined className="text-blue-500 text-xl" />
             <div>
               <div className="text-2xl font-bold">
-                {mockDeployments.filter(d => d.status === 'running').length}
+                {filteredDeployments.filter(d => d.status === 'running').length}
               </div>
               <div className="text-xs text-gray-500">In Progress</div>
             </div>
@@ -683,7 +683,7 @@ export default function Deployments() {
             <ExclamationCircleOutlined className="text-red-500 text-xl" />
             <div>
               <div className="text-2xl font-bold">
-                {mockDeployments.filter(d => d.status === 'failed').length}
+                {filteredDeployments.filter(d => d.status === 'failed').length}
               </div>
               <div className="text-xs text-gray-500">Failed</div>
             </div>
@@ -694,7 +694,7 @@ export default function Deployments() {
             <WarningOutlined className="text-orange-500 text-xl" />
             <div>
               <div className="text-2xl font-bold">
-                {mockDeployments.filter(d => d.syncStatus === 'out-of-sync').length}
+                {filteredDeployments.filter(d => d.syncStatus === 'out-of-sync').length}
               </div>
               <div className="text-xs text-gray-500">Out of Sync</div>
             </div>
@@ -705,7 +705,7 @@ export default function Deployments() {
       {/* Deployments Table */}
       <Card title="Recent Deployments">
         <Table
-          dataSource={mockDeployments}
+          dataSource={filteredDeployments}
           columns={columns}
           rowKey="id"
           pagination={{ pageSize: 10 }}

@@ -27,6 +27,8 @@ import {
 import dayjs from 'dayjs'
 import { AgentResponseRenderer } from '../components/AgentResponseRenderer'
 import type { AgentMessage, AgentAction } from '../types/agent'
+import { useAuthStore } from '../stores/authStore'
+import { useProjectStore } from '../stores/projectStore'
 import PageContainer from '../components/layout/PageContainer'
 
 const { Text } = Typography
@@ -49,10 +51,10 @@ const INITIAL_MESSAGES: AgentMessage[] = [
 ]
 
 const MOCK_HISTORY = [
-  { id: 'sess-1', title: '500 errors in auth-service', date: '2 hours ago', mcp: 'aws-cloudwatch' },
-  { id: 'sess-2', title: 'Memory leak in frontend', date: 'Yesterday', mcp: 'datadog' },
-  { id: 'sess-3', title: 'Payment gateway timeouts', date: 'Last week', mcp: 'elasticsearch' },
-  { id: 'sess-4', title: 'Redis slow queries', date: '2 weeks ago', mcp: 'fluent-bit' },
+  { id: 'sess-1', projectId: 'pipecat-app-a', title: '500 errors in auth-service', date: '2 hours ago', mcp: 'aws-cloudwatch' },
+  { id: 'sess-2', projectId: 'chat-platform', title: 'Memory leak in frontend', date: 'Yesterday', mcp: 'datadog' },
+  { id: 'sess-3', projectId: 'pipecat-app-a', title: 'Payment gateway timeouts', date: 'Last week', mcp: 'elasticsearch' },
+  { id: 'sess-4', projectId: 'infra-core', title: 'Redis slow queries', date: '2 weeks ago', mcp: 'fluent-bit' },
 ]
 
 // ============================================
@@ -60,6 +62,8 @@ const MOCK_HISTORY = [
 // ============================================
 
 export default function Logs() {
+  const { user } = useAuthStore()
+  const { globalSelectedProjectId } = useProjectStore()
   const [messages, setMessages] = useState<AgentMessage[]>(INITIAL_MESSAGES)
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
@@ -183,10 +187,18 @@ export default function Logs() {
     }
   }
 
-  const filteredHistory = MOCK_HISTORY.filter(h => 
-    h.title.toLowerCase().includes(historySearch.toLowerCase()) || 
-    h.mcp.toLowerCase().includes(historySearch.toLowerCase())
-  )
+  const filteredHistory = MOCK_HISTORY.filter(h => {
+    // Project permissions
+    const hasProjectPermission = user?.role === 'admin' || user?.allowedProjects?.includes(h.projectId)
+    if (!hasProjectPermission) return false
+    
+    // Global filter
+    if (globalSelectedProjectId !== 'all' && h.projectId !== globalSelectedProjectId) return false
+
+    // Search filter
+    return h.title.toLowerCase().includes(historySearch.toLowerCase()) || 
+           h.mcp.toLowerCase().includes(historySearch.toLowerCase())
+  })
 
   return (
     <PageContainer
