@@ -84,6 +84,8 @@ export interface VersionDeployment {
   id: string
   projectId: string
   projectName: string
+  serviceId: string
+  serviceName: string
   versionId: string
   codename: string           // 版本代号，如 Phoenix, Titan
   imageVersion: string       // 镜像版本，如 v1.2.3
@@ -104,7 +106,6 @@ export interface VersionDeployment {
   argocdRevision: string     // ArgoCD 同步的 Git revision
 
   // 服务状态
-  serviceName: string        // K8s 服务名称
   replicas: number           // 副本数
   status: 'running' | 'warning' | 'error' | 'unknown'
   cpu: string                // CPU 使用
