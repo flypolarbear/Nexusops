@@ -40,8 +40,9 @@ import {
 import type { UploadFile } from 'antd/es/upload/interface'
 import { useAuthStore } from '../stores/authStore'
 import { useDiagramStore, type DiagramConfig } from '../stores/configStore'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 // ============================================
@@ -962,16 +963,18 @@ export default function Settings() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">
-          <SettingOutlined className="mr-2" />
+    <PageContainer
+      title={
+        <Space>
+          <SettingOutlined />
           Global Settings
-        </Title>
-        <Tag color="blue">Team Configuration</Tag>
-      </div>
-
-      <Alert
+        </Space>
+      }
+      transparent
+      extra={<Tag color="blue">Team Configuration</Tag>}
+    >
+      <div className="space-y-6">
+        <Alert
         message="Global Connection Settings"
         description="These settings are shared across all team members. Changes here affect everyone's access to connected services."
         type="warning"
@@ -1124,7 +1127,8 @@ export default function Settings() {
           </Space>
         )}
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   )
 }
 

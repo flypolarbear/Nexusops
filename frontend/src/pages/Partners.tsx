@@ -32,8 +32,9 @@ import {
   EyeOutlined,
   CopyOutlined,
 } from '@ant-design/icons'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 // ============================================
 // Types
@@ -306,21 +307,25 @@ export default function Partners() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">
-          <TeamOutlined className="mr-2" />
+    <PageContainer
+      title={
+        <Space>
+          <TeamOutlined />
           Partners & Vendors
-        </Title>
+        </Space>
+      }
+      transparent
+      extra={
         <Space>
           <Tag color="blue">{partners.filter(p => p.status === 'active').length} Active</Tag>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
             Add Partner
           </Button>
         </Space>
-      </div>
-
-      <Alert
+      }
+    >
+      <div className="space-y-6">
+        <Alert
         message="Partner Access Management"
         description="Manage external partners and vendors who need limited access to your platform. Assign specific permissions and access levels to control what they can see and do."
         type="info"
@@ -469,7 +474,8 @@ export default function Partners() {
           </Space>
         )}
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   )
 }
 

@@ -26,6 +26,7 @@ import {
 import dayjs from 'dayjs'
 import { AgentResponseRenderer } from '../components/AgentResponseRenderer'
 import type { AgentMessage, AgentAction } from '../types/agent'
+import PageContainer from '../components/layout/PageContainer'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -181,7 +182,7 @@ export default function Logs() {
   }
 
   return (
-    <div className="h-[calc(100vh-100px)] flex gap-4">
+    <PageContainer transparent fullHeight contentClassName="flex gap-4">
       {/* History Sidebar */}
       {historyVisible && (
         <div className="w-64 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 transition-all duration-300">
@@ -385,6 +386,6 @@ export default function Logs() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   )
 }

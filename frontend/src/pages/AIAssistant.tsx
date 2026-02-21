@@ -3,6 +3,7 @@ import { Card, Typography, Input, Button, Space, Avatar, Spin, Empty, List, Typo
 import { SendOutlined, RobotOutlined, UserOutlined, PlusOutlined, HistoryOutlined } from '@ant-design/icons'
 import { useChatStore } from '../stores/chatStore'
 import { useWebSocket } from '../hooks/useWebSocket'
+import PageContainer from '../components/layout/PageContainer'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -50,8 +51,9 @@ export default function AIAssistant() {
   ]
 
   return (
-    <div className="h-[calc(100vh-200px)] flex gap-4">
-      {/* Conversation Sidebar */}
+    <PageContainer transparent fullHeight>
+      <div className="h-full flex gap-4">
+        {/* Conversation Sidebar */}
       <Card className="w-64 shrink-0" title="Conversations" extra={<Button type="text" icon={<PlusOutlined />} onClick={clearMessages} />}>
         <List
           dataSource={mockConversations}
@@ -179,6 +181,7 @@ export default function AIAssistant() {
           </Text>
         </div>
       </Card>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

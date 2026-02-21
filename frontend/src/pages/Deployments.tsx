@@ -33,8 +33,9 @@ import {
   LoadingOutlined,
   UserOutlined,
 } from '@ant-design/icons'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 // 部署链步骤类型
 interface DeploymentChainStep {
@@ -642,16 +643,17 @@ export default function Deployments() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">Deployments</Title>
+    <PageContainer
+      title="Deployments"
+      transparent
+      extra={
         <Space>
           <Button icon={<SyncOutlined />}>Refresh</Button>
         </Space>
-      </div>
-
-      {/* Summary Cards */}
+      }
+    >
+      <div className="space-y-6">
+        {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <Card size="small">
           <div className="flex items-center gap-2">
@@ -760,6 +762,7 @@ export default function Deployments() {
           </>
         )}
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

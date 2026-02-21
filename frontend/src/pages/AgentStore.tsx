@@ -41,8 +41,9 @@ import {
   CodeOutlined,
   BookOutlined,
 } from '@ant-design/icons'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 // ============================================
 // Types
@@ -633,16 +634,18 @@ export default function AgentStore() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">
-          <ShopOutlined className="mr-2" />
+    <PageContainer
+      title={
+        <Space>
+          <ShopOutlined />
           {t('agentStore.title')}
-        </Title>
-        <Tag color="green">{agents.filter(a => a.enabled).length} {t('agentStore.active')}</Tag>
-      </div>
-
-      <Alert
+        </Space>
+      }
+      transparent
+      extra={<Tag color="green">{agents.filter(a => a.enabled).length} {t('agentStore.active')}</Tag>}
+    >
+      <div className="space-y-6">
+        <Alert
         message={t('agentStore.builtin') + " Agents"}
         description={t('agentStore.builtinMessage')}
         type="info"
@@ -735,9 +738,10 @@ export default function AgentStore() {
                 ),
               }))}
             />
-          </Space>
-        )}
-      </Modal>
-    </div>
+            </Space>
+          )}
+        </Modal>
+      </div>
+    </PageContainer>
   )
 }

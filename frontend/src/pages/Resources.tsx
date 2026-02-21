@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Card, Tree, Table, Tag, Input, Select, Space, Typography } from 'antd'
+import { Card, Tree, Table, Tag, Input, Select, Space } from 'antd'
 import { SearchOutlined, FolderOutlined, ClusterOutlined, CloudOutlined } from '@ant-design/icons'
 import type { DataNode } from 'antd/es/tree'
-
-const { Title } = Typography
+import PageContainer from '../components/layout/PageContainer'
 const { Search } = Input
 
 // Mock data for resources
@@ -125,9 +124,7 @@ export default function Resources() {
   ]
 
   return (
-    <div className="space-y-6">
-      <Title level={4}>Resources</Title>
-
+    <PageContainer title="Resources" transparent>
       <div className="flex gap-6">
         {/* Region/Cluster Tree */}
         <Card className="w-80 shrink-0" title="Regions & Clusters">
@@ -177,6 +174,6 @@ export default function Resources() {
           />
         </Card>
       </div>
-    </div>
+    </PageContainer>
   )
 }

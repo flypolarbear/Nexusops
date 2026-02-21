@@ -230,8 +230,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </Dropdown>
           </div>
         </Header>
-        <Content className="m-4 p-6 bg-white rounded-lg shadow-sm min-h-[calc(100vh-100px)] overflow-auto">
-          {children}
+        <Content className="m-4 overflow-hidden h-[calc(100vh-100px)] flex flex-col">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            {children}
+          </div>
         </Content>
       </Layout>
 

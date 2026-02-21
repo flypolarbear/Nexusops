@@ -17,6 +17,7 @@ import {
 import type { DataNode } from 'antd/es/tree'
 import ResourceChatPanel from '../components/ResourceChatPanel'
 import type { AnalyzedResource } from '../components/ResourceChatPanel'
+import PageContainer from '../components/layout/PageContainer'
 
 const { Title, Text } = Typography
 const { Search } = Input
@@ -294,9 +295,8 @@ export default function Resources() {
   ]
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <PageContainer
+      title={
         <div>
           <Title level={4} className="mb-1">Resources</Title>
           <Breadcrumb
@@ -307,6 +307,10 @@ export default function Resources() {
             ]}
           />
         </div>
+      }
+      transparent
+      fullHeight={viewMode !== 'table'}
+      extra={
         <Space>
           <Select
             value={viewMode}
@@ -320,9 +324,10 @@ export default function Resources() {
           />
           <Button icon={<ReloadOutlined />}>Refresh</Button>
         </Space>
-      </div>
-
-      {/* AI Insight Banner */}
+      }
+    >
+      <div className="space-y-4">
+        {/* AI Insight Banner */}
       <Alert
         message={
           <div className="flex items-center gap-2">
@@ -564,6 +569,7 @@ export default function Resources() {
           </div>
         )}
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

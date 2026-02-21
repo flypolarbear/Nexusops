@@ -15,8 +15,9 @@ import {
 } from 'antd'
 import { UserOutlined, CameraOutlined, BellOutlined, BulbOutlined, SyncOutlined, CompressOutlined } from '@ant-design/icons'
 import { useAuthStore } from '../stores/authStore'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 export default function ProfileSettings() {
   const { user, updateUser } = useAuthStore()
@@ -44,13 +45,18 @@ export default function ProfileSettings() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <Title level={4}>
-        <UserOutlined className="mr-2" />
-        Personal Settings
-      </Title>
-
-      {/* Avatar Section */}
+    <PageContainer
+      title={
+        <Space>
+          <UserOutlined />
+          Personal Settings
+        </Space>
+      }
+      transparent
+      className="max-w-3xl mx-auto"
+    >
+      <div className="space-y-6">
+        {/* Avatar Section */}
       <Card>
         <div className="flex items-center gap-6">
           <div className="relative">
@@ -217,6 +223,7 @@ export default function ProfileSettings() {
           </div>
         </Space>
       </Card>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

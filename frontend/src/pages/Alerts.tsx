@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Card, Table, Tag, Typography, Select, Space, Badge, Modal, Descriptions } from 'antd'
+import { Card, Table, Tag, Select, Space, Badge, Modal, Descriptions } from 'antd'
 import { ExclamationCircleOutlined, InfoCircleOutlined, WarningOutlined } from '@ant-design/icons'
-
-const { Title } = Typography
+import PageContainer from '../components/layout/PageContainer'
 
 const mockAlerts = [
   {
@@ -150,8 +149,8 @@ export default function Alerts() {
   ]
 
   return (
-    <div className="space-y-6">
-      <Title level={4}>Alerts</Title>
+    <PageContainer title="Alerts" transparent>
+      <div className="space-y-6">
 
       <Card>
         <Space className="mb-4">
@@ -217,6 +216,7 @@ export default function Alerts() {
           </Descriptions>
         )}
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Card, Table, Tag, Typography, Button, Modal, Form, Input, Select, Space, message } from 'antd'
+import { Card, Table, Tag, Button, Modal, Form, Input, Select, Space, message } from 'antd'
 import { PlusOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title } = Typography
 const { TextArea } = Input
 
 const mockTickets = [
@@ -171,13 +171,16 @@ export default function Tickets() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Title level={4}>Tickets</Title>
+    <PageContainer
+      title="Tickets"
+      transparent
+      extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           New Ticket
         </Button>
-      </div>
+      }
+    >
+      <div className="space-y-6">
 
       <Card>
         <Table
@@ -284,6 +287,7 @@ export default function Tickets() {
           </div>
         )}
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

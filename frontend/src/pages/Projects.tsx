@@ -29,6 +29,7 @@ import {
 } from '@ant-design/icons'
 import { useVersionStore, type Service, type Version, type VersionStatus } from '../stores/versionStore'
 import { useDeploymentStore } from '../stores/deploymentStore'
+import PageContainer from '../components/layout/PageContainer'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -331,9 +332,10 @@ export default function Projects() {
   ]
 
   return (
-    <div className="p-2 md:p-6 bg-white max-w-7xl mx-auto space-y-6">
-      {/* Header & Project Selector */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+    <PageContainer
+      transparent
+      className="max-w-7xl mx-auto"
+      title={
         <Space size="large">
           <Space>
             <Text type="secondary">Current Project:</Text>
@@ -348,15 +350,18 @@ export default function Projects() {
             New Project
           </Button>
         </Space>
+      }
+      extra={
         <Space>
           <Button icon={<HistoryOutlined />}>Audit Logs</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setNewServiceModalOpen(true)}>
             New Service
           </Button>
         </Space>
-      </div>
-
-      {/* Vibe Coding Guide */}
+      }
+    >
+      <div className="space-y-6">
+        {/* Vibe Coding Guide */}
       <Alert
         message={<Text strong className="text-base">🚀 Vibe Coding Ops Workflow</Text>}
         description={
@@ -714,6 +719,7 @@ export default function Projects() {
         )}
       </Modal>
 
-    </div>
+      </div>
+    </PageContainer>
   )
 }

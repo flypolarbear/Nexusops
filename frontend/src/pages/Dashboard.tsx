@@ -15,8 +15,9 @@ import { overviewApi } from '../services/api'
 import type { OverviewStats } from '../types'
 import DrawioRenderer from '../components/DrawioRenderer'
 import WorldMap from '../components/WorldMap'
+import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 export default function Dashboard() {
   const { t } = useTranslation()
@@ -41,19 +42,20 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <Title level={4} className="m-0">{t('dashboard.infrastructureOverview')}</Title>
+    <PageContainer
+      title={t('dashboard.infrastructureOverview')}
+      transparent
+      extra={
         <Space>
           <Text type="secondary">
             <ClockCircleOutlined className="mr-1" />
             {t('dashboard.lastUpdated')}
           </Text>
         </Space>
-      </div>
-
-      {/* Stats Cards */}
+      }
+    >
+      <div className="space-y-6">
+        {/* Stats Cards */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card loading={isLoading}>
@@ -240,6 +242,7 @@ export default function Dashboard() {
           </Button>
         </Space>
       </Card>
-    </div>
+      </div>
+    </PageContainer>
   )
 }
