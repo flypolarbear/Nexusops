@@ -117,12 +117,20 @@ export default function Projects() {
   const handleCreateProject = async () => {
     try {
       const values = await projectForm.validateFields()
+      const newProjectId = `proj-${Date.now()}`
       addProject({
         name: values.name,
         code: values.code,
         description: values.description || '',
         owner: values.owner,
-      })
+      }, newProjectId)
+      
+      // Immediately give current user permission to their new project
+      if (user && user.role !== 'admin') {
+        const updatedProjects = [...(user.allowedProjects || []), newProjectId]
+        useAuthStore.getState().updateUser({ allowedProjects: updatedProjects })
+      }
+      
       setNewProjectModalOpen(false)
       projectForm.resetFields()
       message.success('Project created successfully!')

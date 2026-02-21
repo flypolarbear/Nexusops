@@ -197,7 +197,7 @@ interface VersionState {
   setCurrentService: (id: string | null) => void
   setCurrentVersion: (id: string | null) => void
   
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'services'>) => void
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'services'>, customId?: string) => void
   addService: (projectId: string, service: Omit<Service, 'id' | 'createdAt' | 'versions' | 'projectId' | 'productionVersionId'>) => void
   addVersion: (projectId: string, serviceId: string, version: Omit<Version, 'id' | 'createdAt' | 'updatedAt' | 'serviceId' | 'status'>) => void
   
@@ -219,12 +219,12 @@ export const useVersionStore = create<VersionState>()(
       setCurrentService: (id) => set({ currentServiceId: id, currentVersionId: null }),
       setCurrentVersion: (id) => set({ currentVersionId: id }),
 
-      addProject: (project) => set((state) => ({
+      addProject: (project, customId) => set((state) => ({
         projects: [
           ...state.projects,
           {
             ...project,
-            id: `proj-${Date.now()}`,
+            id: customId || `proj-${Date.now()}`,
             services: [],
             createdAt: new Date().toISOString().split('T')[0],
           }
