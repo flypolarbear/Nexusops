@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react'
-import { Layout, Menu, Avatar, Dropdown, Badge, Select, Breadcrumb, Button, Tooltip, Tag } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Badge, Breadcrumb, Button, Tooltip } from 'antd'
 import {
   DashboardOutlined,
   ClusterOutlined,
@@ -36,17 +36,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const {
-    projects,
-    currentProjectId,
-    currentVersionId,
-    setCurrentProject,
-    setCurrentVersion,
-  } = useVersionStore()
+  useVersionStore()
   const { t } = useTranslation()
-
-  // 获取当前选中的项目和版本
-  const currentProject = projects.find(p => p.id === currentProjectId)
 
   // Main menu items
   const mainMenuItems = [
@@ -213,45 +204,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
             )}
             <Breadcrumb items={getBreadcrumbItems()} />
           </div>
-
-          {/* Project/Version Selector - Hidden on Dashboard */}
-          {location.pathname !== '/dashboard' && (
-            <div className="flex items-center gap-2">
-              <AppstoreOutlined className="text-gray-400" />
-              <Select
-                value={currentProjectId}
-                onChange={(value) => {
-                  setCurrentProject(value)
-                }}
-                style={{ width: 150 }}
-                options={projects.map(p => ({ value: p.id, label: p.name }))}
-                size="small"
-              />
-              <Select
-                value={currentVersionId}
-                onChange={(value) => {
-                  setCurrentVersion(value)
-                }}
-                style={{ width: 130 }}
-                size="small"
-                className="bg-gray-50"
-              >
-                {currentProject?.services.flatMap(s => s.versions).map(v => (
-                  <Select.Option key={v.id} value={v.id}>
-                    <div className="flex items-center gap-1">
-                      <span>{v.codename}</span>
-                      <Tag
-                        color={v.status === 'production' ? 'green' : 'orange'}
-                        style={{ marginLeft: 4, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}
-                      >
-                        {v.status === 'production' ? 'Production' : 'Testing'}
-                      </Tag>
-                    </div>
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-          )}
 
           <div className="flex items-center gap-3">
             {/* AI Assistant Button */}
