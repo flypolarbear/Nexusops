@@ -22,6 +22,7 @@ import {
   HistoryOutlined,
   PlusOutlined,
   MessageOutlined,
+  SearchOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { AgentResponseRenderer } from '../components/AgentResponseRenderer'
@@ -63,6 +64,7 @@ export default function Logs() {
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [historyVisible, setHistoryVisible] = useState(false)
+  const [historySearch, setHistorySearch] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Filters
@@ -181,6 +183,11 @@ export default function Logs() {
     }
   }
 
+  const filteredHistory = MOCK_HISTORY.filter(h => 
+    h.title.toLowerCase().includes(historySearch.toLowerCase()) || 
+    h.mcp.toLowerCase().includes(historySearch.toLowerCase())
+  )
+
   return (
     <PageContainer
       title="Log Analysis Agent"
@@ -190,14 +197,14 @@ export default function Logs() {
       contentClassName="flex gap-4"
       extra={
         <div className="flex flex-wrap items-center gap-4">
-          <Tooltip title={historyVisible ? "Hide History" : "Show History"}>
-            <Button
-              type="text"
-              icon={<HistoryOutlined />}
-              onClick={() => setHistoryVisible(!historyVisible)}
-              className={historyVisible ? "text-primary-500 bg-primary-50" : "text-gray-500"}
-            />
-          </Tooltip>
+          <Button
+            type={historyVisible ? "primary" : "default"}
+            icon={<HistoryOutlined />}
+            onClick={() => setHistoryVisible(!historyVisible)}
+            ghost={historyVisible}
+          >
+            History
+          </Button>
           <Divider type="vertical" className="m-0" />
           <Space>
             <Text type="secondary">MCP:</Text>
@@ -249,7 +256,7 @@ export default function Logs() {
     >
       {/* History Sidebar */}
       {historyVisible && (
-        <div className="w-64 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 transition-all duration-300">
+        <div className="w-72 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 transition-all duration-300">
           <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
             <Space>
               <HistoryOutlined className="text-gray-500" />
@@ -259,8 +266,18 @@ export default function Logs() {
               <Button type="text" icon={<PlusOutlined />} size="small" onClick={handleClear} />
             </Tooltip>
           </div>
+          <div className="p-3 border-b border-gray-100 bg-white">
+            <Input
+              placeholder="Search history..."
+              prefix={<SearchOutlined className="text-gray-400" />}
+              value={historySearch}
+              onChange={e => setHistorySearch(e.target.value)}
+              allowClear
+              variant="filled"
+            />
+          </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {MOCK_HISTORY.map(h => (
+            {filteredHistory.map(h => (
               <div 
                 key={h.id} 
                 className="p-3 hover:bg-gray-100 rounded-lg cursor-pointer text-sm transition-colors border border-transparent hover:border-gray-200"
