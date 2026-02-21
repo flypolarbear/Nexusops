@@ -336,7 +336,6 @@ export default function Projects() {
       title="Projects"
       icon={<AppstoreOutlined />}
       transparent
-      className="max-w-7xl mx-auto"
       extra={
         <Space size="large">
           <Space>

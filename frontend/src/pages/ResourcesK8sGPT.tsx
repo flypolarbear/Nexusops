@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Tree, Table, Tag, Input, Select, Space, Typography, Button, Modal, Descriptions, Progress, Breadcrumb, Alert, Tooltip, message } from 'antd'
+import { Card, Tree, Table, Tag, Input, Select, Space, Typography, Button, Modal, Descriptions, Progress, Alert, Tooltip, message } from 'antd'
 import {
   SearchOutlined,
   FolderOutlined,
@@ -19,7 +19,7 @@ import ResourceChatPanel from '../components/ResourceChatPanel'
 import type { AnalyzedResource } from '../components/ResourceChatPanel'
 import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { Search } = Input
 
 // Mock data for resources

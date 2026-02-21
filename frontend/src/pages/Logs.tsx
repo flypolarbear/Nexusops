@@ -28,7 +28,7 @@ import { AgentResponseRenderer } from '../components/AgentResponseRenderer'
 import type { AgentMessage, AgentAction } from '../types/agent'
 import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { RangePicker } = DatePicker
 const { TextArea } = Input
 
@@ -182,7 +182,71 @@ export default function Logs() {
   }
 
   return (
-    <PageContainer transparent fullHeight contentClassName="flex gap-4">
+    <PageContainer
+      title="Log Analysis Agent"
+      icon={<ThunderboltOutlined />}
+      transparent
+      fullHeight
+      contentClassName="flex gap-4"
+      extra={
+        <div className="flex flex-wrap items-center gap-4">
+          <Tooltip title={historyVisible ? "Hide History" : "Show History"}>
+            <Button
+              type="text"
+              icon={<HistoryOutlined />}
+              onClick={() => setHistoryVisible(!historyVisible)}
+              className={historyVisible ? "text-primary-500 bg-primary-50" : "text-gray-500"}
+            />
+          </Tooltip>
+          <Divider type="vertical" className="m-0" />
+          <Space>
+            <Text type="secondary">MCP:</Text>
+            <Select
+              value={mcp}
+              onChange={setMcp}
+              style={{ width: 160 }}
+              options={[
+                { value: 'aws-cloudwatch', label: 'AWS CloudWatch' },
+                { value: 'elasticsearch', label: 'Elasticsearch' },
+                { value: 'datadog', label: 'Datadog' },
+                { value: 'fluent-bit', label: 'Fluent Bit' },
+              ]}
+            />
+          </Space>
+          <Space>
+            <Text type="secondary">Service:</Text>
+            <Select
+              value={service}
+              onChange={setService}
+              style={{ width: 140 }}
+              options={[
+                { value: 'all', label: 'All Services' },
+                { value: 'auth-service', label: 'auth-service' },
+                { value: 'payment-service', label: 'payment-service' },
+                { value: 'frontend', label: 'frontend' },
+              ]}
+            />
+          </Space>
+          <Space>
+            <Text type="secondary">Time Range:</Text>
+            <RangePicker
+              showTime
+              value={timeRange}
+              onChange={(dates) => setTimeRange(dates as any)}
+              style={{ width: 320 }}
+            />
+          </Space>
+          <Button
+            type="primary"
+            ghost
+            icon={<DownloadOutlined />}
+            onClick={handleDownload5Min}
+          >
+            Download Last 5-Min Logs
+          </Button>
+        </div>
+      }
+    >
       {/* History Sidebar */}
       {historyVisible && (
         <div className="w-64 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 transition-all duration-300">
@@ -225,75 +289,6 @@ export default function Logs() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col space-y-4 min-w-0">
-        {/* Header / Control Bar */}
-        <Card size="small" className="shadow-sm border-b-0 shrink-0">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Tooltip title={historyVisible ? "Hide History" : "Show History"}>
-                <Button 
-                  type="text" 
-                  icon={<HistoryOutlined />} 
-                  onClick={() => setHistoryVisible(!historyVisible)}
-                  className={historyVisible ? "text-primary-500 bg-primary-50" : "text-gray-500"}
-                />
-              </Tooltip>
-              <Divider type="vertical" className="m-0" />
-              <Space>
-                <ThunderboltOutlined className="text-primary-500 text-lg" />
-                <Title level={5} className="m-0">Log Analysis Agent</Title>
-              </Space>
-              <Divider type="vertical" />
-              <Space>
-                <Text type="secondary">MCP:</Text>
-                <Select
-                  value={mcp}
-                  onChange={setMcp}
-                  style={{ width: 160 }}
-                  options={[
-                    { value: 'aws-cloudwatch', label: 'AWS CloudWatch' },
-                    { value: 'elasticsearch', label: 'Elasticsearch' },
-                    { value: 'datadog', label: 'Datadog' },
-                    { value: 'fluent-bit', label: 'Fluent Bit' },
-                  ]}
-                />
-              </Space>
-              <Space>
-                <Text type="secondary">Service:</Text>
-                <Select
-                  value={service}
-                  onChange={setService}
-                  style={{ width: 140 }}
-                  options={[
-                    { value: 'all', label: 'All Services' },
-                    { value: 'auth-service', label: 'auth-service' },
-                    { value: 'payment-service', label: 'payment-service' },
-                    { value: 'frontend', label: 'frontend' },
-                  ]}
-                />
-              </Space>
-              <Space>
-                <Text type="secondary">Time Range:</Text>
-                <RangePicker
-                  showTime
-                  value={timeRange}
-                  onChange={(dates) => setTimeRange(dates as any)}
-                  style={{ width: 320 }}
-                />
-              </Space>
-            </div>
-            <Space>
-              <Button
-                type="primary"
-                ghost
-                icon={<DownloadOutlined />}
-                onClick={handleDownload5Min}
-              >
-                Download Last 5-Min Logs
-              </Button>
-            </Space>
-          </div>
-        </Card>
-
         {/* Chat Area */}
         <Card className="flex-1 overflow-hidden flex flex-col shadow-sm" bodyStyle={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
           {/* Messages List */}
