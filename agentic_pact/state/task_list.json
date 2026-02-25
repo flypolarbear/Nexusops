@@ -1,9 +1,9 @@
 {
   "project": "NexusOps",
   "updated_at": "2026-02-25",
-  "version": "2.1",
+  "version": "2.2",
   "current_phase": "MVP 收尾",
-  "overall_completion": "85%",
+  "overall_completion": "87%",
   "team": {
     "Elon": "Project Manager",
     "Ryan": "Developer",
@@ -29,7 +29,7 @@
     {
       "id": "MVP-TEST-002",
       "title": "Gateway API 单元测试",
-      "status": "pending",
+      "status": "completed",
       "priority": "P0",
       "owner": "Ryan",
       "phase": "MVP 收尾",
@@ -41,7 +41,21 @@
         "validator.py 测试覆盖率 >= 80%",
         "response.py 测试覆盖率 >= 80%"
       ],
-      "blocked_by": ["MVP-TEST-001"]
+      "blocked_by": ["MVP-TEST-001"],
+      "completed_at": "2026-02-25",
+      "evidence": {
+        "errors.py_coverage": "100%",
+        "contract.py_coverage": "100%",
+        "response.py_coverage": "85.37%",
+        "validator.py_coverage": "82.19%",
+        "test_files": [
+          "tests/unit/test_gateway_errors.py",
+          "tests/unit/test_gateway_contract.py",
+          "tests/unit/test_gateway_validator.py",
+          "tests/unit/test_gateway_response.py"
+        ],
+        "tests_passed": 203
+      }
     },
     {
       "id": "MVP-TEST-003",
@@ -98,6 +112,12 @@
     }
   ],
   "completed_tasks": [
+    {
+      "id": "MVP-TEST-002",
+      "title": "Gateway API 单元测试",
+      "completed_at": "2026-02-25",
+      "category": "testing"
+    },
     {
       "id": "MK-006-MK-007-HOTFIX",
       "title": "MK-006/MK-007 契约一致性修正",
@@ -269,9 +289,9 @@
   ],
   "statistics": {
     "total_tasks": 6,
-    "pending": 4,
+    "pending": 3,
     "in_progress": 0,
-    "completed": 31,
+    "completed": 32,
     "p0_tasks": 2,
     "p1_tasks": 1,
     "p2_tasks": 2
