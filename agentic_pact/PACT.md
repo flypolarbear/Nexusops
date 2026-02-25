@@ -145,13 +145,26 @@ EXO 是一个多智能体并行协作团队，采用 **Spec/PRD 驱动 + 并行�
 
 **检索后仍不确定**: 在置顶文档写清问题点、已检索证据、备选方案、需要用户确认的点。
 
-### 9.6 tmuxSplitPanes 监控
+### 9.6 tmux 工作区配置 (claude-work)
 
-使用 tmux 分屏实时监控各 Agent 工作状态:
+#### 9.6.1 Session 信息
+- **Session 名称**: `claude-work`
+- **工作目录**: `/Users/hendrix/AgentSpace/NexusOps`
+- **配置文件**: `agentic_pact/state/tmux_agent_mapping.json`
 
+#### 9.6.2 分屏与角色对应
+
+| Pane Index | Role | 身份 | 职责 | tmux target |
+|------------|------|------|------|-------------|
+| **0** | **GLM** | Executive Lead | 总控协调、任务分派、冲突解决、质量门禁、最终汇总 | `claude-work:0.0` |
+| **1** | **Ryan** | Full-Stack Dev | 代码实现、质量审计、运行手册、接口契约 | `claude-work:0.1` |
+| **2** | **Cynthia** | QA Engineer | 测试用例、自动化测试、调试诊断、质量门禁 | `claude-work:0.2` |
+| **3** | **Elon** | PM + Architect | 需求澄清、PRD/Spec、架构方向、里程碑规划 | `claude-work:0.3` |
+
+#### 9.6.3 分屏布局
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                        GLM: Coordinator                            │
+│                        GLM (Coordinator)                            │
 │  任务分派 | 冲突解决 | 质量门禁 | 最终汇总                           │
 ├─────────────────────┬─────────────────────┬────────────────────────┤
 │        Elon         │        Ryan         │       Cynthia          │
@@ -161,6 +174,45 @@ EXO 是一个多智能体并行协作团队，采用 **Spec/PRD 驱动 + 并行�
 │  [架构状态]         │  [代码质量]         │  [E2E 状态]            │
 │  [里程碑]           │  [技术债务]         │  [质量门禁]            │
 └─────────────────────┴─────────────────────┴────────────────────────┘
+```
+
+#### 9.6.4 工作流程
+
+**任务启动流程**:
+1. GLM 接收用户需求 → 分析并拆分为并行任务包
+2. GLM 通过 `tmux send-keys` 分派任务:
+   ```bash
+   tmux send-keys -t claude-work:0.1 "echo 'Ryan: 开始实现 XXX 功能'" C-m
+   ```
+3. 各 Agent 独立执行任务
+
+**进度汇报流程**:
+1. Agent 完成子任务后 → 更新输出文件 + 发送完成信号
+2. GLM 收集各 Agent 输出:
+   ```bash
+   tmux capture-pane -t claude-work:0.1 -p  # 截图
+   ```
+3. GLM 解决冲突 → 更新汇总文档
+
+**完成汇总流程**:
+1. GLM 确认所有任务完成 → 检查 DoD 满足情况
+2. GLM 截图保存证据 → `test_results/`
+3. GLM 提交代码 → `git commit`
+4. GLM 向用户汇报
+
+#### 9.6.5 常用 tmux 命令
+```bash
+# 列出所有分屏
+tmux list-panes -t claude-work -F "#{pane_index}: #{pane_title}"
+
+# 向分屏发送命令
+tmux send-keys -t claude-work:0.1 "echo 'Hello from Ryan'" C-m
+
+# 截图分屏
+tmux capture-pane -t claude-work:0.1 -p > /path/to/screenshot.txt
+
+# 切换到指定分屏
+tmux select-pane -t claude-work:0.1
 ```
 
 ### 9.7 启动命令
