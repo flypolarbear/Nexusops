@@ -1,0 +1,320 @@
+{
+  "project": "NexusOps",
+  "updated_at": "2026-02-25",
+  "version": "2.0",
+  "current_phase": "MVP 收尾",
+  "overall_completion": "80%",
+  "team": {
+    "Elon": "Project Manager",
+    "Ryan": "Developer",
+    "Cynthia": "QA/Tester"
+  },
+  "tasks": [
+    {
+      "id": "MVP-TEST-001",
+      "title": "建立测试基础设施",
+      "status": "in_progress",
+      "priority": "P0",
+      "owner": "Cynthia",
+      "phase": "MVP 收尾",
+      "category": "testing",
+      "description": "搭建 pytest 测试框架，配置 CI 测试流水线",
+      "acceptance_criteria": [
+        "pytest 框架配置完成",
+        "CI 流水线集成测试运行",
+        "测试覆盖率报告自动生成"
+      ],
+      "notes": {
+        "blocker": "当前测试覆盖率严重不足，需要优先建立基础设施",
+        "created_at": "2026-02-25"
+      }
+    },
+    {
+      "id": "MVP-TEST-002",
+      "title": "Gateway API 单元测试",
+      "status": "pending",
+      "priority": "P0",
+      "owner": "Ryan",
+      "phase": "MVP 收尾",
+      "category": "testing",
+      "description": "为 Gateway 核心模块编写单元测试",
+      "acceptance_criteria": [
+        "errors.py 测试覆盖率 >= 80%",
+        "contract.py 测试覆盖率 >= 80%",
+        "validator.py 测试覆盖率 >= 80%",
+        "response.py 测试覆盖率 >= 80%"
+      ],
+      "blocked_by": ["MVP-TEST-001"]
+    },
+    {
+      "id": "MVP-TEST-003",
+      "title": "Agent Market API 集成测试",
+      "status": "pending",
+      "priority": "P0",
+      "owner": "Cynthia",
+      "phase": "MVP 收尾",
+      "category": "testing",
+      "description": "为 Agent Market API 编写集成测试",
+      "acceptance_criteria": [
+        "注册/安装/调用完整链路测试",
+        "错误场景覆盖",
+        "边界条件测试"
+      ],
+      "blocked_by": ["MVP-TEST-001"]
+    },
+    {
+      "id": "MK-006-MK-007-HOTFIX",
+      "title": "MK-006/MK-007 契约一致性修正",
+      "status": "in_progress",
+      "priority": "P0",
+      "owner": "Ryan",
+      "phase": "MVP 收尾",
+      "category": "agent_market",
+      "description": "修复 Gateway 契约一致性问题",
+      "acceptance_criteria": [
+        "AgentResponse 添加顶层 trace_id 字段",
+        "替换 HTTPException 为统一错误构建器",
+        "添加 path/body agent_id 一致性校验",
+        "修复测试软通过逻辑（500 必须 fail）",
+        "所有测试通过（MK-008 保持 8/8）"
+      ],
+      "spec": "agentic_pact/specs/SPEC-MK-006-MK-007-HOTFIX.md"
+    },
+    {
+      "id": "MK-009",
+      "title": "内置 Agent 能力批次验收（至少 6 类）",
+      "status": "pending",
+      "priority": "P1",
+      "owner": "Ryan",
+      "phase": "MVP 收尾",
+      "category": "agent_market",
+      "description": "验收内置 Agent 能力达到可调用/可诊断/可回滚",
+      "acceptance_criteria": [
+        "K8s 状态检索 Agent",
+        "Manifest 生成 Agent",
+        "日志查询 Agent",
+        "成本计算 Agent",
+        "DNS Agent（Aliyun/Cloudflare）",
+        "CI/CD Agent（Jenkins/ArgoCD）",
+        "Git 管理 Agent"
+      ],
+      "blocked_by": ["MK-006-MK-007-HOTFIX"]
+    },
+    {
+      "id": "MK-010",
+      "title": "外部系统兼容适配稳定性测试",
+      "status": "pending",
+      "priority": "P1",
+      "owner": "Cynthia",
+      "phase": "MVP 收尾",
+      "category": "testing",
+      "description": "验证与外部系统的集成稳定性",
+      "acceptance_criteria": [
+        "Jenkins 构建触发与状态回传",
+        "ArgoCD 同步触发与状态回传",
+        "Aliyun DNS 操作链路",
+        "Cloudflare DNS 操作链路",
+        "异常与重试策略验证"
+      ],
+      "blocked_by": ["MVP-TEST-001"]
+    },
+    {
+      "id": "MK-011",
+      "title": "PRD-001 统一验收与测试证据归档",
+      "status": "pending",
+      "priority": "P1",
+      "owner": "Elon",
+      "phase": "MVP 收尾",
+      "category": "delivery",
+      "description": "执行 PRD 测试矩阵并归档 evidence",
+      "acceptance_criteria": [
+        "执行 PRD 测试矩阵并归档 evidence",
+        "P0 用例 100% 通过",
+        "P0/P1 总通过率 >= 95%",
+        "DevOps/SRE 与研发代表 UAT 签收"
+      ],
+      "blocked_by": ["MVP-TEST-001", "MVP-TEST-002", "MVP-TEST-003"]
+    },
+    {
+      "id": "MVP-DOC-001",
+      "title": "API 文档更新",
+      "status": "pending",
+      "priority": "P2",
+      "owner": "Elon",
+      "phase": "MVP 收尾",
+      "category": "documentation",
+      "description": "更新 API 文档，确保与实现一致"
+    },
+    {
+      "id": "MVP-DOC-002",
+      "title": "部署指南编写",
+      "status": "pending",
+      "priority": "P2",
+      "owner": "Elon",
+      "phase": "MVP 收尾",
+      "category": "documentation",
+      "description": "编写生产环境部署指南"
+    }
+  ],
+  "completed_tasks": [
+    {
+      "id": "VC-001",
+      "title": "Projects 页面 - 版本卡片增强",
+      "completed_at": "2026-02-16",
+      "category": "vibe_coding"
+    },
+    {
+      "id": "VC-002",
+      "title": "创建版本流程优化",
+      "completed_at": "2026-02-16",
+      "category": "vibe_coding"
+    },
+    {
+      "id": "VC-003",
+      "title": "申请上线流程",
+      "completed_at": "2026-02-16",
+      "category": "vibe_coding"
+    },
+    {
+      "id": "VC-004",
+      "title": "Dashboard - 测试版本概览",
+      "completed_at": "2026-02-16",
+      "category": "vibe_coding"
+    },
+    {
+      "id": "VC-005",
+      "title": "WorldMap - 按版本筛选",
+      "completed_at": "2026-02-16",
+      "category": "vibe_coding"
+    },
+    {
+      "id": "OPS-001",
+      "title": "Deployments - 部署链追踪增强",
+      "completed_at": "2026-02-18",
+      "category": "operations"
+    },
+    {
+      "id": "OPS-002",
+      "title": "Resources - K8sGPT 诊断增强",
+      "completed_at": "2026-02-18",
+      "category": "operations"
+    },
+    {
+      "id": "OPS-003",
+      "title": "AI Assistant - 快捷命令",
+      "completed_at": "2026-02-18",
+      "category": "operations"
+    },
+    {
+      "id": "BE-001",
+      "title": "后端 API - 版本管理",
+      "completed_at": "2026-02-20",
+      "category": "backend"
+    },
+    {
+      "id": "BE-002",
+      "title": "ArgoCD 集成",
+      "completed_at": "2026-02-20",
+      "category": "backend"
+    },
+    {
+      "id": "BE-003",
+      "title": "CI/CD 集成（Jenkins/GitLab CI）",
+      "completed_at": "2026-02-20",
+      "category": "backend"
+    },
+    {
+      "id": "BE-004",
+      "title": "Agent Gateway 基础",
+      "completed_at": "2026-02-22",
+      "category": "backend"
+    },
+    {
+      "id": "AGENT-001",
+      "title": "Agent 类型系统",
+      "completed_at": "2026-02-22",
+      "category": "agent_infrastructure"
+    },
+    {
+      "id": "AGENT-002",
+      "title": "Agent 上下文管理",
+      "completed_at": "2026-02-22",
+      "category": "agent_infrastructure"
+    },
+    {
+      "id": "AGENT-003",
+      "title": "Agent 响应渲染器",
+      "completed_at": "2026-02-22",
+      "category": "agent_infrastructure"
+    },
+    {
+      "id": "AGENT-004",
+      "title": "现有功能 Agent 化改造",
+      "completed_at": "2026-02-23",
+      "category": "agent_infrastructure"
+    },
+    {
+      "id": "AGENT-005",
+      "title": "Agent 工具层",
+      "completed_at": "2026-02-23",
+      "category": "agent_infrastructure"
+    },
+    {
+      "id": "MK-001",
+      "title": "Agent 注册中心",
+      "completed_at": "2026-02-24",
+      "category": "agent_market"
+    },
+    {
+      "id": "MK-003",
+      "title": "Agent Store UI",
+      "completed_at": "2026-02-24",
+      "category": "agent_market"
+    },
+    {
+      "id": "MK-006",
+      "title": "Gateway 调用契约与错误模型",
+      "completed_at": "2026-02-25",
+      "category": "agent_market"
+    },
+    {
+      "id": "MK-007",
+      "title": "Gateway 插件执行边界（Executor Adapter）",
+      "completed_at": "2026-02-25",
+      "category": "agent_market"
+    },
+    {
+      "id": "MK-008",
+      "title": "第三方 Agent 最小闭环（注册-安装-调用）",
+      "completed_at": "2026-02-25",
+      "category": "agent_market"
+    },
+    {
+      "id": "OPT-001",
+      "title": "实时数据推送（WebSocket）",
+      "completed_at": "2026-02-21",
+      "category": "optimization"
+    },
+    {
+      "id": "OPT-002",
+      "title": "性能优化",
+      "completed_at": "2026-02-21",
+      "category": "optimization"
+    },
+    {
+      "id": "OPT-003",
+      "title": "JSON 输出保证",
+      "completed_at": "2026-02-21",
+      "category": "optimization"
+    }
+  ],
+  "statistics": {
+    "total_tasks": 9,
+    "pending": 5,
+    "in_progress": 2,
+    "completed": 25,
+    "p0_tasks": 4,
+    "p1_tasks": 3,
+    "p2_tasks": 2
+  }
+}

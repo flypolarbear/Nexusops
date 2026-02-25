@@ -1,0 +1,39 @@
+{
+  "locks": [
+    {
+      "task_id": "PRD-001",
+      "owner": "Codex",
+      "timestamp": "2026-02-24T15:30:00Z",
+      "status": "released",
+      "note": "PRD execution breakdown + test plan completed"
+    },
+    {
+      "task_id": "MK-006",
+      "owner": "Architect-Opus",
+      "timestamp": "2026-02-24T16:00:00Z",
+      "status": "released",
+      "note": "Gateway Contract & Error Model design completed - SPEC-MK-006-GATEWAY-CONTRACT.md"
+    },
+    {
+      "task_id": "MK-007",
+      "owner": "Architect-Opus",
+      "timestamp": "2026-02-24T16:00:00Z",
+      "status": "released",
+      "note": "Executor Adapter boundary design completed - SPEC-MK-007-EXECUTOR-ADAPTER.md"
+    },
+    {
+      "task_id": "MK-008",
+      "owner": "dev-agent",
+      "timestamp": "2026-02-25T00:30:00Z",
+      "status": "released",
+      "note": "Third-party Agent minimal loop completed - Register/Install/Invoke/Reject flow implemented and tested"
+    },
+    {
+      "task_id": "BUGFIX-2026-02-25",
+      "owner": "Ryan",
+      "timestamp": "2026-02-25T04:30:00Z",
+      "status": "released",
+      "note": "Fixed JSONB compatibility, missing imports, agent store inconsistency, and test fixture issues - All 155 tests passing"
+    }
+  ]
+}

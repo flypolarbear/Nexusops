@@ -1,0 +1,14 @@
+{
+  "project": "<PROJECT_NAME>",
+  "updated_at": "<YYYY-MM-DD>",
+  "tasks": [
+    {
+      "id": "<TASK_ID>",
+      "title": "<TASK_TITLE>",
+      "status": "todo",
+      "priority": "medium",
+      "owner": "",
+      "tests": ["<TEST_STEP>"]
+    }
+  ]
+}
