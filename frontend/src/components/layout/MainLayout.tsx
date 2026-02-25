@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react'
-import { Layout, Menu, Avatar, Dropdown, Badge, Breadcrumb, Button, Tooltip, Select, Space, Typography } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Badge, Breadcrumb, Button, Tooltip, Select } from 'antd'
 import {
   DashboardOutlined,
   ClusterOutlined,
@@ -27,7 +27,6 @@ import AIAssistantDrawer from '../AIAssistantDrawer'
 import { useProjectStore } from '../../stores/projectStore'
 
 const { Header, Sider, Content } = Layout
-const { Text } = Typography
 
 interface MainLayoutProps {
   children: ReactNode
@@ -39,8 +38,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const { projects, globalSelectedProjectId, setGlobalSelectedProjectId } = useProjectStore()
-  useVersionStore()
+  const { globalSelectedProjectId, setGlobalSelectedProjectId } = useProjectStore()
+  const { projects } = useVersionStore()
   const { t } = useTranslation()
 
   // Main menu items

@@ -143,18 +143,6 @@ export default function Projects() {
     } catch (e) { }
   }
 
-  const handleDeleteProject = (projectId: string) => {
-    removeProject(projectId)
-    
-    // Remove from auth store if not admin
-    if (user && user.role !== 'admin' && user.allowedProjects?.includes(projectId)) {
-      const updatedProjects = user.allowedProjects.filter(id => id !== projectId)
-      useAuthStore.getState().updateUser({ allowedProjects: updatedProjects })
-    }
-    
-    message.success('Project deleted successfully')
-  }
-
   const handleCreateService = async () => {
     try {
       const values = await serviceForm.validateFields()
@@ -390,11 +378,7 @@ export default function Projects() {
               style={{ width: 250 }}
               options={projects.map(p => ({ label: p.name, value: p.id }))}
             />
-            {currentProjectId && (
-              <Popconfirm title="Delete this project?" onConfirm={() => handleDeleteProject(currentProjectId)}>
-                <Button type="text" danger icon={<DeleteOutlined />} />
-              </Popconfirm>
-            )}
+            {/* Project deletion moved to Settings */}
           </Space>
           <Button type="link" icon={<PlusOutlined />} onClick={() => setNewProjectModalOpen(true)}>
             New Project

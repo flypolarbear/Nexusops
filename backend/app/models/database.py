@@ -5,7 +5,7 @@ Based on ADR-003 (凭证管理), ADR-004 (状态管理)
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -17,9 +17,44 @@ from sqlalchemy import (
     Text,
     Boolean,
     Index,
+    TypeDecorator,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB, UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class JSONB(TypeDecorator):
+    """
+    Platform-independent JSONB type.
+
+    Uses PostgreSQL's JSONB type when available,
+    falls back to JSON for other databases like SQLite.
+    """
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PG_JSONB())
+        else:
+            return dialect.type_descriptor(JSON())
+
+
+class UUID(TypeDecorator):
+    """
+    Platform-independent UUID type.
+
+    Uses PostgreSQL's UUID type when available,
+    falls back to String for other databases like SQLite.
+    """
+    impl = String(36)
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PG_UUID(as_uuid=False))
+        else:
+            return dialect.type_descriptor(String(36))
 
 
 class Base(DeclarativeBase):

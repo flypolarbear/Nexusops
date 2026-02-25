@@ -36,9 +36,12 @@ import {
   UploadOutlined,
   LinkOutlined,
   SaveOutlined,
+  AppstoreOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { useAuthStore } from '../stores/authStore'
+import { useVersionStore, type Project } from '../stores/versionStore'
 import { useDiagramStore, type DiagramConfig } from '../stores/configStore'
 import PageContainer from '../components/layout/PageContainer'
 

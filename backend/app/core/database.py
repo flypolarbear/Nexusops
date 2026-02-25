@@ -34,6 +34,8 @@ async def get_db() -> AsyncSession:
 async def init_db():
     """Initialize database tables"""
     from app.models.database import Base
+    # Import agent store models to register them with Base.metadata
+    from app.stores.agent_store import InstalledAgent, AgentReview  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

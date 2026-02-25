@@ -2,10 +2,17 @@
 NexusOps Backend - Agent API Router
 
 Implements BE-004: Agent Gateway 基础
+Implements MK-006: Gateway 调用契约
+Implements MK-007: Gateway 插件执行边界
+Implements MK-008: 第三方 Agent 最小闭环
+
+Refactored to use the new Gateway layer.
+Database Migration: Now uses SQLAlchemy async database storage
 """
 
 from datetime import datetime
-from typing import Any
+from enum import Enum
+from typing import Any, Optional, List
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,9 +29,42 @@ from app.models.schemas import (
     AgentRegistrationResponse,
     AgentManifest,
     AgentToolDefinition,
+    AgentError,
 )
+from app.stores.agent_store import (
+    # Legacy in-memory stores (for backward compatibility with Gateway)
+    agent_store as _market_store,
+    installed_agents as _installed_agents,
+    # New async database functions
+    async_get_agent,
+    async_get_install_status,
+    async_list_installed_agents,
+    async_list_agents,
+)
+from app.gateway.trace import generate_trace_id, init_trace_context, get_trace_context
+from app.gateway.errors import (
+    ErrorCode,
+    AgentError as GatewayAgentError,
+    agent_not_found,
+    agent_not_installed,
+    agent_disabled,
+)
+from app.gateway.executor.router import ExecutorRouter, get_executor_router
+
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+# ============================================
+# Install Status (synced with agent_market.py)
+# ============================================
+
+class InstallStatus(str, Enum):
+    """Agent 安装状态"""
+    NOT_INSTALLED = "not_installed"
+    INSTALLED = "installed"
+    DISABLED = "disabled"
+
 
 # ============================================
 # Built-in Agents (matching frontend BUILTIN_AGENTS)
@@ -56,7 +96,7 @@ BUILTIN_AGENTS: list[dict[str, Any]] = [
         "agent_id": "nexusops.dns",
         "name": "DNS Operations Agent",
         "version": "1.0.0",
-        "description": "DNS 记录管理、域名生成、Cloudflare 配置",
+        "description": "DNS 记录管理、域名生成",
         "category": "infrastructure",
         "capabilities": [
             "dns_record_create",
@@ -64,34 +104,7 @@ BUILTIN_AGENTS: list[dict[str, Any]] = [
             "dns_record_query",
             "random_domain_generate",
         ],
-        "tools": [
-            {
-                "name": "create_dns_record",
-                "description": "Create a DNS record",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "zone_id": {"type": "string"},
-                        "record_type": {"type": "string"},
-                        "name": {"type": "string"},
-                        "content": {"type": "string"},
-                    },
-                    "required": ["zone_id", "record_type", "name", "content"],
-                },
-            },
-            {
-                "name": "generate_random_subdomain",
-                "description": "Generate a random subdomain",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "base_domain": {"type": "string"},
-                        "levels": {"type": "integer", "default": 4},
-                    },
-                    "required": ["base_domain"],
-                },
-            },
-        ],
+        "tools": [],
     },
     {
         "agent_id": "nexusops.k8s",
@@ -100,34 +113,7 @@ BUILTIN_AGENTS: list[dict[str, Any]] = [
         "description": "Kubernetes 资源管理、部署操作",
         "category": "deployment",
         "capabilities": ["k8s_deploy", "k8s_scale", "k8s_logs", "k8s_describe"],
-        "tools": [
-            {
-                "name": "get_pod_logs",
-                "description": "Get logs from a pod",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "pod_name": {"type": "string"},
-                        "namespace": {"type": "string", "default": "default"},
-                        "tail_lines": {"type": "integer", "default": 100},
-                    },
-                    "required": ["pod_name"],
-                },
-            },
-            {
-                "name": "describe_resource",
-                "description": "Describe a Kubernetes resource",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "resource_type": {"type": "string"},
-                        "name": {"type": "string"},
-                        "namespace": {"type": "string", "default": "default"},
-                    },
-                    "required": ["resource_type", "name"],
-                },
-            },
-        ],
+        "tools": [],
     },
     {
         "agent_id": "nexusops.deploy",
@@ -136,43 +122,7 @@ BUILTIN_AGENTS: list[dict[str, Any]] = [
         "description": "部署流程编排",
         "category": "deployment",
         "capabilities": ["deploy_create", "deploy_rollback", "deploy_status", "deploy_force_sync"],
-        "tools": [
-            {
-                "name": "create_deployment",
-                "description": "Create a new deployment",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "version_id": {"type": "string"},
-                        "regions": {"type": "array", "items": {"type": "string"}},
-                    },
-                    "required": ["version_id", "regions"],
-                },
-            },
-            {
-                "name": "rollback_deployment",
-                "description": "Rollback a deployment",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "version_id": {"type": "string"},
-                        "region": {"type": "string"},
-                    },
-                    "required": ["version_id"],
-                },
-            },
-            {
-                "name": "force_sync",
-                "description": "Force sync ArgoCD application",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "app_name": {"type": "string"},
-                    },
-                    "required": ["app_name"],
-                },
-            },
-        ],
+        "tools": [],
     },
 ]
 
@@ -302,7 +252,7 @@ async def get_agent(
 
 
 # ============================================
-# Agent Invocation
+# Agent Invocation (Refactored to use Gateway)
 # ============================================
 
 @router.post("/{agent_id}/invoke", response_model=AgentResponse)
@@ -315,38 +265,72 @@ async def invoke_agent(
     Invoke an agent
 
     This is the main entry point for agent execution.
-    Implements ADR-001 (execution environment), ADR-002 (auth), ADR-005 (error handling)
+    Uses the new Gateway layer (MK-006/MK-007) for execution.
     """
     start_time = datetime.utcnow()
+    trace_id = generate_trace_id()
 
-    # Validate agent exists
-    agent_found = False
-    agent_manifest = None
+    # Initialize trace context
+    init_trace_context(
+        request_id=request.request_id,
+        trace_id=trace_id,
+        agent_id=agent_id,
+        conversation_id=request.conversation_id,
+    )
 
-    for agent_data in BUILTIN_AGENTS:
-        if agent_data["agent_id"] == agent_id:
-            agent_found = True
-            agent_manifest = agent_data
-            break
+    # Step 1: Check if it's a built-in agent
+    is_builtin = any(a["agent_id"] == agent_id for a in BUILTIN_AGENTS)
 
-    if not agent_found:
-        result = await db.execute(
-            select(AgentRegistration).where(
-                AgentRegistration.id == agent_id,
-                AgentRegistration.status == "active"
+    # Step 2: For third-party agents, check install status from database
+    if not is_builtin:
+        # Check if agent exists in database
+        agent = await async_get_agent(agent_id, db)
+
+        if agent:
+            # Agent is registered, check install status
+            install_status = await async_get_install_status(agent_id, db)
+
+            if install_status == InstallStatus.NOT_INSTALLED.value:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "code": "AGENT_NOT_INSTALLED",
+                        "message": f"Agent '{agent_id}' is not installed. Please install it first.",
+                        "trace_id": trace_id,
+                    }
+                )
+
+            if install_status == InstallStatus.DISABLED.value:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "code": "AGENT_DISABLED",
+                        "message": f"Agent '{agent_id}' is disabled. Please enable it first.",
+                        "trace_id": trace_id,
+                    }
+                )
+        else:
+            # Check database for registered agents
+            result = await db.execute(
+                select(AgentRegistration).where(
+                    AgentRegistration.id == agent_id,
+                    AgentRegistration.status == "active"
+                )
             )
-        )
-        reg = result.scalar_one_or_none()
-        if reg:
-            agent_found = True
-            agent_manifest = reg.manifest
-
-    if not agent_found:
-        raise HTTPException(status_code=404, detail="Agent not found")
+            reg = result.scalar_one_or_none()
+            if not reg:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={
+                        "code": "AGENT_NOT_FOUND",
+                        "message": f"Agent '{agent_id}' not found",
+                        "trace_id": trace_id,
+                    }
+                )
 
     # Create invocation record
     invocation = AgentInvocation(
-        id=str(uuid.uuid4()),
+        id=trace_id,
         agent_id=agent_id,
         request_id=request.request_id,
         conversation_id=request.conversation_id,
@@ -357,8 +341,50 @@ async def invoke_agent(
     await db.commit()
 
     try:
-        # Execute agent (mock implementation)
-        response = await execute_agent_mock(agent_id, request, agent_manifest)
+        # Execute via Gateway
+        router = get_executor_router(use_mock_remote=True)
+
+        # Build request context
+        request_context = {}
+        if request.context:
+            request_context = {
+                "user_id": request.context.user_id,
+                "tenant_id": request.context.tenant_id,
+                "project_id": request.context.project_id,
+                "version_id": request.context.version_id,
+                "codename": request.context.codename,
+                "region": request.context.region,
+                "resource_type": request.context.resource_type,
+                "resource_name": request.context.resource_name,
+                "namespace": request.context.namespace,
+            }
+
+        # Get installed agents list for gateway (need to convert from database)
+        installed_list = await async_list_installed_agents(db)
+        installed_agents_dict = {
+            item["agent_id"]: item for item in installed_list
+        }
+
+        # Get agent store for gateway from database
+        # We need to get all registered agents from the database
+        all_agents = await async_list_agents(db=db)
+        agent_store_dict = {agent["agent_id"]: agent for agent in all_agents}
+
+        # Execute via router
+        executor_result = await router.route_and_execute(
+            agent_id=agent_id,
+            trace_id=trace_id,
+            request_id=request.request_id,
+            query=request.query,
+            request_context=request_context,
+            output_config=request.output_config.model_dump() if request.output_config else None,
+            tools=[t.model_dump() for t in request.tools] if request.tools else None,
+            installed_agents=installed_agents_dict,
+            agent_store=agent_store_dict,
+        )
+
+        # Convert to API response
+        response = _executor_result_to_response(executor_result, request.request_id, trace_id)
 
         # Update invocation record
         invocation.status = response.status
@@ -368,6 +394,8 @@ async def invoke_agent(
 
         return response
 
+    except HTTPException:
+        raise
     except Exception as e:
         invocation.status = "error"
         invocation.error_code = "INTERNAL_ERROR"
@@ -378,177 +406,73 @@ async def invoke_agent(
             request_id=request.request_id,
             status="error",
             content=AgentContent(text="", format="plain"),
-            error={
-                "code": "INTERNAL_ERROR",
-                "message": str(e),
-            },
+            error=AgentError(
+                code="INTERNAL_ERROR",
+                message=str(e),
+                details={"trace_id": trace_id},
+            ),
+            metadata={"trace_id": trace_id},
         )
 
 
-async def execute_agent_mock(
-    agent_id: str,
-    request: AgentRequest,
-    manifest: dict,
+def _executor_result_to_response(
+    result: Any,
+    request_id: str,
+    trace_id: str,
 ) -> AgentResponse:
-    """
-    Mock agent execution
+    """Convert ExecutorResult to AgentResponse"""
+    status = "success" if result.success else "error"
 
-    In production, this would:
-    1. Validate request against input_schema
-    2. Execute tools if needed
-    3. Call LLM with context
-    4. Validate response against output_schema
-    5. Return structured response
-    """
-    # Simulate processing delay
-    import asyncio
-    await asyncio.sleep(0.5 + len(request.query) * 0.001)
+    content = AgentContent(
+        text=result.content.get("text", ""),
+        format=result.content.get("format", "markdown"),
+        data=result.content.get("data"),
+    )
 
-    # Generate mock response based on agent type and query
-    query = request.query.lower()
+    suggested_actions = []
+    for action in (result.suggested_actions or []):
+        suggested_actions.append({
+            "id": action.get("id", ""),
+            "type": action.get("type", "invoke"),
+            "label": action.get("label", ""),
+            "params": action.get("params", {}),
+            "confirm_required": action.get("confirm_required", False),
+            "danger": action.get("danger", False),
+        })
 
-    if agent_id == "nexusops.chat":
-        if query.startswith("/deploy"):
-            return AgentResponse(
-                request_id=request.request_id,
-                status="success",
-                content=AgentContent(
-                    text=f"""## 🚀 Deployment Triggered
+    related_resources = []
+    for resource in (result.related_resources or []):
+        related_resources.append({
+            "type": resource.get("type", ""),
+            "id": resource.get("id", ""),
+            "name": resource.get("name", ""),
+            "link": resource.get("link"),
+        })
 
-**Version:** {request.context.codename or 'unknown'}
-**Target Region:** {request.context.region or 'us-east'}
-
-The deployment has been initiated. I'll notify you when it completes.
-
-### Deployment Steps
-1. ✅ CI/CD Build - Completed
-2. 🔄 ArgoCD Sync - In Progress
-3. ⏳ Health Check - Pending
-
-Estimated time: 2-3 minutes
-""",
-                    format="markdown",
-                ),
-                structured_output={
-                    "type": "deployment_status",
-                    "data": {
-                        "codename": request.context.codename,
-                        "regions": [{"name": request.context.region, "status": "progressing"}],
-                    },
-                },
-                suggested_actions=[
-                    {
-                        "id": "view-progress",
-                        "type": "navigate",
-                        "label": "View Progress",
-                        "params": {"url": "/deployments"},
-                    },
-                ],
-            )
-
-        elif query.startswith("/status"):
-            return AgentResponse(
-                request_id=request.request_id,
-                status="success",
-                content=AgentContent(
-                    text=f"""## 📊 Version Status: {request.context.codename or 'unknown'}
-
-The version is deployed and healthy across all regions.
-
-### Regional Status
-| Region | Status | Health | Replicas |
-|--------|--------|--------|----------|
-| US East | ✅ Synced | 🟢 Healthy | 3/3 |
-| EU West | ✅ Synced | 🟢 Healthy | 2/2 |
-
-**Last deployed:** 2 hours ago
-""",
-                    format="markdown",
-                ),
-                structured_output={
-                    "type": "deployment_status",
-                    "data": {
-                        "codename": request.context.codename,
-                        "regions": [
-                            {"name": "US East", "status": "healthy", "replicas": {"ready": 3, "total": 3}},
-                            {"name": "EU West", "status": "healthy", "replicas": {"ready": 2, "total": 2}},
-                        ],
-                    },
-                },
-            )
-
-        else:
-            return AgentResponse(
-                request_id=request.request_id,
-                status="success",
-                content=AgentContent(
-                    text=f"""I understand you're asking: "{request.query}"
-
-Based on the current system state, here's what I found:
-
-- All services are operational
-- No critical incidents in the last 24 hours
-- Resource utilization is within expected ranges
-
-Is there anything specific you'd like me to help with?
-""",
-                    format="markdown",
-                ),
-            )
-
-    elif agent_id == "nexusops.k8s":
-        return AgentResponse(
-            request_id=request.request_id,
-            status="success",
-            content=AgentContent(
-                text=f"""## K8s Resource Analysis
-
-Analyzing resource: **{request.context.resource_name or 'unknown'}** in namespace **{request.context.namespace or 'default'}**
-
-### Resource Status
-- **Type:** {request.context.resource_type or 'Pod'}
-- **Status:** Running
-- **Health:** Healthy
-
-### Metrics
-- CPU: 250m / 500m (50%)
-- Memory: 384Mi / 512Mi (75%)
-
-### No issues detected
-""",
-                format="markdown",
-            ),
+    error = None
+    if result.error:
+        error = AgentError(
+            code=result.error.get("code", "UNKNOWN_ERROR"),
+            message=result.error.get("message", "Unknown error"),
+            details=result.error.get("details"),
+            retry_after=result.error.get("retry_after"),
         )
 
-    elif agent_id == "nexusops.deploy":
-        return AgentResponse(
-            request_id=request.request_id,
-            status="success",
-            content=AgentContent(
-                text=f"""## Deployment Orchestration
+    metadata = {
+        **(result.metadata or {}),
+        "trace_id": trace_id,
+    }
 
-Processing deployment request for **{request.context.codename or 'unknown'}**
-
-### Deployment Chain
-1. ✅ **CI/CD Build** - Completed (2m 30s)
-2. ✅ **ArgoCD Sync** - Completed (45s)
-3. ✅ **Health Check** - Passed (30s)
-
-### Result
-Deployment successful! All services are running.
-""",
-                format="markdown",
-            ),
-        )
-
-    # Default response
     return AgentResponse(
-        request_id=request.request_id,
-        status="success",
-        content=AgentContent(
-            text=f"Agent {agent_id} received your request: {request.query}",
-            format="markdown",
-        ),
+        request_id=request_id,
+        status=status,
+        content=content,
+        structured_output=result.structured_output,
+        suggested_actions=suggested_actions,
+        related_resources=related_resources,
+        tool_calls=result.tool_calls,
+        metadata=metadata,
+        error=error,
     )
 
 
