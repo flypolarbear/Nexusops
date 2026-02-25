@@ -278,6 +278,17 @@ async def invoke_agent(
         conversation_id=request.conversation_id,
     )
 
+    # Validate agent_id consistency (path vs body)
+    if request.agent_id and request.agent_id != agent_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INPUT_AGENT_ID_MISMATCH",
+                "message": f"Path agent_id '{agent_id}' does not match body agent_id '{request.agent_id}'",
+                "trace_id": trace_id,
+            }
+        )
+
     # Step 1: Check if it's a built-in agent
     is_builtin = any(a["agent_id"] == agent_id for a in BUILTIN_AGENTS)
 
