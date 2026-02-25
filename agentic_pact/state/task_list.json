@@ -1,78 +1,15 @@
 {
   "project": "NexusOps",
   "updated_at": "2026-02-25",
-  "version": "2.2",
+  "version": "2.3",
   "current_phase": "MVP 收尾",
-  "overall_completion": "87%",
+  "overall_completion": "90%",
   "team": {
     "Elon": "Project Manager",
     "Ryan": "Developer",
     "Cynthia": "QA/Tester"
   },
   "tasks": [
-    {
-      "id": "MVP-TEST-001",
-      "title": "建立测试基础设施",
-      "status": "completed",
-      "priority": "P0",
-      "owner": "Cynthia",
-      "phase": "MVP 收尾",
-      "category": "testing",
-      "description": "搭建 pytest 测试框架，配置 CI 测试流水线",
-      "acceptance_criteria": [
-        "pytest 框架配置完成",
-        "CI 流水线集成测试运行",
-        "测试覆盖率报告自动生成"
-      ],
-      "completed_at": "2026-02-25"
-    },
-    {
-      "id": "MVP-TEST-002",
-      "title": "Gateway API 单元测试",
-      "status": "completed",
-      "priority": "P0",
-      "owner": "Ryan",
-      "phase": "MVP 收尾",
-      "category": "testing",
-      "description": "为 Gateway 核心模块编写单元测试",
-      "acceptance_criteria": [
-        "errors.py 测试覆盖率 >= 80%",
-        "contract.py 测试覆盖率 >= 80%",
-        "validator.py 测试覆盖率 >= 80%",
-        "response.py 测试覆盖率 >= 80%"
-      ],
-      "blocked_by": ["MVP-TEST-001"],
-      "completed_at": "2026-02-25",
-      "evidence": {
-        "errors.py_coverage": "100%",
-        "contract.py_coverage": "100%",
-        "response.py_coverage": "85.37%",
-        "validator.py_coverage": "82.19%",
-        "test_files": [
-          "tests/unit/test_gateway_errors.py",
-          "tests/unit/test_gateway_contract.py",
-          "tests/unit/test_gateway_validator.py",
-          "tests/unit/test_gateway_response.py"
-        ],
-        "tests_passed": 203
-      }
-    },
-    {
-      "id": "MVP-TEST-003",
-      "title": "Agent Market API 集成测试",
-      "status": "pending",
-      "priority": "P0",
-      "owner": "Cynthia",
-      "phase": "MVP 收尾",
-      "category": "testing",
-      "description": "为 Agent Market API 编写集成测试",
-      "acceptance_criteria": [
-        "注册/安装/调用完整链路测试",
-        "错误场景覆盖",
-        "边界条件测试"
-      ],
-      "blocked_by": ["MVP-TEST-001"]
-    },
     {
       "id": "MK-011",
       "title": "PRD-001 统一验收与测试证据归档",
@@ -88,7 +25,7 @@
         "P0/P1 总通过率 >= 95%",
         "DevOps/SRE 与研发代表 UAT 签收"
       ],
-      "blocked_by": ["MVP-TEST-001", "MVP-TEST-002", "MVP-TEST-003"]
+      "blocked_by": []
     },
     {
       "id": "MVP-DOC-001",
@@ -105,7 +42,7 @@
       "title": "部署指南编写",
       "status": "pending",
       "priority": "P2",
-      "owner": "Elon",
+      "owner": "Ryan",
       "phase": "MVP 收尾",
       "category": "documentation",
       "description": "编写生产环境部署指南"
@@ -113,10 +50,46 @@
   ],
   "completed_tasks": [
     {
+      "id": "MVP-TEST-001",
+      "title": "建立测试基础设施",
+      "completed_at": "2026-02-25",
+      "category": "testing"
+    },
+    {
       "id": "MVP-TEST-002",
       "title": "Gateway API 单元测试",
       "completed_at": "2026-02-25",
-      "category": "testing"
+      "category": "testing",
+      "evidence": {
+        "tests_passed": 203,
+        "coverage": ">= 80%"
+      }
+    },
+    {
+      "id": "MVP-TEST-003",
+      "title": "Agent Market API 集成测试",
+      "completed_at": "2026-02-25",
+      "category": "testing",
+      "evidence": {
+        "error_tests": 17,
+        "boundary_tests": 20
+      }
+    },
+    {
+      "id": "PRODUCT-VERIFY",
+      "title": "产品实现验收检查",
+      "completed_at": "2026-02-25",
+      "category": "delivery",
+      "evidence": {
+        "report": "exo_research/product_verification_report.md",
+        "screenshots": "/tmp/nexusops_*.png"
+      }
+    },
+    {
+      "id": "LLM-INTEGRATION",
+      "title": "AI 模型接入配置 (GLM)",
+      "completed_at": "2026-02-25",
+      "category": "feature"
     },
     {
       "id": "MK-006-MK-007-HOTFIX",
@@ -135,6 +108,24 @@
       "title": "外部系统兼容适配稳定性测试",
       "completed_at": "2026-02-25",
       "category": "testing"
+    },
+    {
+      "id": "MK-006",
+      "title": "Gateway 调用契约与错误模型",
+      "completed_at": "2026-02-25",
+      "category": "agent_market"
+    },
+    {
+      "id": "MK-007",
+      "title": "Gateway 插件执行边界（Executor Adapter）",
+      "completed_at": "2026-02-25",
+      "category": "agent_market"
+    },
+    {
+      "id": "MK-008",
+      "title": "第三方 Agent 最小闭环（注册-安装-调用）",
+      "completed_at": "2026-02-25",
+      "category": "agent_market"
     },
     {
       "id": "VC-001",
@@ -251,24 +242,6 @@
       "category": "agent_market"
     },
     {
-      "id": "MK-006",
-      "title": "Gateway 调用契约与错误模型",
-      "completed_at": "2026-02-25",
-      "category": "agent_market"
-    },
-    {
-      "id": "MK-007",
-      "title": "Gateway 插件执行边界（Executor Adapter）",
-      "completed_at": "2026-02-25",
-      "category": "agent_market"
-    },
-    {
-      "id": "MK-008",
-      "title": "第三方 Agent 最小闭环（注册-安装-调用）",
-      "completed_at": "2026-02-25",
-      "category": "agent_market"
-    },
-    {
       "id": "OPT-001",
       "title": "实时数据推送（WebSocket）",
       "completed_at": "2026-02-21",
@@ -288,11 +261,11 @@
     }
   ],
   "statistics": {
-    "total_tasks": 6,
+    "total_tasks": 3,
     "pending": 3,
     "in_progress": 0,
-    "completed": 32,
-    "p0_tasks": 2,
+    "completed": 37,
+    "p0_tasks": 0,
     "p1_tasks": 1,
     "p2_tasks": 2
   }
