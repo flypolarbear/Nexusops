@@ -19,3 +19,7 @@ logs/
 
 # OS
 .DS_Store
+
+# Integration test secrets
+backend/.env.integration
+.env.integration
