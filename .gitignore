@@ -23,3 +23,7 @@ logs/
 # Integration test secrets
 backend/.env.integration
 .env.integration
+
+# LLM API keys
+backend/.env.llm
+.env.llm
