@@ -124,6 +124,42 @@ BUILTIN_AGENTS: list[dict[str, Any]] = [
         "capabilities": ["deploy_create", "deploy_rollback", "deploy_status", "deploy_force_sync"],
         "tools": [],
     },
+    {
+        "agent_id": "nexusops.logs",
+        "name": "Logs Agent",
+        "version": "1.0.0",
+        "description": "日志查询、过滤、分析",
+        "category": "observability",
+        "capabilities": ["query_logs", "search_errors", "tail_logs", "filter_by_level", "filter_by_service", "search_keywords", "time_range"],
+        "tools": [],
+    },
+    {
+        "agent_id": "nexusops.cost",
+        "name": "Cost Agent",
+        "version": "1.0.0",
+        "description": "云资源成本分析、预算管理、优化建议",
+        "category": "finops",
+        "capabilities": ["cost_query", "cost_by_service", "cost_by_region", "cost_trend_analysis", "budget_comparison", "budget_alert", "cost_optimization", "resource_utilization"],
+        "tools": [],
+    },
+    {
+        "agent_id": "nexusops.cicd",
+        "name": "CI/CD Agent",
+        "version": "1.0.0",
+        "description": "CI/CD 流水线操作 (Jenkins, ArgoCD)",
+        "category": "deployment",
+        "capabilities": ["pipeline_trigger", "pipeline_status", "pipeline_cancel", "build_logs", "pipeline_list", "jenkins_trigger", "argocd_sync"],
+        "tools": [],
+    },
+    {
+        "agent_id": "nexusops.git",
+        "name": "Git Agent",
+        "version": "1.0.0",
+        "description": "Git 仓库操作、分支管理、PR/MR 处理",
+        "category": "source_control",
+        "capabilities": ["git_status", "git_branch", "git_tag", "git_pr", "git_diff", "git_commit", "create_branch", "delete_branch", "create_pull_request"],
+        "tools": [],
+    },
 ]
 
 

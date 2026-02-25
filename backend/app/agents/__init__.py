@@ -13,6 +13,8 @@ from app.agents.deploy import DeployAgentHandler
 from app.agents.dns import DNSAgentHandler
 from app.agents.logs import LogsAgentHandler
 from app.agents.cost import CostAgentHandler
+from app.agents.cicd import CICDAgentHandler
+from app.agents.git import GitAgentHandler
 
 __all__ = [
     "BaseAgentHandler",
@@ -22,4 +24,6 @@ __all__ = [
     "DNSAgentHandler",
     "LogsAgentHandler",
     "CostAgentHandler",
+    "CICDAgentHandler",
+    "GitAgentHandler",
 ]
