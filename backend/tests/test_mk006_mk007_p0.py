@@ -94,7 +94,7 @@ class TestCT004_InvalidAgentID:
         })
         # Should be 404 for agent not found (since INVALID is not a registered agent)
         # or 422 for validation error
-        assert resp.status_code in [404, 422, 500]  # 500 may occur due to DB issues
+        assert resp.status_code in [404, 422]
 
 
 class TestCT005_AgentNotFound:
@@ -111,12 +111,11 @@ class TestCT005_AgentNotFound:
             "query": "test"
         })
         # Should be 404 for not found
-        assert resp.status_code in [404, 500]  # May be 500 due to DB transaction issues
-        if resp.status_code == 404:
-            data = resp.json()
-            detail = data.get("detail", {})
-            if isinstance(detail, dict):
-                assert detail.get("code") == "AGENT_NOT_FOUND"
+        assert resp.status_code == 404
+        data = resp.json()
+        detail = data.get("detail", {})
+        if isinstance(detail, dict):
+            assert detail.get("code") == "AGENT_NOT_FOUND"
 
 
 class TestCT006_AuthTokenMissing:
@@ -131,8 +130,8 @@ class TestCT006_AuthTokenMissing:
             "agent_id": "nexusops.chat",
             "query": "test"
         })
-        # Should succeed in demo mode (may fail due to DB issues in test env)
-        assert resp.status_code in [200, 500]
+        # Should succeed in demo mode
+        assert resp.status_code == 200
 
 
 class TestCT007_TraceIDAndRequestID:
@@ -209,12 +208,10 @@ class TestEX001_BuiltinAgentSuccess:
             "agent_id": "nexusops.chat",
             "query": "What is the status?"
         })
-        # May fail due to DB issues in test environment
-        assert resp.status_code in [200, 500]
-        if resp.status_code == 200:
-            data = resp.json()
-            assert data["status"] == "success"
-            assert len(data["content"]["text"]) > 0
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert len(data["content"]["text"]) > 0
 
 
 class TestEX002_ThirdPartyAgentSuccess:
@@ -245,12 +242,10 @@ class TestEX002_ThirdPartyAgentSuccess:
             "agent_id": agent_id,
             "query": "test"
         })
-        # May fail due to DB issues in test environment
-        assert resp.status_code in [200, 500]
-        if resp.status_code == 200:
-            data = resp.json()
-            assert data["status"] == "success"
-            assert data["metadata"]["agent_type"] == "third_party"
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert data["metadata"]["agent_type"] == "third_party"
 
 
 class TestEX003_AgentNotFound:
@@ -265,11 +260,10 @@ class TestEX003_AgentNotFound:
             "agent_id": agent_id,
             "query": "test"
         })
-        assert resp.status_code in [404, 500]  # May be 500 due to DB issues
-        if resp.status_code == 404:
-            detail = resp.json().get("detail", {})
-            if isinstance(detail, dict):
-                assert detail.get("code") == "AGENT_NOT_FOUND"
+        assert resp.status_code == 404
+        detail = resp.json().get("detail", {})
+        if isinstance(detail, dict):
+            assert detail.get("code") == "AGENT_NOT_FOUND"
 
 
 class TestEX004_RemoteExecutorTimeout:
@@ -344,13 +338,11 @@ class TestEX007_TraceIDThirdParty:
             "agent_id": agent_id,
             "query": "test"
         })
-        # May fail due to DB issues
-        assert resp.status_code in [200, 500]
-        if resp.status_code == 200:
-            data = resp.json()
-            trace_id = data["metadata"]["trace_id"]
-            assert trace_id is not None
-            assert len(trace_id) == 32
+        assert resp.status_code == 200
+        data = resp.json()
+        trace_id = data["metadata"]["trace_id"]
+        assert trace_id is not None
+        assert len(trace_id) == 32
 
 
 class TestEX008_AgentHandlerReturnsExecutorResult:

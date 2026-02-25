@@ -152,7 +152,7 @@ class TestAgentInstallFlow:
         status_response = client.get(f"/api/v1/market/{agent_id}/install-status")
         assert status_response.json()["install_status"] == "installed"
 
-        # Step 6: Invoke the agent (should succeed now, but may fail due to DB issues)
+        # Step 6: Invoke the agent (should succeed now)
         invoke_response = client.post(
             f"/api/v1/agents/{agent_id}/invoke",
             json={
@@ -162,13 +162,11 @@ class TestAgentInstallFlow:
                 "query": "What's the weather in Tokyo?"
             }
         )
-        # Allow 500 for DB transaction issues in test environment
-        assert invoke_response.status_code in [200, 500], f"Got {invoke_response.status_code}: {invoke_response.json()}"
-        if invoke_response.status_code == 200:
-            data = invoke_response.json()
-            assert data["status"] == "success"
-            assert "trace_id" in data["metadata"]
-            assert data["metadata"]["agent_type"] == "third_party"
+        assert invoke_response.status_code == 200, f"Got {invoke_response.status_code}: {invoke_response.json()}"
+        data = invoke_response.json()
+        assert data["status"] == "success"
+        assert "trace_id" in data["metadata"]
+        assert data["metadata"]["agent_type"] == "third_party"
 
     def test_uninstall_then_invoke_rejected(self, client, sample_manifest):
         """
@@ -309,25 +307,18 @@ class TestStructuredOutput:
             }
         )
 
-        # Note: May fail with 500 due to DB issues in test environment
-        # The key validation is that when it works, it returns structured output
-        if invoke_response.status_code == 200:
-            data = invoke_response.json()
+        assert invoke_response.status_code == 200, f"Got {invoke_response.status_code}: {invoke_response.json()}"
+        data = invoke_response.json()
 
-            # Check structured output exists
-            assert data["structured_output"] is not None
-            assert data["structured_output"]["type"] == "third_party_response"
-            assert data["structured_output"]["agent_id"] == agent_id
-            assert data["structured_output"]["processed"] is True
+        # Check structured output exists
+        assert data["structured_output"] is not None
+        assert data["structured_output"]["type"] == "third_party_response"
+        assert data["structured_output"]["agent_id"] == agent_id
+        assert data["structured_output"]["processed"] is True
 
-            # Check trace_id in metadata
-            assert "trace_id" in data["metadata"]
-            assert data["metadata"]["agent_type"] == "third_party"
-        else:
-            # If DB issues, just verify the install status is correct
-            # This shows the API flow works, even if DB persistence fails
-            status_response = client.get(f"/api/v1/market/{agent_id}/install-status")
-            assert status_response.json()["install_status"] == "installed"
+        # Check trace_id in metadata
+        assert "trace_id" in data["metadata"]
+        assert data["metadata"]["agent_type"] == "third_party"
 
 
 class TestInstalledAgentsList:
