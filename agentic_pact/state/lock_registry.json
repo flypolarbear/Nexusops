@@ -41,6 +41,13 @@
       "timestamp": "2026-02-25T10:00:00Z",
       "status": "released",
       "note": "Gateway API 单元测试完成 - 4个测试文件，203个测试用例，所有模块覆盖率 >= 80%"
+    },
+    {
+      "task_id": "MVP-DOC-002",
+      "owner": "Ryan",
+      "timestamp": "2026-02-25T12:00:00Z",
+      "status": "released",
+      "note": "生产环境部署指南完成 - docs/DEPLOYMENT.md"
     }
   ]
 }
