@@ -1,5 +1,35 @@
 ---
 description: Execute the implementation planning workflow using the plan template to generate design artifacts.
+
+# Agent Dispatch Configuration (方案 A)
+# Sisyphus 在执行此命令时按阶段分派到专业 Agent
+agent_dispatch:
+  phases:
+    - name: research
+      description: Phase 0 - 技术研究与信息收集
+      primary: librarian
+      parallel: true
+      trigger: NEEDS_CLARIFICATION markers exist
+      
+    - name: architecture
+      description: Phase 1 - 架构设计与技术决策
+      primary: oracle
+      review: momus
+      trigger: 复杂系统/多模块/架构决策
+      review_required: true
+      
+    - name: task_planning
+      description: Phase 1 - 任务规划与依赖编排
+      primary: prometheus
+      trigger: 复杂任务需要分解
+      
+    - name: documentation
+      description: Phase 1 - 文档撰写
+      primary: writing
+      trigger: 总是
+      outputs:
+        - quickstart.md
+        - contracts/
 handoffs: 
   - label: Create Tasks
     agent: speckit.tasks
