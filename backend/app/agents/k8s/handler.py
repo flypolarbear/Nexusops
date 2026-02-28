@@ -102,6 +102,9 @@ class K8sAgentHandler(BaseAgentHandler):
             "k8s_list_namespaces": adapter.list_namespaces,
             # Service operations
             "k8s_list_services": adapter.list_services,
+            "k8s_get_service": adapter.get_service,
+            # Ingress operations
+            "k8s_list_ingresses": adapter.list_ingresses,
         }
         
         if tool_name not in tool_map:
@@ -190,9 +193,64 @@ class K8sAgentHandler(BaseAgentHandler):
             lines = [f"## 📋 {tool_name}\n"]
             lines.append(f"Found **{len(services)}** services:\n")
             for svc in services[:10]:
-                lines.append(f"- `{svc['name']}` - {svc['type']} ({svc['cluster_ip']})")
+                svc_type = svc.get('type', 'ClusterIP')
+                cluster_ip = svc.get('cluster_ip', 'N/A')
+                lines.append(f"- `{svc['name']}` - **{svc_type}** ({cluster_ip})")
+                # Show access URLs if available
+                if svc.get('access_urls'):
+                    for url in svc['access_urls'][:2]:  # Limit to 2 URLs
+                        lines.append(f"  - 🔗 {url}")
             if len(services) > 10:
                 lines.append(f"\n_... and {len(services) - 10} more_")
+            return "\n".join(lines)
+        
+        elif "service" in result:
+            # Single service detail
+            svc = result["service"]
+            lines = [f"## 📋 Service: `{svc['name']}`\n"]
+            lines.append(f"- **Namespace**: {svc.get('namespace', 'default')}")
+            lines.append(f"- **Type**: {svc.get('type', 'ClusterIP')}")
+            lines.append(f"- **Cluster IP**: {svc.get('cluster_ip', 'N/A')}")
+            
+            # Ports
+            if svc.get('ports'):
+                lines.append(f"\n**Ports:**")
+                for p in svc['ports']:
+                    port_str = f"- {p.get('port', '?')} -> {p.get('target_port', '?')} ({p.get('protocol', 'TCP')})"
+                    if p.get('node_port'):
+                        port_str += f" [NodePort: {p['node_port']}]"
+                    lines.append(port_str)
+            
+            # External IPs
+            if svc.get('external_ips'):
+                lines.append(f"\n**External IPs:**")
+                for ip in svc['external_ips']:
+                    lines.append(f"- {ip}")
+            
+            # Access URLs
+            if svc.get('access_urls'):
+                lines.append(f"\n**Access URLs:**")
+                for url in svc['access_urls']:
+                    lines.append(f"- 🔗 {url}")
+            
+            return "\n".join(lines)
+        
+        elif "ingresses" in result:
+            ingresses = result["ingresses"]
+            if not ingresses:
+                return f"## 📋 {tool_name}\n\nNo ingresses found in namespace `{result.get('namespace', 'default')}`"
+            
+            lines = [f"## 📋 {tool_name}\n"]
+            lines.append(f"Found **{len(ingresses)}** ingresses:\n")
+            for ing in ingresses[:10]:
+                lines.append(f"- `{ing['name']}`")
+                if ing.get('hosts'):
+                    lines.append(f"  - Hosts: {', '.join(ing['hosts'])}")
+                if ing.get('access_urls'):
+                    for url in ing['access_urls'][:2]:
+                        lines.append(f"  - 🔗 {url}")
+            if len(ingresses) > 10:
+                lines.append(f"\n_... and {len(ingresses) - 10} more_")
             return "\n".join(lines)
         
         elif "pod" in result:
@@ -276,15 +334,18 @@ Available tools for managing Kubernetes resources:
 - `k8s_list_namespaces` - List all namespaces
 
 ### Service Operations
-- `k8s_list_services` - List services in a namespace
+- `k8s_list_services` - List services in a namespace with access URLs
+- `k8s_get_service` - Get detailed service info including access URLs
+
+### Ingress Operations
+- `k8s_list_ingresses` - List ingresses with hosts and URLs
 
 ### Example Queries
 - "List all pods in production namespace"
 - "Get details of pod api-gateway-xxx"
 - "Scale api-gateway deployment to 5 replicas"
 - "Show logs from worker pod"
-""",
-            metadata={"type": "help"}
+- "List all ingresses"""
         )
     
     # ============================================================
@@ -460,6 +521,41 @@ Available tools for managing Kubernetes resources:
             {
                 "name": "k8s_list_services",
                 "description": "List services in a namespace",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "namespace": {
+                            "type": "string",
+                            "description": "Kubernetes namespace",
+                            "default": "default"
+                        }
+                    }
+                },
+                "dangerous": False
+            },
+            {
+                "name": "k8s_get_service",
+                "description": "Get detailed service information including access URLs and external IPs",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Service name"
+                        },
+                        "namespace": {
+                            "type": "string",
+                            "description": "Kubernetes namespace",
+                            "default": "default"
+                        }
+                    },
+                    "required": ["name"]
+                },
+                "dangerous": False
+            },
+            {
+                "name": "k8s_list_ingresses",
+                "description": "List ingresses in a namespace with hosts and access URLs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
