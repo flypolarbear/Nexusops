@@ -390,3 +390,49 @@ Before starting any task:
 3. Follow spec-driven workflow in `agentic_pact/specs/SPEC-*.md`
 
 If rules conflict, defer to `agentic_pact/PACT.md`.
+
+---
+
+## OMO × Spec-Kit Bridge
+
+This repo uses Spec-Kit for **spec/plan/tasks artifacts** and OMO for **execution**.
+Use the bridge rules to avoid workflow conflicts:
+
+- **Bridge Contract**: `OMO_SPEC_KIT_BRIDGE.md`
+- **Spec-Kit Output**: `specs/<feature>/{spec.md,plan.md,tasks.md,...}` (source of truth)
+- **OMO Execution**: read `tasks.md` only; do not mutate spec/plan/tasks directly
+
+### Agent Mapping (自动分派)
+
+Sisyphus 在执行 Spec‑Kit 命令时自动分派到专业 Agent：
+
+| 命令 | 阶段 | 分派到 |
+|------|------|--------|
+| `/speckit.specify` | 澄清 | metis |
+| `/speckit.plan` | 研究 | librarian |
+| `/speckit.plan` | 架构 | oracle |
+| `/speckit.plan` | 任务规划 | prometheus |
+| `/speckit.plan` | 审查 | momus |
+| `/speckit.plan` | 文档 | writing |
+| `/speckit.tasks` | 分析 | momus |
+| `/speckit.implement` | 前端 | visual-engineering |
+| `/speckit.implement` | 复杂逻辑 | ultrabrain |
+
+### 魔法命令 `/spec`
+
+一键启动完整 Spec‑Kit 工作流：
+
+```
+/spec 我想在顶部 tab 栏添加一个小狗 icon
+```
+
+自动执行：`/speckit.specify` → `/speckit.plan` → `/speckit.tasks`
+
+**调度脚本**: `.specify/scripts/bash/agent-dispatch.sh`
+
+## Active Technologies
+- Python 3.11+ (backend), TypeScript 5+ (frontend) + FastAPI 0.100+, SQLAlchemy 2.0+ (async), Pydantic v2, React 18, Zustand 4 (001-agent-market-gateway)
+- PostgreSQL 15+, Redis 7+ (for rate limiting/caching) (001-agent-market-gateway)
+
+## Recent Changes
+- 001-agent-market-gateway: Added Python 3.11+ (backend), TypeScript 5+ (frontend) + FastAPI 0.100+, SQLAlchemy 2.0+ (async), Pydantic v2, React 18, Zustand 4
