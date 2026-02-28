@@ -327,3 +327,58 @@ class Region(Base, TimestampMixin):
     # Coordinates (for WorldMap)
     latitude: Mapped[float] = mapped_column(nullable=False)
     longitude: Mapped[float] = mapped_column(nullable=False)
+
+
+# ============================================
+# Agent Skill Models
+# ============================================
+
+class AgentSkill(Base, TimestampMixin):
+    """Agent Skill model - skills synced from skills.sh marketplace"""
+    __tablename__ = "agent_skills"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)  # format: owner/repo/skill-name
+    name: Mapped[str] = mapped_column(String(64), nullable=False)  # skill name (max 64 chars)
+    description: Mapped[str] = mapped_column(String(1024), nullable=False)  # skill description
+    
+    # Source info
+    source_repo: Mapped[str] = mapped_column(String(255), nullable=False)  # e.g., anthropics/skills
+    source_url: Mapped[Optional[str]] = mapped_column(String(500))  # GitHub URL
+    
+    # Content
+    content: Mapped[str] = mapped_column(Text, nullable=False)  # Full SKILL.md content
+    frontmatter: Mapped[dict] = mapped_column(JSONB, default=dict)  # Parsed YAML frontmatter
+    
+    # Metadata
+    license: Mapped[Optional[str]] = mapped_column(String(100))
+    compatibility: Mapped[Optional[str]] = mapped_column(String(500))
+    skill_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    
+    # Status
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active, disabled
+    install_count: Mapped[int] = mapped_column(Integer, default=0)
+    
+    # Indexes
+    __table_args__ = (
+        Index("ix_agent_skills_name", "name"),
+        Index("ix_agent_skills_source_repo", "source_repo"),
+        Index("ix_agent_skills_status", "status"),
+    )
+
+
+class AgentSkillBinding(Base, TimestampMixin):
+    """Agent-Skill binding - associates skills with specific agents"""
+    __tablename__ = "agent_skill_bindings"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    skill_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    
+    # Binding metadata
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0)  # Higher = more priority
+    
+    # Indexes
+    __table_args__ = (
+        Index("ix_skill_bindings_agent_skill", "agent_id", "skill_id"),
+    )

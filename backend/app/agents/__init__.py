@@ -1,14 +1,14 @@
 """
 NexusOps Built-in Agents
 
-MK-007: 内置 Agent Handler 实现
+MK-007: Built-in Agent Handler implementations.
 
 All built-in agents implement the BaseAgentHandler interface.
 """
 
 from app.agents.base import BaseAgentHandler
 from app.agents.chat import ChatAgentHandler
-from app.agents.k8s import K8sAgentHandler
+from app.agents.k8s.handler import K8sAgentHandler
 from app.agents.deploy import DeployAgentHandler
 from app.agents.dns import DNSAgentHandler
 from app.agents.logs import LogsAgentHandler

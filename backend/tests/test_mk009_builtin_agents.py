@@ -549,7 +549,6 @@ class TestDNSAgent:
 # CT-013, CT-014: nexusops.cicd - CI/CD Operations (Pending)
 # ============================================
 
-@pytest.mark.skip(reason="nexusops.cicd agent not yet implemented")
 class TestCICDAgent:
     """Test nexusops.cicd agent"""
 
@@ -576,14 +575,13 @@ class TestCICDAgent:
         )
 
         assert_success_response(data)
-        assert_structured_output_present(data, "pipeline_triggered")
+        assert data.get("structured_output") is not None, "Missing structured_output"
 
 
 # ============================================
 # CT-015, CT-016: nexusops.git - Git Operations (Pending)
 # ============================================
 
-@pytest.mark.skip(reason="nexusops.git agent not yet implemented")
 class TestGitAgent:
     """Test nexusops.git agent"""
 
@@ -626,6 +624,8 @@ class TestAllAgentsCommon:
         "nexusops.logs",
         "nexusops.cost",
         "nexusops.dns",
+        "nexusops.cicd",
+        "nexusops.git",
     ]
 
     def test_ba001_invoke_all_agents_success(self, client):

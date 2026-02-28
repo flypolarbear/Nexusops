@@ -233,11 +233,41 @@ class ExecutorRouter:
     def list_registered_agents(self) -> list[str]:
         """List all registered third-party agents"""
         return list(self._agent_registry.keys())
+    def get_all_tools(self) -> list[dict]:
+        """Get tools from all available agents"""
+        tools = []
+
+        # 1. Built-in agents
+        for agent_id in self._builtin.list_agents():
+            # Skip chat agent itself to avoid recursion/redundancy if it had tools
+            if agent_id == "nexusops.chat":
+                continue
+
+            info = self._builtin.get_agent_info(agent_id)
+            if info and info.get("tools"):
+                # Deep copy to avoid modifying original
+                import copy
+                agent_tools = copy.deepcopy(info["tools"])
+                # Inject agent_id for routing
+                for tool in agent_tools:
+                    tool["x-nexusops-agent-id"] = agent_id
+                tools.extend(agent_tools)
+
+        # 2. Registered remote agents
+        for agent_id, info in self._agent_registry.items():
+            if info.get("tools"):
+                import copy
+                agent_tools = copy.deepcopy(info["tools"])
+                # Inject agent_id for routing
+                for tool in agent_tools:
+                    tool["x-nexusops-agent-id"] = agent_id
+                tools.extend(agent_tools)
+
+        return tools
 
     def _elapsed_ms(self, start_time: datetime) -> int:
         """Calculate elapsed time in milliseconds"""
         return int((datetime.utcnow() - start_time).total_seconds() * 1000)
-
     def _add_latency(self, result: ExecutorResult, start_time: datetime) -> ExecutorResult:
         """Add latency to result metadata"""
         result.metadata["latency_ms"] = self._elapsed_ms(start_time)

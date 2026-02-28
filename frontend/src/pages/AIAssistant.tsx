@@ -1,13 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { Card, Typography, Input, Button, Space, Avatar, Spin, Empty, List, Typography as AntTypography } from 'antd'
+import { Card, Typography, Input, Button, Space, Avatar, Empty, List, Spin } from 'antd'
 import { SendOutlined, RobotOutlined, UserOutlined, PlusOutlined, HistoryOutlined } from '@ant-design/icons'
-import { useChatStore } from '../stores/chatStore'
-import { useWebSocket } from '../hooks/useWebSocket'
 import PageContainer from '../components/layout/PageContainer'
 
-const { Title, Text } = Typography
+const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
-const { Paragraph } = AntTypography
 
 const mockConversations = [
   { id: 'conv-1', title: 'Resource status check', createdAt: '2024-01-15 14:00' },
@@ -15,11 +12,19 @@ const mockConversations = [
   { id: 'conv-3', title: 'Alert investigation', createdAt: '2024-01-14 16:00' },
 ]
 
+interface Message {
+  id: string
+  role: string
+  content: string
+}
+
 export default function AIAssistant() {
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, isTyping, isConnected, currentConversation, setCurrentConversation, clearMessages } = useChatStore()
-  const { sendMessage } = useWebSocket()
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isTyping, setIsTyping] = useState(false)
+  const [isConnected] = useState(true)
+  const [currentConversation, setCurrentConversation] = useState<typeof mockConversations[0] | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -29,11 +34,38 @@ export default function AIAssistant() {
     scrollToBottom()
   }, [messages])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return
 
-    sendMessage(inputValue.trim())
+    const userMessage: Message = { id: `msg-${Date.now()}`, role: 'user', content: inputValue.trim() }
+    setMessages(prev => [...prev, userMessage])
     setInputValue('')
+    setIsTyping(true)
+
+    try {
+      const response = await fetch('/api/v1/agents/nexusops.chat/invoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: `req-${Date.now()}`,
+          conversation_id: 'demo',
+          agent_id: 'nexusops.chat',
+          query: inputValue.trim()
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const aiMessage: Message = { id: `msg-${Date.now() + 1}`, role: 'assistant', content: data.content?.text || 'No response' }
+        setMessages(prev => [...prev, aiMessage])
+      } else {
+        setMessages(prev => [...prev, { id: `msg-${Date.now() + 1}`, role: 'assistant', content: 'Failed to get response' }])
+      }
+    } catch {
+      setMessages(prev => [...prev, { id: `msg-${Date.now() + 1}`, role: 'assistant', content: 'Connection error' }])
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -54,7 +86,7 @@ export default function AIAssistant() {
     <PageContainer transparent fullHeight>
       <div className="h-full flex gap-4">
         {/* Conversation Sidebar */}
-      <Card className="w-64 shrink-0" title="Conversations" extra={<Button type="text" icon={<PlusOutlined />} onClick={clearMessages} />}>
+      <Card className="w-64 shrink-0" title="Conversations" extra={<Button type="text" icon={<PlusOutlined />} onClick={() => { setMessages([]); setCurrentConversation(null) }} />}>
         <List
           dataSource={mockConversations}
           renderItem={(item) => (

@@ -77,6 +77,10 @@ class GLMClient(BaseLLMClient):
             "stream": False,
         }
 
+        if "tools" in kwargs:
+            payload["tools"] = kwargs["tools"]
+            payload["tool_choice"] = kwargs.get("tool_choice", "auto")
+
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
@@ -85,14 +89,17 @@ class GLMClient(BaseLLMClient):
         latency_ms = int((time.time() - start_time) * 1000)
 
         choice = data["choices"][0]
-        content = choice["message"]["content"]
+        message = choice["message"]
+        content = message.get("content")
+        tool_calls = message.get("tool_calls")
         finish_reason = choice.get("finish_reason")
 
         usage = data.get("usage", {})
 
         return LLMResponse(
-            content=content,
+            content=content or "",
             model=data.get("model", self.model),
+            tool_calls=tool_calls,
             usage={
                 "prompt_tokens": usage.get("prompt_tokens", 0),
                 "completion_tokens": usage.get("completion_tokens", 0),

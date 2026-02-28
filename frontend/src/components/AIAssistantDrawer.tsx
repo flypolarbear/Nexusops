@@ -343,7 +343,7 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
     }
   }, [inputValue])
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!inputValue.trim()) return
 
     const userMessage: Message = {
@@ -354,12 +354,41 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
       createdAt: new Date().toISOString(),
     }
     addMessage(userMessage)
+    const queryToSend = inputValue.trim()
     setInputValue('')
     setShowCommands(false)
     setTyping(true)
 
-    // Simulate AI response with delay
-    setTimeout(() => {
+    try {
+      // Call real backend API
+      const response = await fetch('/api/v1/agents/nexusops.chat/invoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: `req-${Date.now()}`,
+          conversation_id: 'demo',
+          agent_id: 'nexusops.chat',
+          query: queryToSend,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        conversationId: 'demo',
+        role: 'assistant',
+        content: data.content?.text || data.content || 'Sorry, I could not process your request.',
+        createdAt: new Date().toISOString(),
+      }
+      addMessage(aiResponse)
+    } catch (error) {
+      console.error('AI API error:', error)
+      // Fallback to mock response on error
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         conversationId: 'demo',
@@ -368,8 +397,9 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
         createdAt: new Date().toISOString(),
       }
       addMessage(aiResponse)
+    } finally {
       setTyping(false)
-    }, 1000 + Math.random() * 1000)
+    }
   }, [inputValue, addMessage, setTyping])
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -524,7 +554,7 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
                 className={`max-w-[85%] px-4 py-3 rounded-lg ${
                   msg.role === 'user'
                     ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800'
+                    : 'bg-slate-50/85 border border-slate-100'
                 }`}
               >
                 {msg.role === 'assistant' ? (

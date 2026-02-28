@@ -15,21 +15,30 @@ class MessageRole(str, Enum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
+    TOOL = "tool"
 
 
 class LLMMessage(BaseModel):
     """LLM 消息"""
     role: MessageRole
     content: str
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_call_id: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, str]:
-        return {"role": self.role.value, "content": self.content}
+    def to_dict(self) -> Dict[str, Any]:
+        data = {"role": self.role.value, "content": self.content}
+        if self.tool_calls:
+            data["tool_calls"] = self.tool_calls
+        if self.tool_call_id:
+            data["tool_call_id"] = self.tool_call_id
+        return data
 
 
 class LLMResponse(BaseModel):
     """LLM 响应"""
     content: str
     model: str
+    tool_calls: Optional[List[Dict[str, Any]]] = None
     usage: Optional[Dict[str, int]] = None
     finish_reason: Optional[str] = None
     latency_ms: Optional[int] = None
@@ -119,6 +128,6 @@ class BaseLLMClient(ABC):
         response = await self.chat(messages)
         return response.content
 
-    def _build_messages(self, messages: List[LLMMessage]) -> List[Dict[str, str]]:
+    def _build_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
         """构建消息列表"""
         return [msg.to_dict() for msg in messages]

@@ -36,12 +36,9 @@ import {
   UploadOutlined,
   LinkOutlined,
   SaveOutlined,
-  AppstoreOutlined,
-  UserOutlined,
 } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { useAuthStore } from '../stores/authStore'
-import { useVersionStore, type Project } from '../stores/versionStore'
 import { useDiagramStore, type DiagramConfig } from '../stores/configStore'
 import PageContainer from '../components/layout/PageContainer'
 
@@ -74,7 +71,7 @@ interface IntegrationConfig {
   url: string
   api_token: string
   username: string
-  status: 'connected' | 'disconnected' | 'error'
+  status: 'connected' | 'disconnected' | 'error' | 'configured' | 'not_configured'
   last_sync: string | null
 }
 
@@ -91,6 +88,8 @@ interface ConnectionTestResult {
 function GrafanaConfig() {
   const [config, setConfig] = useState<IntegrationConfig | null>(null)
   const [loading, setLoading] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -99,11 +98,12 @@ function GrafanaConfig() {
 
   const loadConfig = async () => {
     try {
-      const response = await fetch('/api/v1/integrations/grafana')
-      if (!response.ok) throw new Error("API error")
-      const data = await response.json()
-      setConfig(data)
-      form.setFieldsValue(data)
+      const response = await fetch('/api/v1/integrations/type/grafana')
+      if (response.ok) {
+        const data = await response.json()
+        setConfig(data)
+        form.setFieldsValue(data)
+      }
     } catch {
       // Demo mode
     }
@@ -126,12 +126,29 @@ function GrafanaConfig() {
   }
 
   const handleTest = async () => {
-    message.info('Testing connection...')
-    setTimeout(() => message.success('Connection successful'), 1000)
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const response = await fetch('/api/v1/integrations/type/grafana/test', { method: 'POST' })
+      const result = await response.json()
+      setTestResult(result)
+      if (result.success) {
+        message.success(result.message)
+        setConfig(prev => prev ? { ...prev, status: 'connected' } : null)
+      } else {
+        message.error(result.message || 'Connection failed')
+      }
+    } catch (e) {
+      const errorMsg = 'Connection test failed'
+      setTestResult({ success: false, message: errorMsg })
+      message.error(errorMsg)
+    } finally {
+      setTesting(false)
+    }
   }
 
   return (
-    <Card title="Grafana Configuration" extra={<Tag color={config?.status === 'connected' ? 'green' : 'default'}>{config?.status || 'Not Configured'}</Tag>}>
+    <Card title="Grafana Configuration" extra={<Tag color={config?.status === 'connected' ? 'green' : config?.status === 'configured' ? 'blue' : 'default'}>{config?.status || 'Not Configured'}</Tag>}>
       <Form form={form} layout="vertical" onFinish={handleSave}>
         <Form.Item name="url" label="Grafana URL" rules={[{ required: true }]}>
           <Input placeholder="https://grafana.example.com" prefix={<LinkOutlined />} />
@@ -146,10 +163,19 @@ function GrafanaConfig() {
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
             Save
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={handleTest}>
+          <Button icon={<ReloadOutlined />} onClick={handleTest} loading={testing}>
             Test Connection
           </Button>
         </Space>
+        {testResult && (
+          <Alert
+            className="mt-4"
+            message={testResult.success ? 'Connection Successful' : 'Connection Failed'}
+            description={testResult.message}
+            type={testResult.success ? 'success' : 'error'}
+            showIcon
+          />
+        )}
       </Form>
     </Card>
   )
@@ -158,6 +184,8 @@ function GrafanaConfig() {
 function ArgoCDConfig() {
   const [config, setConfig] = useState<IntegrationConfig | null>(null)
   const [loading, setLoading] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -166,11 +194,12 @@ function ArgoCDConfig() {
 
   const loadConfig = async () => {
     try {
-      const response = await fetch('/api/v1/integrations/argocd')
-      if (!response.ok) throw new Error("API error")
-      const data = await response.json()
-      setConfig(data)
-      form.setFieldsValue(data)
+      const response = await fetch('/api/v1/integrations/type/argocd')
+      if (response.ok) {
+        const data = await response.json()
+        setConfig(data)
+        form.setFieldsValue(data)
+      }
     } catch {
       // Demo mode
     }
@@ -193,12 +222,29 @@ function ArgoCDConfig() {
   }
 
   const handleTest = async () => {
-    message.info('Testing connection...')
-    setTimeout(() => message.success('Connection successful'), 1000)
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const response = await fetch('/api/v1/integrations/type/argocd/test', { method: 'POST' })
+      const result = await response.json()
+      setTestResult(result)
+      if (result.success) {
+        message.success(result.message)
+        setConfig(prev => prev ? { ...prev, status: 'connected' } : null)
+      } else {
+        message.error(result.message || 'Connection failed')
+      }
+    } catch (e) {
+      const errorMsg = 'Connection test failed'
+      setTestResult({ success: false, message: errorMsg })
+      message.error(errorMsg)
+    } finally {
+      setTesting(false)
+    }
   }
 
   return (
-    <Card title="ArgoCD Configuration" extra={<Tag color={config?.status === 'connected' ? 'green' : 'default'}>{config?.status || 'Not Configured'}</Tag>}>
+    <Card title="ArgoCD Configuration" extra={<Tag color={config?.status === 'connected' ? 'green' : config?.status === 'configured' ? 'blue' : 'default'}>{config?.status || 'Not Configured'}</Tag>}>
       <Form form={form} layout="vertical" onFinish={handleSave}>
         <Form.Item name="url" label="ArgoCD URL" rules={[{ required: true }]}>
           <Input placeholder="https://argocd.example.com" prefix={<LinkOutlined />} />
@@ -213,10 +259,19 @@ function ArgoCDConfig() {
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
             Save
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={handleTest}>
+          <Button icon={<ReloadOutlined />} onClick={handleTest} loading={testing}>
             Test Connection
           </Button>
         </Space>
+        {testResult && (
+          <Alert
+            className="mt-4"
+            message={testResult.success ? 'Connection Successful' : 'Connection Failed'}
+            description={testResult.message}
+            type={testResult.success ? 'success' : 'error'}
+            showIcon
+          />
+        )}
       </Form>
     </Card>
   )
@@ -225,6 +280,8 @@ function ArgoCDConfig() {
 function JenkinsConfig() {
   const [config, setConfig] = useState<IntegrationConfig | null>(null)
   const [loading, setLoading] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -233,11 +290,12 @@ function JenkinsConfig() {
 
   const loadConfig = async () => {
     try {
-      const response = await fetch('/api/v1/integrations/jenkins')
-      if (!response.ok) throw new Error("API error")
-      const data = await response.json()
-      setConfig(data)
-      form.setFieldsValue(data)
+      const response = await fetch('/api/v1/integrations/type/jenkins')
+      if (response.ok) {
+        const data = await response.json()
+        setConfig(data)
+        form.setFieldsValue(data)
+      }
     } catch {
       // Demo mode
     }
@@ -260,12 +318,29 @@ function JenkinsConfig() {
   }
 
   const handleTest = async () => {
-    message.info('Testing connection...')
-    setTimeout(() => message.success('Connection successful'), 1000)
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const response = await fetch('/api/v1/integrations/type/jenkins/test', { method: 'POST' })
+      const result = await response.json()
+      setTestResult(result)
+      if (result.success) {
+        message.success(result.message)
+        setConfig(prev => prev ? { ...prev, status: 'connected' } : null)
+      } else {
+        message.error(result.message || 'Connection failed')
+      }
+    } catch (e) {
+      const errorMsg = 'Connection test failed'
+      setTestResult({ success: false, message: errorMsg })
+      message.error(errorMsg)
+    } finally {
+      setTesting(false)
+    }
   }
 
   return (
-    <Card title="Jenkins Configuration" extra={<Tag color={config?.status === 'connected' ? 'green' : 'default'}>{config?.status || 'Not Configured'}</Tag>}>
+    <Card title="Jenkins Configuration" extra={<Tag color={config?.status === 'connected' ? 'green' : config?.status === 'configured' ? 'blue' : 'default'}>{config?.status || 'Not Configured'}</Tag>}>
       <Form form={form} layout="vertical" onFinish={handleSave}>
         <Form.Item name="url" label="Jenkins URL" rules={[{ required: true }]}>
           <Input placeholder="https://jenkins.example.com" prefix={<LinkOutlined />} />
@@ -280,10 +355,19 @@ function JenkinsConfig() {
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
             Save
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={handleTest}>
+          <Button icon={<ReloadOutlined />} onClick={handleTest} loading={testing}>
             Test Connection
           </Button>
         </Space>
+        {testResult && (
+          <Alert
+            className="mt-4"
+            message={testResult.success ? 'Connection Successful' : 'Connection Failed'}
+            description={testResult.message}
+            type={testResult.success ? 'success' : 'error'}
+            showIcon
+          />
+        )}
       </Form>
     </Card>
   )
@@ -521,53 +605,74 @@ export default function Settings() {
   // Diagram handlers
   // ============================================
 
-  const handleDiagramUpload = async (file: UploadFile) => {
-    const uploadFile = file.originFileObj
-    if (!uploadFile) return false
-
-    const fileName = uploadFile.name.toLowerCase()
-    const reader = new FileReader()
+const handleDiagramUpload = async (file: File) => {
+  const fileName = file.name.toLowerCase()
+  const reader = new FileReader()
 
     reader.onload = (e) => {
       const content = e.target?.result as string
-
-      let type: 'drawio' | 'svg' | 'png' = 'svg'
-      if (fileName.endsWith('.drawio') || fileName.endsWith('.xml')) {
-        type = 'drawio'
-      } else if (fileName.endsWith('.png')) {
-        type = 'png'
-      } else if (fileName.endsWith('.svg')) {
-        type = 'svg'
-      }
-
-      let fileContent = content
-      if (type === 'png') {
-        // Keep as data URL
-      } else if (type === 'drawio') {
-        fileContent = btoa(content)
-      } else {
-        if (!content.startsWith('data:')) {
-          fileContent = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(content)))}`
+      try {
+        if (!content) {
+          message.error('Failed to read file content')
+          return
         }
-      }
 
-      const newDiagram: DiagramConfig = {
-        id: `diagram-${Date.now()}`,
-        name: uploadFile.name.replace(/\.[^/.]+$/, ''),
-        type,
-        content: fileContent,
-        lastUpdated: new Date().toISOString(),
-        uploadedBy: user?.username || 'unknown',
-      }
+        let type: 'drawio' | 'svg' | 'png' = 'svg'
+        if (fileName.endsWith('.drawio') || fileName.endsWith('.xml')) {
+          type = 'drawio'
+        } else if (fileName.endsWith('.png')) {
+          type = 'png'
+        } else if (fileName.endsWith('.svg')) {
+          type = 'svg'
+        }
 
-      addDiagram(newDiagram)
-      message.success(`Diagram "${newDiagram.name}" uploaded successfully`)
+        let fileContent = content
+        if (type === 'png') {
+          // Keep as data URL
+        } else if (type === 'drawio') {
+          fileContent = btoa(unescape(encodeURIComponent(content)))
+        } else if (type === 'svg') {
+          // For SVG files, use data URL encoding
+          if (!content.startsWith('data:')) {
+            // Use a safer encoding approach for large files
+            // Convert UTF-8 to base64 using a more reliable method
+            const uint8Array = new TextEncoder().encode(content)
+            let binaryString = ''
+            // Process in chunks to avoid call stack overflow
+            const chunkSize = 65536
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+              binaryString += String.fromCharCode.apply(null, Array.from(chunk))
+            }
+            fileContent = `data:image/svg+xml;base64,${btoa(binaryString)}`
+          }
+        }
+
+        const newDiagram: DiagramConfig = {
+          id: `diagram-${Date.now()}`,
+          name: file.name.replace(/\.[^/.]+$/, ''),
+          type,
+          content: fileContent,
+          lastUpdated: new Date().toISOString(),
+          uploadedBy: user?.username || 'unknown',
+        }
+
+        addDiagram(newDiagram)
+        message.success(`Diagram "${newDiagram.name}" uploaded successfully`)
+      } catch (error) {
+        console.error('Upload error:', error)
+        message.error(`Failed to upload diagram: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+
+    reader.onerror = () => {
+      message.error('Failed to read file')
     }
 
     if (fileName.endsWith('.png')) {
-      reader.readAsDataURL(uploadFile)
+      reader.readAsDataURL(file)
     } else {
-      reader.readAsText(uploadFile)
+      reader.readAsText(file)
     }
 
     return false
@@ -812,7 +917,534 @@ export default function Settings() {
   // Tab items
   // ============================================
 
+  // ============================================
+  // Multi-Provider AI Configuration Component
+  // ============================================
+
+  interface ProviderInfo {
+    id: string
+    name: string
+    description?: string
+    base_url?: string
+    api_url?: string
+    models?: Array<{id: string; name: string; description?: string}>
+    default_model?: string
+    configured?: boolean
+    enabled?: boolean
+    masked_api_key?: string  // 加密显示的 API Key
+    current_model?: string   // 当前配置的模型
+  }
+
+  // Provider metadata (fallback if API doesn't return full info)
+  const PROVIDER_META: Record<string, {name: string; description: string; models: Array<{id: string; name: string}>}> = {
+    openai: { name: 'OpenAI', description: 'GPT-4, GPT-4o, O1/O3 系列', models: [{id: 'gpt-4o', name: 'GPT-4o'}, {id: 'gpt-4o-mini', name: 'GPT-4o Mini'}, {id: 'o1', name: 'O1'}, {id: 'o3-mini', name: 'O3 Mini'}] },
+    anthropic: { name: 'Anthropic', description: 'Claude 系列模型', models: [{id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet'}, {id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku'}] },
+    zhipu: { name: 'Zhipu GLM', description: '智谱 GLM 系列模型', models: [{id: 'glm-4-flash', name: 'GLM-4 Flash'}, {id: 'glm-4-plus', name: 'GLM-4 Plus'}, {id: 'glm-4', name: 'GLM-4'}] },
+    gemini: { name: 'Google Gemini', description: 'Google Gemini 系列', models: [{id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro'}, {id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash'}] },
+    kimi: { name: 'Moonshot Kimi', description: '长上下文模型', models: [{id: 'moonshot-v1-8k', name: 'Kimi 8K'}, {id: 'moonshot-v1-32k', name: 'Kimi 32K'}] },
+  }
+
+  function MultiProviderConfig() {
+    const [providers, setProviders] = useState<ProviderInfo[]>([])
+    const [currentProvider, setCurrentProvider] = useState<string>('zhipu')
+    const [currentModel, setCurrentModel] = useState<string>('glm-4-flash')
+    const [activeTabKey, setActiveTabKey] = useState<string>('zhipu')
+    const [loading, setLoading] = useState(false)
+    const [testing, setTesting] = useState(false)
+    const [settingCurrent, setSettingCurrent] = useState(false)
+    const [testResult, setTestResult] = useState<{success: boolean; message: string; response_time_ms?: number; providerId?: string} | null>(null)
+
+    useEffect(() => {
+      loadProviders()
+    }, [])
+
+    const loadProviders = async () => {
+      try {
+        const response = await fetch('/api/v1/ai/providers')
+        if (response.ok) {
+          const data = await response.json()
+          // Normalize data format
+          const normalized = data.map((p: ProviderInfo) => {
+            const meta = PROVIDER_META[p.id] || { name: p.name, description: '', models: [] }
+            return {
+              ...p,
+              name: p.name || meta.name,
+              description: p.description || meta.description,
+              base_url: p.base_url || p.api_url || '',
+              models: p.models || meta.models,
+              default_model: p.default_model || (meta.models[0]?.id) || '',
+              configured: p.configured || false,
+              enabled: (p.enabled ?? p.configured) || false,
+            }
+          })
+          setProviders(normalized)
+        }
+
+        // Load current config
+        const configResponse = await fetch('/api/v1/ai/config')
+        if (configResponse.ok) {
+          const config = await configResponse.json()
+          const provider = config.current_provider || config.provider || 'zhipu'
+          const model = config.current_model || config.model || 'glm-4-flash'
+          setCurrentProvider(provider)
+          setCurrentModel(model)
+          setActiveTabKey(provider)
+        }
+      } catch (e) {
+        console.error('Failed to load providers:', e)
+        // Use fallback data
+        setProviders(Object.entries(PROVIDER_META).map(([id, meta]) => ({
+          id,
+          name: meta.name,
+          description: meta.description,
+          base_url: '',
+          models: meta.models,
+          default_model: meta.models[0]?.id,
+          configured: false,
+          enabled: false,
+        })))
+      }
+    }
+
+    // State for each provider's form data
+    const [providerForms, setProviderForms] = useState<Record<string, {apiKey: string; baseUrl: string; model: string; hasExistingKey: boolean}>>({})
+
+    // Initialize form data when providers load
+    useEffect(() => {
+      if (providers.length === 0) return
+      const forms: Record<string, {apiKey: string; baseUrl: string; model: string; hasExistingKey: boolean}> = {}
+      providers.forEach(p => {
+        forms[p.id] = {
+          apiKey: '',  // 留空，用户需要重新输入才能更新
+          baseUrl: p.base_url || p.api_url || '',
+          // 使用服务器返回的 current_model，如果没有则用 default_model
+          model: p.current_model || p.default_model || '',
+          hasExistingKey: p.configured || false  // 标记是否已有配置
+        }
+      })
+      setProviderForms(forms)
+    }, [providers])
+
+    const handleFormChange = (providerId: string, field: 'apiKey' | 'baseUrl' | 'model', value: string) => {
+      setProviderForms(prev => ({
+        ...prev,
+        [providerId]: {
+          ...prev[providerId],
+          [field]: value
+        }
+      }))
+    }
+
+    const handleSaveProvider = async (providerId: string) => {
+      const formData = providerForms[providerId]
+      if (!formData) return
+
+      // 检查是否需要 API Key
+      const provider = providers.find(p => p.id === providerId)
+      if (!provider?.configured && !formData.apiKey) {
+        message.error('请输入 API Key')
+        return
+      }
+
+      setLoading(true)
+      try {
+        // 只有当用户输入了新的 API Key 时才更新
+        const payload: Record<string, unknown> = {
+          base_url: formData.baseUrl,
+          enabled: true
+        }
+        if (formData.apiKey) {
+          payload.api_key = formData.apiKey
+        }
+
+        const response = await fetch(`/api/v1/ai/providers/${providerId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+
+        if (response.ok) {
+          // 如果是当前 provider，同时更新 model
+          if (providerId === currentProvider && formData.model) {
+            await fetch('/api/v1/ai/set-current', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ provider: providerId, model: formData.model })
+            })
+            setCurrentModel(formData.model)
+          }
+          message.success(`${provider?.name || providerId} 配置已保存`)
+
+          // Refresh providers list to update configured status and current_model
+          await loadProviders()
+
+          // Clear API key after save, but keep the model value
+          setProviderForms(prev => ({
+            ...prev,
+            [providerId]: {
+              ...prev[providerId],
+              apiKey: '',
+              model: formData.model  // 保持新模型值
+            }
+          }))
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          message.error(errorData.detail || '保存失败')
+        }
+      } catch (e) {
+        console.error('Save error:', e)
+        message.error('保存失败')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const handleTestProvider = async (providerId: string) => {
+      setTesting(true)
+      setTestResult(null)
+      try {
+        const response = await fetch(`/api/v1/ai/providers/${providerId}/test`, { method: 'POST' })
+        const result = await response.json()
+        setTestResult({ ...result, providerId })
+        if (result.success) {
+          message.success(result.message)
+        } else {
+          message.error(result.message || 'Connection failed')
+        }
+      } catch {
+        setTestResult({ success: false, message: 'Connection test failed', providerId })
+        message.error('Connection test failed')
+      } finally {
+        setTesting(false)
+      }
+    }
+
+    // 设为当前 Provider（使用该 Provider 配置的 Model）
+    const handleSetAsCurrent = async (providerId: string) => {
+      const provider = providers.find(p => p.id === providerId)
+      if (!provider) return
+
+      // 使用该 Provider 配置的 current_model
+      const modelToUse = provider.current_model || provider.default_model
+      if (!modelToUse) {
+        message.error('请先配置 Model Name')
+        return
+      }
+
+      setSettingCurrent(true)
+      try {
+        const response = await fetch('/api/v1/ai/set-current', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider: providerId, model: modelToUse })
+        })
+        if (response.ok) {
+          setCurrentProvider(providerId)
+          setCurrentModel(modelToUse)
+          message.success(`已切换到 ${provider.name} / ${modelToUse}`)
+        } else {
+          message.error('切换失败')
+        }
+      } catch {
+        message.error('切换失败')
+      } finally {
+        setSettingCurrent(false)
+      }
+    }
+
+    // Build tab items for each provider
+    const providerTabItems = providers.map(provider => ({
+      key: provider.id,
+      label: (
+        <Space size={4}>
+          <span>{provider.name}</span>
+          {provider.id === currentProvider && (
+            <Tag color="purple" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', margin: 0 }}>Active</Tag>
+          )}
+          {provider.configured && provider.id !== currentProvider && (
+            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+          )}
+        </Space>
+      ),
+      children: (
+        <div style={{ padding: '24px 24px 32px' }}>
+          <Form layout="vertical" style={{ maxWidth: 560 }}>
+            {/* API Key */}
+            <Form.Item
+              label={<span style={{ fontSize: 14, fontWeight: 500, color: '#262626' }}>API Key</span>}
+              required={!provider.configured}
+              style={{ marginBottom: 24 }}
+            >
+              {/* 如果已有配置，显示加密的 key 和输入新 key 的提示 */}
+              {provider.configured && provider.masked_api_key && !providerForms[provider.id]?.apiKey && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{
+                    padding: '8px 12px',
+                    background: '#f5f5f5',
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <Space>
+                      <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                      <Text code style={{ fontSize: 13 }}>{provider.masked_api_key}</Text>
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 12 }}>已配置</Text>
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                    输入新的 API Key 以更新配置（留空则保持原有配置）
+                  </Text>
+                </div>
+              )}
+              <Input.Password
+                value={providerForms[provider.id]?.apiKey || ''}
+                onChange={(e) => handleFormChange(provider.id, 'apiKey', e.target.value)}
+                placeholder={provider.configured ? "输入新的 API Key（可选）" : `Enter your ${provider.name} API key`}
+                style={{ fontSize: 14 }}
+              />
+            </Form.Item>
+
+            {/* Base URL */}
+            <Form.Item
+              label={<span style={{ fontSize: 14, fontWeight: 500, color: '#262626' }}>Base URL</span>}
+              style={{ marginBottom: 24 }}
+            >
+              <Input
+                value={providerForms[provider.id]?.baseUrl || provider.base_url || provider.api_url || ''}
+                onChange={(e) => handleFormChange(provider.id, 'baseUrl', e.target.value)}
+                placeholder="API endpoint URL"
+                prefix={<LinkOutlined style={{ color: '#bfbfbf' }} />}
+                style={{ fontSize: 14 }}
+              />
+            </Form.Item>
+
+            {/* Model Name - 手动输入 */}
+            <Form.Item
+              label={<span style={{ fontSize: 14, fontWeight: 500, color: '#262626' }}>Model Name</span>}
+              required
+              style={{ marginBottom: 8 }}
+              help={<span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                {(provider.models || []).length > 0
+                  ? `可用模型: ${(provider.models || []).map(m => m.id).join(', ')}`
+                  : 'Example: gpt-4o, claude-3-5-sonnet, glm-4-flash'}
+              </span>}
+            >
+              <Input
+                value={providerForms[provider.id]?.model || ''}
+                onChange={(e) => handleFormChange(provider.id, 'model', e.target.value)}
+                placeholder="Enter model name"
+                prefix={<ThunderboltOutlined style={{ color: '#bfbfbf' }} />}
+                style={{ fontSize: 14 }}
+              />
+            </Form.Item>
+
+            {/* Action Buttons */}
+            <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
+              <Space size={12}>
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  onClick={() => handleSaveProvider(provider.id)}
+                  loading={loading}
+                  style={{ fontSize: 14, height: 36, paddingLeft: 20, paddingRight: 20 }}
+                >
+                  Save
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => handleTestProvider(provider.id)}
+                  loading={testing}
+                  style={{ fontSize: 14, height: 36 }}
+                >
+                  Test Connection
+                </Button>
+                {/* 设为当前按钮 - 只有已配置且不是当前 provider 时显示 */}
+                {provider.configured && provider.id !== currentProvider && (
+                  <Button
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => handleSetAsCurrent(provider.id)}
+                    loading={settingCurrent}
+                    style={{ fontSize: 14, height: 36 }}
+                  >
+                    设为当前
+                  </Button>
+                )}
+                {/* 当前 provider 标记 */}
+                {provider.id === currentProvider && (
+                  <Tag color="purple" style={{ fontSize: 13, padding: '4px 12px', height: 36, lineHeight: '28px' }}>
+                    当前使用
+                  </Tag>
+                )}
+              </Space>
+            </Form.Item>
+
+            {/* Test Result */}
+            {testResult && testResult.providerId === provider.id && (
+              <Alert
+                message={testResult.success ? 'Connection Successful' : 'Connection Failed'}
+                description={
+                  <div>
+                    <span style={{ fontSize: 13 }}>{testResult.message}</span>
+                    {testResult.response_time_ms && (
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+                        Response time: {testResult.response_time_ms}ms
+                      </div>
+                    )}
+                  </div>
+                }
+                type={testResult.success ? 'success' : 'error'}
+                showIcon
+                closable
+                onClose={() => setTestResult(null)}
+                style={{ marginTop: 20, fontSize: 13 }}
+              />
+            )}
+          </Form>
+        </div>
+      )
+    }))
+
+    return (
+      <div>
+        {/* Current Selection Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: 8,
+          padding: '16px 24px',
+          marginBottom: 24,
+          color: 'white'
+        }}>
+          <Space size="large">
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.9 }}>Current AI Provider</div>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>
+                {providers.find(p => p.id === currentProvider)?.name || currentProvider}
+              </div>
+            </div>
+            <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.3)' }} />
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.9 }}>Current Model</div>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>{currentModel}</div>
+            </div>
+          </Space>
+        </div>
+
+        {/* Provider Tabs */}
+        <Card bordered={false} style={{ borderRadius: 8 }}>
+          <Tabs
+            items={providerTabItems}
+            activeKey={activeTabKey}
+            onChange={(key) => setActiveTabKey(key)}
+            type="line"
+            size="large"
+          />
+        </Card>
+      </div>
+    )
+  }
+
+  // ============================================
+  // Legacy AI Model Configuration Component (for backward compatibility)
+  // ============================================
+
+  function AIModelConfig() {
+    return <MultiProviderConfig />
+  }
+
+  // ============================================
+  // K8s Connection Status Component
+  // ============================================
+
+  function K8sConnectionCard() {
+    const [testing, setTesting] = useState(false)
+    const [testResult, setTestResult] = useState<{success: boolean; message: string; response_time_ms?: number} | null>(null)
+
+    const handleTest = async () => {
+      setTesting(true)
+      setTestResult(null)
+      try {
+        const response = await fetch('/api/v1/integrations/type/kubernetes/test', { method: 'POST' })
+        const result = await response.json()
+        setTestResult(result)
+        if (result.success) {
+          message.success(result.message)
+        } else {
+          message.error(result.message || 'Connection failed')
+        }
+      } catch (e) {
+        const errorMsg = 'Connection test failed'
+        setTestResult({ success: false, message: errorMsg })
+        message.error(errorMsg)
+      } finally {
+        setTesting(false)
+      }
+    }
+
+    return (
+      <Card
+        title="Cluster Connection Status"
+        extra={
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleTest}
+            loading={testing}
+          >
+            Test Connection
+          </Button>
+        }
+      >
+        <Space direction="vertical" className="w-full">
+          <div className="flex items-center gap-4">
+            <ClusterOutlined className="text-2xl text-blue-500" />
+            <div>
+              <Text strong>Kubernetes Cluster</Text>
+              <br />
+              <Text type="secondary">Connected via kubeconfig</Text>
+            </div>
+            {testResult && (
+              <Tag color={testResult.success ? 'green' : 'red'} icon={testResult.success ? <CheckCircleOutlined /> : undefined}>
+                {testResult.success ? 'Connected' : 'Disconnected'}
+              </Tag>
+            )}
+          </div>
+          {testResult && (
+            <Alert
+              message={testResult.success ? 'Connection Successful' : 'Connection Failed'}
+              description={
+                <div>
+                  <p>{testResult.message}</p>
+                  {testResult.response_time_ms && (
+                    <Text type="secondary">Response time: {testResult.response_time_ms}ms</Text>
+                  )}
+                </div>
+              }
+              type={testResult.success ? 'success' : 'error'}
+              showIcon
+            />
+          )}
+        </Space>
+      </Card>
+    )
+  }
+
   const tabItems = [
+    {
+      key: 'ai',
+      label: (
+        <span>
+          <ThunderboltOutlined />
+          AI Models
+        </span>
+      ),
+      children: (
+        <Space direction="vertical" className="w-full" size="large">
+          <Alert message="Configure AI/LLM providers for intelligent operations and chat functionality" type="info" showIcon />
+          <AIModelConfig />
+        </Space>
+      ),
+    },
     {
       key: 'kubernetes',
       label: (
@@ -829,6 +1461,7 @@ export default function Settings() {
             type="info"
             showIcon
           />
+          <K8sConnectionCard />
           <Card
             title="Kubeconfig Files"
             extra={
@@ -997,10 +1630,25 @@ export default function Settings() {
               <Text type="secondary">Last updated: {new Date(previewDiagram.lastUpdated).toLocaleString()}</Text>
             </div>
             <div className="border rounded-lg bg-gray-50 p-4" style={{ height: 400, overflow: 'auto' }}>
-              {previewDiagram.type === 'svg' && previewDiagram.content.startsWith('data:image/svg+xml') && (
+            {previewDiagram.type === 'svg' && previewDiagram.content.startsWith('data:image/svg+xml') && (
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: decodeURIComponent(previewDiagram.content.split(',')[1]),
+                    __html: (() => {
+                      const content = previewDiagram.content
+                      if (content.startsWith('data:image/svg+xml;base64,')) {
+                        // Base64-encoded SVG (UTF-8)
+                        const base64Content = content.replace('data:image/svg+xml;base64,', '')
+                        const binaryString = atob(base64Content)
+                        const bytes = new Uint8Array(binaryString.length)
+                        for (let i = 0; i < binaryString.length; i++) {
+                          bytes[i] = binaryString.charCodeAt(i)
+                        }
+                        return new TextDecoder('utf-8').decode(bytes)
+                      } else {
+                        // URL-encoded SVG
+                        return decodeURIComponent(content.split(',')[1])
+                      }
+                    })(),
                   }}
                   style={{ width: '100%', height: '100%' }}
                 />

@@ -299,6 +299,7 @@ export default function AIAssistantDrawer({ open, onClose }: AIAssistantDrawerPr
                     onActionClick={handleActionClick}
                     onResourceClick={handleResourceClick}
                   />
+                  </div>
                 )}
               </div>
               {msg.role === 'user' && (

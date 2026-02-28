@@ -18,7 +18,6 @@ import {
   Alert,
   Result,
   Steps,
-  Popconfirm,
 } from 'antd'
 import {
   AppstoreOutlined,
@@ -27,7 +26,6 @@ import {
   HistoryOutlined,
   StarFilled,
   GithubOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons'
 import { useVersionStore, type Service, type Version, type VersionStatus } from '../stores/versionStore'
 import { useDeploymentStore } from '../stores/deploymentStore'
@@ -54,17 +52,17 @@ interface DeploymentProgress {
 export default function Projects() {
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null)
-  
+
   const [versionDetailOpen, setVersionDetailOpen] = useState(false)
   const [newVersionModalOpen, setNewVersionModalOpen] = useState(false)
   const [switchRequestModalOpen, setSwitchRequestModalOpen] = useState(false)
   const [newProjectModalOpen, setNewProjectModalOpen] = useState(false)
   const [newServiceModalOpen, setNewServiceModalOpen] = useState(false)
-  
+
   const [deploymentProgressModalOpen, setDeploymentProgressModalOpen] = useState(false)
   const [deploymentProgress, setDeploymentProgress] = useState<DeploymentProgress | null>(null)
   const [productionDeployRegions, setProductionDeployRegions] = useState<string[]>([])
-  
+
   const [versionForm] = Form.useForm()
   const [switchForm] = Form.useForm()
   const [projectForm] = Form.useForm()
@@ -79,7 +77,6 @@ export default function Projects() {
     currentProjectId,
     setCurrentProject,
     addProject,
-    removeProject,
     addService,
     addVersion,
     createSwitchRequest,

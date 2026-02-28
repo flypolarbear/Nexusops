@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agents, agent_market, cicd, deployments, projects, kubeconfig, integrations, overview
+from app.api import agents, agent_market, cicd, deployments, projects, kubeconfig, integrations, overview, ai_config, llm_providers, skills
 from app.api.ws_endpoint import router as ws_router
 from app.api.ws_endpoint import rest_router as ws_rest_router
 from app.core.config import settings
@@ -57,6 +57,9 @@ app.include_router(agent_market.router, prefix=settings.API_PREFIX)
 app.include_router(kubeconfig.router, prefix=settings.API_PREFIX)
 app.include_router(integrations.router, prefix=settings.API_PREFIX)
 app.include_router(overview.router, prefix=settings.API_PREFIX)
+app.include_router(ai_config.router, prefix=settings.API_PREFIX)
+app.include_router(llm_providers.router, prefix=settings.API_PREFIX)
+app.include_router(skills.router, prefix=settings.API_PREFIX)
 app.include_router(ws_rest_router, prefix=settings.API_PREFIX)
 
 # WebSocket endpoint (no prefix)

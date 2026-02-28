@@ -1,0 +1,142 @@
+{
+  "project": "NexusOps",
+  "updated_at": "2026-02-27",
+  "version": "2.10",
+  "current_phase": "Phase: 浏览器验证与功能确认",
+  "overall_completion": "92%",
+  "sprint": {
+    "name": "浏览器验证 Sprint",
+    "goal": "通过浏览器验证所有功能，确保无 mock 数据，真实连接正常",
+    "start_date": "2026-02-26"
+  },
+  "team": {
+    "Sisyphus": "Coordinator - Agent 验证、问题修复"
+  },
+  "work_plan": {
+    "phase_1": {
+      "name": "API 层 Agent 功能验证",
+      "duration": "已完成",
+      "tasks": [
+        "SPRINT-007: Settings 页面 AI Provider 配置验证",
+        "SPRINT-008: AI 对话功能真实 API 验证",
+        "SPRINT-012: 内置 Agent 功能验证"
+      ]
+    },
+    "phase_2": {
+      "name": "问题修复与测试补充",
+      "duration": "已完成",
+      "tasks": [
+        "SPRINT-013: 启用被跳过的 Agent 集成测试",
+        "SPRINT-014: 补充缺失的 Agent 单元测试"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "SPRINT-012",
+      "title": "内置 Agent 功能 API 验证",
+      "status": "completed",
+      "completed_at": "2026-02-27",
+      "priority": "P0",
+      "owner": "Sisyphus",
+      "category": "verification",
+      "description": "通过 API 验证所有 8 个内置 Agent 功能正常",
+      "acceptance_criteria_met": [
+        "✅ nexusops.chat - 使用真实 GLM API (glm-4.7)",
+        "✅ nexusops.k8s - 返回 K8s 资源状态",
+        "✅ nexusops.logs - 返回日志查询结果",
+        "✅ nexusops.cost - 返回成本分析",
+        "✅ nexusops.deploy - 返回部署编排结果",
+        "✅ nexusops.dns - 返回 DNS 状态",
+        "✅ nexusops.cicd - 返回 CI/CD 流水线列表",
+        "✅ nexusops.git - 返回 Git 分支列表"
+      ],
+      "evidence": "agentic_pact/evidence/agent-verification-2026-02-27.md"
+    },
+    {
+      "id": "SPRINT-013",
+      "title": "启用被跳过的 Agent 集成测试",
+      "status": "completed",
+      "completed_at": "2026-02-28",
+      "priority": "P1",
+      "owner": "Sisyphus",
+      "category": "testing",
+      "description": "test_mk009_builtin_agents.py 中 CICD 和 Git agent 测试已启用"
+    },
+    {
+      "id": "SPRINT-014",
+      "title": "补充缺失的 Agent 单元测试",
+      "status": "completed",
+      "completed_at": "2026-02-28",
+      "priority": "P2",
+      "owner": "Sisyphus",
+      "category": "testing",
+    },
+    {
+      "id": "SPRINT-015",
+      "title": "Skills.sh 集成功能",
+      "status": "completed",
+      "completed_at": "2026-02-28",
+      "priority": "P1",
+      "owner": "Sisyphus",
+      "category": "feature",
+      "description": "实现 Skills.sh 市场同步功能，从 GitHub 拉取技能到 Agent 技能库"
+    }
+  ],
+  "completed_tasks": [
+    {
+      "id": "SPRINT-006",
+      "title": "多 AI Provider 配置支持",
+      "completed_at": "2026-02-26",
+      "category": "feature",
+      "owner": "Ryan"
+    },
+    {
+      "id": "SPRINT-007",
+      "title": "Settings 页面 AI Provider 配置验证",
+      "completed_at": "2026-02-27",
+      "category": "verification",
+      "owner": "Sisyphus"
+    },
+    {
+      "id": "SPRINT-008",
+      "title": "AI 对话功能真实 API 验证",
+      "completed_at": "2026-02-27",
+      "category": "verification",
+      "owner": "Sisyphus",
+      "acceptance_criteria_met": [
+        "✅ Chat Agent 使用真实 GLM API",
+        "✅ 响应内容上下文相关",
+        "✅ 显示正确的 Provider 信息"
+      ]
+    }
+  ],
+  "statistics": {
+    "total_tasks": 2,
+    "pending": 2,
+    "in_progress": 0,
+    "completed": 51,
+    "p1_tasks": 1,
+    "p2_tasks": 1
+  },
+  "issues_found": [
+    {
+      "id": "ISSUE-001",
+      "description": "SDK 测试依赖 tenacity 未安装",
+      "severity": "low",
+      "status": "resolved"
+    },
+    {
+      "id": "ISSUE-002",
+      "description": "CICD/Git Agent 集成测试被跳过",
+      "severity": "medium",
+      "status": "resolved"
+    },
+    {
+      "id": "ISSUE-003",
+      "description": "Chat/Deploy/DNS/Logs Agent 缺少单元测试",
+      "severity": "low",
+      "status": "resolved"
+    }
+  ]
+}

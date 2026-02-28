@@ -424,8 +424,8 @@ async def invoke_agent(
             request_id=request.request_id,
             query=request.query,
             request_context=request_context,
-            output_config=request.output_config.model_dump() if request.output_config else None,
-            tools=[t.model_dump() for t in request.tools] if request.tools else None,
+            output_config=request.output_config,
+            tools=request.tools,
             installed_agents=installed_agents_dict,
             agent_store=agent_store_dict,
         )

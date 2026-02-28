@@ -1,0 +1,202 @@
+# Kubernetes Agent Manifest
+apiVersion: nexusops/v1
+kind: Agent
+
+metadata:
+  id: nexusops.k8s
+  name: Kubernetes Agent
+  version: 2.0.0
+  description: Manage Kubernetes resources with real API integration
+  author: NexusOps Team
+  keywords:
+    - kubernetes
+    - k8s
+    - pods
+    - deployments
+    - services
+    - namespace
+
+spec:
+  # Entry point configuration
+  entrypoint:
+    type: builtin
+    module: app.agents.k8s.handler
+  
+  # Capabilities (permissions)
+  capabilities:
+    - k8s:read
+    - k8s:write
+  
+  # Configuration schema
+  configSchema:
+    type: object
+    properties:
+      kubeconfig:
+        type: string
+        description: Path to kubeconfig file (optional, uses default if not specified)
+      context:
+        type: string
+        description: Kubernetes context to use (optional)
+  
+  # Tool definitions
+  tools:
+    # Pod operations
+    - name: k8s_list_pods
+      description: List pods in a Kubernetes namespace with optional label filtering
+      inputSchema:
+        type: object
+        properties:
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+          labels:
+            type: object
+            description: Label selectors, e.g. {"app": "nginx"}
+      dangerous: false
+    
+    - name: k8s_get_pod
+      description: Get detailed information about a specific pod
+      inputSchema:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Pod name
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+        required:
+          - name
+      dangerous: false
+    
+    - name: k8s_delete_pod
+      description: Delete a pod from the cluster
+      inputSchema:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Pod name
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+          force:
+            type: boolean
+            description: Force deletion without grace period
+            default: false
+        required:
+          - name
+      dangerous: true
+    
+    - name: k8s_get_pod_logs
+      description: Get logs from a pod
+      inputSchema:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Pod name
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+          tail_lines:
+            type: integer
+            description: Number of lines to return
+            default: 100
+          container:
+            type: string
+            description: Container name for multi-container pods
+        required:
+          - name
+      dangerous: false
+    
+    # Deployment operations
+    - name: k8s_list_deployments
+      description: List deployments in a namespace
+      inputSchema:
+        type: object
+        properties:
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+      dangerous: false
+    
+    - name: k8s_get_deployment
+      description: Get detailed deployment information
+      inputSchema:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Deployment name
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+        required:
+          - name
+      dangerous: false
+    
+    - name: k8s_scale_deployment
+      description: Scale a deployment to specified replicas
+      inputSchema:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Deployment name
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+          replicas:
+            type: integer
+            description: Target replica count
+            minimum: 0
+            maximum: 100
+        required:
+          - name
+          - replicas
+      dangerous: false
+    
+    # Namespace operations
+    - name: k8s_list_namespaces
+      description: List all Kubernetes namespaces
+      inputSchema:
+        type: object
+        properties: {}
+      dangerous: false
+    
+    # Service operations
+    - name: k8s_list_services
+      description: List services in a namespace
+      inputSchema:
+        type: object
+        properties:
+          namespace:
+            type: string
+            description: Kubernetes namespace
+            default: default
+      dangerous: false
+  
+  # Trigger keywords for intelligent routing
+  triggers:
+    keywords:
+      - pod
+      - pods
+      - deployment
+      - deployments
+      - service
+      - services
+      - k8s
+      - kubernetes
+      - namespace
+      - replica
+      - scale
+      - container
+      - node

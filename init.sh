@@ -53,9 +53,9 @@ check_dependencies() {
         exit 1
     fi
 
-    # Check Go
-    if ! command -v go &> /dev/null; then
-        log_warn "Go is not installed. Backend services will not start."
+    # Check Python
+    if ! command -v python3 &> /dev/null; then
+        log_warn "Python 3 is not installed. Backend services will not start."
     fi
 
     # Check Node.js
@@ -68,16 +68,16 @@ check_dependencies() {
 
 start_infra() {
     log_info "Starting infrastructure services..."
-    cd backend/deployments/docker
+    cd docker
 
     # Start core services
-    docker-compose up -d postgres redis grafana prometheus
+    docker-compose -f docker-compose.middleware.yml up -d postgres redis
 
     log_info "Waiting for services to be healthy..."
     sleep 5
 
     # Check if postgres is ready
-    until docker-compose exec -T postgres pg_isready -U nexusops; do
+    until docker-compose -f docker-compose.middleware.yml exec -T postgres pg_isready -U nexusops; do
         log_info "Waiting for PostgreSQL..."
         sleep 2
     done
@@ -85,8 +85,6 @@ start_infra() {
     log_success "Infrastructure services started"
     log_info "  - PostgreSQL: localhost:5432"
     log_info "  - Redis: localhost:6379"
-    log_info "  - Grafana: http://localhost:3001 (admin/admin)"
-    log_info "  - Prometheus: http://localhost:9090"
 
     cd "$SCRIPT_DIR"
 }
@@ -96,28 +94,16 @@ start_backend() {
 
     cd backend
 
-    # Download dependencies
-    if [ ! -d "vendor" ]; then
-        log_info "Downloading Go dependencies..."
-        go mod download
-    fi
-
-    # Start API Gateway
-    log_info "Starting API Gateway on port 8080..."
-    go run ./cmd/api-gateway &
+    # Start FastAPI backend
+    log_info "Starting FastAPI backend on port 8000..."
+    uvicorn app.main:app --reload --port 8000 &
     API_PID=$!
     echo $API_PID > /tmp/nexusops-api.pid
 
-    # Start Chat Gateway
-    log_info "Starting Chat Gateway on port 8081..."
-    go run ./cmd/chat-gateway &
-    CHAT_PID=$!
-    echo $CHAT_PID > /tmp/nexusops-chat.pid
-
     cd "$SCRIPT_DIR"
     log_success "Backend services started"
-    log_info "  - API Gateway: http://localhost:8080"
-    log_info "  - Chat Gateway: ws://localhost:8081"
+    log_info "  - API: http://localhost:8000"
+    log_info "  - WebSocket: ws://localhost:8000/ws"
 }
 
 start_frontend() {
@@ -150,18 +136,14 @@ stop_services() {
         kill $(cat /tmp/nexusops-api.pid) 2>/dev/null || true
         rm /tmp/nexusops-api.pid
     fi
-    if [ -f /tmp/nexusops-chat.pid ]; then
-        kill $(cat /tmp/nexusops-chat.pid) 2>/dev/null || true
-        rm /tmp/nexusops-chat.pid
-    fi
     if [ -f /tmp/nexusops-frontend.pid ]; then
         kill $(cat /tmp/nexusops-frontend.pid) 2>/dev/null || true
         rm /tmp/nexusops-frontend.pid
     fi
 
     # Stop Docker services
-    cd backend/deployments/docker
-    docker-compose down
+    cd docker
+    docker-compose -f docker-compose.middleware.yml down
     cd "$SCRIPT_DIR"
 
     log_success "All services stopped"
@@ -172,23 +154,17 @@ show_status() {
     echo ""
 
     # Check Docker services
-    cd backend/deployments/docker
-    docker-compose ps
+    cd docker
+    docker-compose -f docker-compose.middleware.yml ps
     cd "$SCRIPT_DIR"
 
     echo ""
 
     # Check backend processes
-    if pgrep -f "api-gateway" > /dev/null; then
-        log_success "API Gateway: Running"
+    if pgrep -f "uvicorn app.main:app" > /dev/null; then
+        log_success "Backend API: Running"
     else
-        log_warn "API Gateway: Not running"
-    fi
-
-    if pgrep -f "chat-gateway" > /dev/null; then
-        log_success "Chat Gateway: Running"
-    else
-        log_warn "Chat Gateway: Not running"
+        log_warn "Backend API: Not running"
     fi
 
     if pgrep -f "vite" > /dev/null; then
@@ -202,11 +178,9 @@ show_urls() {
     echo ""
     log_info "Service URLs:"
     echo "  Frontend:      http://localhost:3000"
-    echo "  API Gateway:   http://localhost:8080"
-    echo "  Chat Gateway:  ws://localhost:8081"
-    echo "  Grafana:       http://localhost:3001 (admin/admin)"
-    echo "  Prometheus:    http://localhost:9090"
-    echo "  PostgreSQL:    localhost:5432 (nexusops/nexusops_dev)"
+    echo "  API:           http://localhost:8000"
+    echo "  WebSocket:     ws://localhost:8000/ws"
+    echo "  PostgreSQL:    localhost:5432 (nexusops/nexusops)"
     echo "  Redis:         localhost:6379"
     echo ""
 }

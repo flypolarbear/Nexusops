@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# EXO Team: Parallel Agent Workflow with tmux Split Panes
+#
+# Layout:
+# ┌────────────────────────────────────────┐
+# │                        GLM (Coordinator)                             │
+# ├─────────────────────┬─────────────────────┤────────────────────────┤
+# │        Elon (PM/Architect)         │        Ryan (Developer)        │       Cynthia (QA)         │
+# └─────────────────────┴─────────────────────┘─────────────────────────────────────┘
+
+# Pane 0: GLM (Coordinator)
+# Pane 1: Ryan (Developer)
+# Pane 2: Cynthia (QA)
+# Pane 3: Elon (PM)
+
+SESSION_name="claude-work"
+project_root="/Users/hendrix/AgentSpace/NexusOps"
+pane_base="/Users/hendrix/AgentSpace/NexusOps"
+
+# Kill existing session if exists
+tmux kill-session -t $SESSION_name 2>/dev/null
+
+fi
+
+tmux send-keys -t $SESSION_name:0 "echo '🟢 GLM - Coordinator' && echo '任务: 总控协调、质量门禁、最终汇总' && echo ''
+sleep 1
+
+# Pane 0: GLM
+tmux send-keys -t $session_name:0 "echo '🟢 GLM - Coordinator' && echo '任务: 总控协调、质量门禁、最终汇总' && echo ''
+sleep 1
+
+# Pane 1: Ryan
+tmux send-keys -t$session_name:1 "echo '🔵 Ryan - Full-Stack Developer' && echo '任务: 在 Settings 页面添加 AI/LLM 配置 Tab' && echo '2. 配置 GLM API Key' && echo '3. 创建新的 hook: frontend/src/hooks/useAgentChat.ts' && echo '4. 更新 AIAssistant.tsx 使用新 hook' && echo '' && echo '5. 截图保存测试证据' && echo '' && echo '6. 回归测试' && echo '' && echo '7. 更新任务列表' && echo ''

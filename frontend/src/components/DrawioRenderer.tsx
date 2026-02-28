@@ -119,11 +119,16 @@ export default function DrawioRenderer({ height = 400, showControls = true }: Dr
         const svgContent = decodeURIComponent(content.replace('data:image/svg+xml,', ''))
         containerRef.current.innerHTML = svgContent
       } else if (content.startsWith('data:image/svg+xml;base64,')) {
-        // Base64-encoded SVG data URL
+        // Base64-encoded SVG data URL (UTF-8)
         const base64Content = content.replace('data:image/svg+xml;base64,', '')
-        const svgContent = atob(base64Content)
+        // Decode base64 to bytes, then decode UTF-8 properly
+        const binaryString = atob(base64Content)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        const svgContent = new TextDecoder('utf-8').decode(bytes)
         containerRef.current.innerHTML = svgContent
-      } else if (content.startsWith('<svg')) {
         // Raw SVG content
         containerRef.current.innerHTML = content
       } else if (content.startsWith('http')) {
@@ -161,14 +166,11 @@ export default function DrawioRenderer({ height = 400, showControls = true }: Dr
     }
   }
 
-  const handleUpload = async (file: UploadFile) => {
-    const uploadFile = file.originFileObj
-    if (!uploadFile) return false
+  const handleUpload = async (file: File) => {
+  const fileName = file.name.toLowerCase()
+  const reader = new FileReader()
 
-    const fileName = uploadFile.name.toLowerCase()
-    const reader = new FileReader()
-
-    reader.onload = (e) => {
+  reader.onload = (e) => {
       const content = e.target?.result as string
 
       let type: 'drawio' | 'svg' | 'png' = 'svg'
@@ -196,7 +198,7 @@ export default function DrawioRenderer({ height = 400, showControls = true }: Dr
 
       const newDiagram: DiagramConfig = {
         id: `diagram-${Date.now()}`,
-        name: uploadFile.name.replace(/\.[^/.]+$/, ''),
+        name: file.name.replace(/\.[^/.]+$/, ''),
         type,
         content: fileContent,
         lastUpdated: new Date().toISOString(),
@@ -209,9 +211,9 @@ export default function DrawioRenderer({ height = 400, showControls = true }: Dr
     }
 
     if (fileName.endsWith('.png')) {
-      reader.readAsDataURL(uploadFile)
+      reader.readAsDataURL(file)
     } else {
-      reader.readAsText(uploadFile)
+      reader.readAsText(file)
     }
 
     return false // Prevent default upload behavior
