@@ -86,7 +86,7 @@ class TestK8sAgentHandler:
     
     def test_tools_count(self, handler):
         tools = handler.get_tools()
-        assert len(tools) == 9
+        assert len(tools) == 11
     
     def test_tool_names(self, handler):
         tools = handler.get_tools()
@@ -101,6 +101,8 @@ class TestK8sAgentHandler:
             "k8s_scale_deployment",
             "k8s_list_namespaces",
             "k8s_list_services",
+            "k8s_get_service",
+            "k8s_list_ingresses",
         }
         assert tool_names == expected
     

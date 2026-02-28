@@ -34,9 +34,9 @@ class KubernetesAdapter(BaseAdapter):
         self._context = context
         self._core_v1 = None
         self._apps_v1 = None
+        self._networking_v1 = None
         self._initialized = False
         self._init_error: Optional[str] = None
-    
     def _ensure_initialized(self):
         """Ensure K8s client is initialized"""
         if self._initialized:
@@ -70,6 +70,7 @@ class KubernetesAdapter(BaseAdapter):
             
             self._core_v1 = client.CoreV1Api()
             self._apps_v1 = client.AppsV1Api()
+            self._networking_v1 = client.NetworkingV1Api()
         except ImportError:
             raise RuntimeError("kubernetes package not installed. Run: pip install kubernetes")
         except Exception as e:
@@ -388,6 +389,57 @@ class KubernetesAdapter(BaseAdapter):
         except Exception as e:
             return self._handle_api_error(e, "list_services")
     
+    async def get_service(self, name: str, namespace: str = "default") -> Dict[str, Any]:
+        """
+        Get detailed service information including access URLs.
+        
+        Args:
+            name: Service name
+            namespace: Kubernetes namespace
+            
+        Returns:
+            Standardized result with service details
+        """
+        try:
+            self._ensure_initialized()
+            
+            service = self._core_v1.read_namespaced_service(name, namespace)
+            
+            return {
+                "success": True,
+                "service": self._format_service(service),
+                "namespace": namespace
+            }
+        except Exception as e:
+            return self._handle_api_error(e, "get_service", resource=name)
+    
+    # ============================================================
+    # Ingress Operations
+    # ============================================================
+    
+    async def list_ingresses(self, namespace: str = "default") -> Dict[str, Any]:
+        """
+        List ingresses in a namespace.
+        
+        Args:
+            namespace: Kubernetes namespace
+            
+        Returns:
+            Standardized result with ingress list
+        """
+        try:
+            self._ensure_initialized()
+            
+            ingresses = self._networking_v1.list_namespaced_ingress(namespace)
+            
+            return {
+                "success": True,
+                "ingresses": [self._format_ingress(ing) for ing in ingresses.items],
+                "namespace": namespace,
+                "total": len(ingresses.items)
+            }
+        except Exception as e:
+            return self._handle_api_error(e, "list_ingresses")
     # ============================================================
     # Formatting Methods
     # ============================================================
@@ -453,21 +505,159 @@ class KubernetesAdapter(BaseAdapter):
         }
     
     def _format_service(self, service) -> Dict[str, Any]:
-        """Format service summary"""
+        """Format service summary with access URL info"""
+        service_type = service.spec.type
+        
+        # Build ports array with node_port if available
+        ports = []
+        for p in (service.spec.ports or []):
+            port_info = {
+                "port": p.port,
+                "target_port": p.target_port,
+                "protocol": p.protocol,
+            }
+            # Add node_port for NodePort type
+            if service_type == "NodePort" and p.node_port:
+                port_info["node_port"] = p.node_port
+            ports.append(port_info)
+        
+        # Get external IPs based on service type
+        external_ips = []
+        loadbalancer_ip = None
+        
+        if service_type == "LoadBalancer":
+            # Get LoadBalancer external IP
+            if service.status.loadBalancer and service.status.loadBalancer.ingress:
+                for ingress in service.status.loadBalancer.ingress:
+                    if ingress.ip:
+                        external_ips.append(ingress.ip)
+                        loadbalancer_ip = ingress.ip
+                    if ingress.hostname:
+                        external_ips.append(ingress.hostname)
+        elif service_type == "NodePort":
+            # Get node external IPs if available
+            if service.spec.externalIPs:
+                external_ips.extend(service.spec.externalIPs)
+        
+        # Build access URLs
+        access_urls = self._build_access_urls(service, ports, external_ips, loadbalancer_ip)
+        
         return {
             "name": service.metadata.name,
             "namespace": service.metadata.namespace,
-            "type": service.spec.type,
+            "type": service_type,
             "cluster_ip": service.spec.cluster_ip,
-            "ports": [
-                {
-                    "port": p.port,
-                    "target_port": p.target_port,
-                    "protocol": p.protocol,
-                }
-                for p in (service.spec.ports or [])
-            ],
+            "ports": ports,
+            "external_ips": external_ips,
+            "loadbalancer_ip": loadbalancer_ip,
+            "access_urls": access_urls,
             "age": self._get_age(service.metadata.creation_timestamp),
+        }
+    
+    def _build_access_urls(
+        self,
+        service,
+        ports: List[Dict],
+        external_ips: List[str],
+        loadbalancer_ip: Optional[str]
+    ) -> List[str]:
+        """Build access URLs based on service type"""
+        urls = []
+        service_type = service.spec.type
+        namespace = service.metadata.namespace
+        name = service.metadata.name
+        
+        for port_info in ports:
+            port = port_info["port"]
+            
+            # Determine URL scheme
+            scheme = "https" if port in [443, 8443] else "http"
+            
+            if service_type == "LoadBalancer":
+                # LoadBalancer - use external IP
+                if loadbalancer_ip:
+                    url_port = f":{port}" if port not in [80, 443] else ""
+                    urls.append(f"{scheme}://{loadbalancer_ip}{url_port}")
+                for ip in external_ips:
+                    if ip != loadbalancer_ip:
+                        url_port = f":{port}" if port not in [80, 443] else ""
+                        urls.append(f"{scheme}://{ip}{url_port}")
+            
+            elif service_type == "NodePort":
+                # NodePort - need node IP + node_port
+                node_port = port_info.get("node_port")
+                if node_port:
+                    # Indicate that node IP is needed
+                    urls.append(f"{scheme}://<node-ip>:{node_port}")
+            
+            elif service_type == "ClusterIP":
+                # ClusterIP - internal only
+                cluster_ip = service.spec.cluster_ip
+                if cluster_ip and cluster_ip != "None":
+                    url_port = f":{port}" if port not in [80, 443] else ""
+                    urls.append(f"{scheme}://{cluster_ip}{url_port} (internal only)")
+        
+        # Add note about port-forward for internal access
+        if service_type == "ClusterIP":
+            first_port = ports[0]["port"] if ports else 80
+            urls.append(f"kubectl port-forward svc/{name} -n {namespace} <local-port>:{first_port}")
+        
+        return urls
+    
+    def _format_ingress(self, ingress) -> Dict[str, Any]:
+        """Format ingress summary"""
+        # Build hosts and paths
+        hosts = []
+        paths = []
+        
+        if ingress.spec.rules:
+            for rule in ingress.spec.rules:
+                host = rule.host or "*"
+                hosts.append(host)
+                
+                if rule.http and rule.http.paths:
+                    for path in rule.http.paths:
+                        backend = path.backend
+                        service_name = None
+                        service_port = None
+                        
+                        # Handle different backend types
+                        if backend.service:
+                            service_name = backend.service.name
+                            service_port = backend.service.port.number if backend.service.port else None
+                        
+                        paths.append({
+                            "host": host,
+                            "path": path.path or "/",
+                            "path_type": path.path_type or "Prefix",
+                            "service_name": service_name,
+                            "service_port": service_port,
+                        })
+        
+        # Build TLS info
+        tls = []
+        if ingress.spec.tls:
+            for t in ingress.spec.tls:
+                tls.append({
+                    "hosts": t.hosts or [],
+                    "secret_name": t.secret_name,
+                })
+        
+        # Build access URLs
+        access_urls = []
+        for host in hosts:
+            scheme = "https" if any(t["hosts"] and host in t["hosts"] for t in tls) else "http"
+            if host != "*":
+                access_urls.append(f"{scheme}://{host}")
+        
+        return {
+            "name": ingress.metadata.name,
+            "namespace": ingress.metadata.namespace,
+            "hosts": hosts,
+            "paths": paths,
+            "tls": tls,
+            "access_urls": access_urls,
+            "age": self._get_age(ingress.metadata.creation_timestamp),
         }
     
     def _format_resources(self, resources) -> Dict[str, Any]:
