@@ -395,6 +395,32 @@ If rules conflict, defer to `agentic_pact/PACT.md`.
 
 ## OMO × Spec-Kit Bridge
 
+### 工作流快速参考
+
+**标准执行顺序**（Spec-Kit 阶段 → OMO 阶段）：
+
+```
+# Spec-Kit 阶段（模板/脚本驱动）
+/speckit.specify   → 生成 spec.md
+/speckit.clarify   → （可选）澄清需求
+/speckit.plan      → 生成 plan.md + research.md + data-model.md + contracts/
+/speckit.tasks     → 生成 tasks.md
+
+# 完成信号：tasks.md 存在 + 所有 checklist 通过
+
+# OMO 阶段（agent/harness 驱动）
+Sisyphus           → 读取 tasks.md，生成执行图
+ulw-loop           → 执行任务（以 tasks.md 为唯一输入）
+Ralph              → 验证 + 证据输出
+```
+
+**关键规则**：
+- OMO 对 `specs/` 目录**只读**（规则 A）
+- Spec-Kit 阶段与 OMO 阶段**互斥**（规则 B）
+- OMO 执行单位必须是 `tasks.md` 中的任务（规则 C）
+- 规格变更必须先停止 OMO，返回 Spec-Kit 重生成制品（规则 C + D）
+
+
 This repo uses Spec-Kit for **spec/plan/tasks artifacts** and OMO for **execution**.
 Use the bridge rules to avoid workflow conflicts:
 
