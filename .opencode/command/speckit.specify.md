@@ -1,19 +1,5 @@
 ---
 description: Create or update the feature specification from a natural language feature description.
-
-# Agent Dispatch Configuration (方案 A)
-agent_dispatch:
-  phases:
-    - name: specify
-      description: 需求分析与规格撰写
-      primary: sisyphus  # Sisyphus 自己处理主流程
-      trigger: 总是
-      
-    - name: clarify
-      description: 歧义消除与需求澄清
-      primary: metis
-      trigger: 有 [NEEDS CLARIFICATION] 标记
-      
 handoffs: 
   - label: Build Technical Plan
     agent: speckit.plan

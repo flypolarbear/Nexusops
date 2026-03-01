@@ -424,25 +424,8 @@ Ralph              → 验证 + 证据输出
 This repo uses Spec-Kit for **spec/plan/tasks artifacts** and OMO for **execution**.
 Use the bridge rules to avoid workflow conflicts:
 
-- **Bridge Contract**: `OMO_SPEC_KIT_BRIDGE.md`
 - **Spec-Kit Output**: `specs/<feature>/{spec.md,plan.md,tasks.md,...}` (source of truth)
 - **OMO Execution**: read `tasks.md` only; do not mutate spec/plan/tasks directly
-
-### Agent Mapping (自动分派)
-
-Sisyphus 在执行 Spec‑Kit 命令时自动分派到专业 Agent：
-
-| 命令 | 阶段 | 分派到 |
-|------|------|--------|
-| `/speckit.specify` | 澄清 | metis |
-| `/speckit.plan` | 研究 | librarian |
-| `/speckit.plan` | 架构 | oracle |
-| `/speckit.plan` | 任务规划 | prometheus |
-| `/speckit.plan` | 审查 | momus |
-| `/speckit.plan` | 文档 | writing |
-| `/speckit.tasks` | 分析 | momus |
-| `/speckit.implement` | 前端 | visual-engineering |
-| `/speckit.implement` | 复杂逻辑 | ultrabrain |
 
 ### 魔法命令 `/spec`
 
@@ -452,7 +435,7 @@ Sisyphus 在执行 Spec‑Kit 命令时自动分派到专业 Agent：
 /spec 我想在顶部 tab 栏添加一个小狗 icon
 ```
 
-自动执行：`/speckit.specify` → `/speckit.plan` → `/speckit.tasks`
+自动执行：`/speckit.specify`→ `/speckit.clarify` → `/speckit.plan`  → `/speckit.tasks`
 
 **调度脚本**: `.specify/scripts/bash/agent-dispatch.sh`
 

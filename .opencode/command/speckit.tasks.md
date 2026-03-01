@@ -1,19 +1,5 @@
 ---
 description: Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts.
-
-# Agent Dispatch Configuration (方案 A)
-agent_dispatch:
-  phases:
-    - name: decompose
-      description: 任务分解与依赖编排
-      primary: sisyphus  # Sisyphus 自己处理
-      trigger: 总是
-      
-    - name: analyze
-      description: 一致性分析
-      primary: momus
-      trigger: 可选（质量门）
-      
 handoffs: 
   - label: Analyze For Consistency
     agent: speckit.analyze
