@@ -22,11 +22,9 @@ from app.core.config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
-    # Startup - skip DB for demo
-    # await init_db()
+    from app.core.database import init_db
+    await init_db()
     yield
-    # Shutdown
-    # await close_db()
 
 
 app = FastAPI(

@@ -11,7 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./docker/scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexusops"]
       interval: 5s
@@ -44,10 +44,10 @@ services:
       - "18789:18789"
     volumes:
       - openclaw_data:/home/node/.openclaw
-      - ../openclaw/workspace:/home/node/.openclaw/nexusops/workspace
+      - ./openclaw/workspace:/home/node/.openclaw/nexusops/workspace:ro
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_AUTH_TOKEN:-nexusops-gateway-token-change-me}
+      - OPENCLAW_CONFIG_CONTENT=${OPENCLAW_CONFIG_CONTENT}
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:18789/ || exit 1"]
       interval: 15s
@@ -56,18 +56,38 @@ services:
       start_period: 30s
     networks:
       - nexusops-network
-    depends_on:
-      openclaw-init:
-        condition: service_completed_successfully
 
-  # Copy config and fix ownership before openclaw starts
-  openclaw-init:
-    image: busybox
-    container_name: nexusops-openclaw-init
-    command: ["sh", "-c", "cp /config/openclaw.json /home/node/.openclaw/openclaw.json && chown -R 1000:1000 /home/node/.openclaw && echo done"]
-    volumes:
-      - openclaw_data:/home/node/.openclaw
-      - ../openclaw/openclaw.json:/config/openclaw.json:ro
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nexusops-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://nexusops:nexusops@postgres:5432/nexusops
+      - REDIS_URL=redis://redis:6379
+      - OPENCLAW_GATEWAY_URL=http://openclaw:18789
+      - DEBUG=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nexusops-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nexusops-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
     networks:
       - nexusops-network
 

@@ -13,9 +13,13 @@
 
 ---
 
-## Constitution (必读)
+## Development Guidelines
 
-最高优先级规则：[.specify/memory/constitution.md](./.specify/memory/constitution.md)
+遵循项目开发规范：
+- **API-First Design** - 所有功能暴露 REST/WebSocket API
+- **Async-First Architecture** - 全异步架构
+- **Type Safety** - 严格类型检查
+- **Test Coverage** - 70%+ 测试覆盖率
 
 ---
 
@@ -43,7 +47,7 @@ cd docker && docker-compose -f docker-compose.middleware.yml up -d
 | 用户文档 | [docs/](./docs/index.md) |
 | 演进知识库 | [evolve/](./evolve/index.md) |
 | AI 工具指南 | [copilot/](./copilot/index.md) |
-| 宪法 | [.specify/memory/constitution.md](./.specify/memory/constitution.md) |
+| 开发流程 | [DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md) |
 ---
 
 ## Code Style
@@ -89,15 +93,54 @@ cd docker && docker-compose -f docker-compose.middleware.yml up -d
 
 ---
 
+## OpenClaw Integration
+
+NexusOps agents run through [OpenClaw](https://docs.openclaw.ai/) — a self-hosted AI agent gateway.
+
+| 组件 | 说明 |
+|------|------|
+| `openclaw/openclaw.json` | OpenClaw agent 配置（8个 NexusOps agents） |
+| `openclaw/workspace/` | Agent workspace（AGENTS.md, SOUL.md, skills/） |
+| `openclaw/workspace/skills/` | 每个 agent 的 SKILL.md 技能文件 |
+
+### 启动 OpenClaw
+
+```bash
+# 随中间件一起启动
+cd docker && docker-compose -f docker-compose.middleware.yml up -d
+
+# 或单独启动
+docker run -it --rm \
+  -p 18789:18789 \
+  -v ~/.openclaw:/home/node/.openclaw \
+  -v $(pwd)/openclaw/workspace:/home/node/.openclaw/nexusops/workspace \
+  -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+  ghcr.io/openclaw/openclaw:latest
+```
+
+### 启用 OpenClaw 路由
+
+```bash
+# 设置环境变量，后端将通过 OpenClaw 执行所有 agents
+export OPENCLAW_GATEWAY_URL=http://localhost:18789
+cd backend && uvicorn app.main:app --reload --port 8000
+```
+
+不设置 `OPENCLAW_GATEWAY_URL` 时，后端回退到内置 Python agent handlers。
+
+---
+
 ## Project Structure
 
 ```
 NexusOps/
 ├── AGENTS.md              # 本文件
+├── openclaw/              # OpenClaw 配置与 workspace
+│   ├── openclaw.json      # Agent 定义
+│   └── workspace/         # Agent workspace + skills
 ├── docs/                  # 用户文档
 ├── evolve/                # 演进知识库
 ├── copilot/               # AI 工具指南
-├── .specify/              # Spec-Kit 配置
 ├── backend/               # FastAPI 后端
 └── frontend/              # React 前端
 ```
@@ -107,35 +150,12 @@ NexusOps/
 ## Active Work
 
 任务状态：[copilot/](./copilot/index.md) 查看工具指南
----
-
-## Spec-Kit Bridge
-
-```
-# Spec-Kit 阶段
-/speckit.specify   → spec.md
-/speckit.clarify   → spec.md
-/speckit.plan     
-    → plan.md: 技术栈决策（比如用React 18, Zustand做状态管理, Framer Motion做动画）。
-    → （可选）data-model.md: 数据结构定义（比如Todo长啥样）。
-    → （可选）contracts/: API接口或组件接口定义。
-    → （可选）research.md: 为啥这么选型，做了哪些调研。
-/speckit.tasks     → tasks.md
-
-# OMO 执行阶段
-Sisyphus           → 读取 tasks.md 执行
-```
-
-魔法命令：`/spec <需求描述>` 一键启动 Spec-Kit 工作流
 
 ---
 
 ## Knowledge Base
 
-```
-# 任务完成后归档经验
-/wind-up            → 分析会话 → 更新 evolve/ 知识库
-```
+演进知识库：[evolve/](./evolve/index.md)
 
 适用场景：
 - 完成功能模块后总结模式
@@ -143,8 +163,13 @@ Sisyphus           → 读取 tasks.md 执行
 - 做出重要技术决策后归档 ADR
 
 ## Active Technologies
-- Python 3.11+ + FastAPI 0.100+, SQLAlchemy 2.0+ (async), Pydantic 2.0+, httpx (001-skill-bridge-mvp)
-- PostgreSQL 15+ (BridgeConfig, BridgeAdapter 状态) (001-skill-bridge-mvp)
+- Python 3.11+ + FastAPI 0.100+, SQLAlchemy 2.0+ (async), Pydantic 2.0+, httpx
+- PostgreSQL 15+ / Redis 7+
+- OpenClaw (ghcr.io/openclaw/openclaw) — AI agent gateway on port 18789
 
 ## Recent Changes
-- 001-skill-bridge-mvp: Added Python 3.11+ + FastAPI 0.100+, SQLAlchemy 2.0+ (async), Pydantic 2.0+, httpx
+- 001-skill-bridge-mvp: Integrated OpenClaw as agent execution backend
+  - Added `openclaw/` workspace with 8 agent SKILL.md files
+  - Added `OpenClawExecutor` in `backend/app/gateway/executor/openclaw.py`
+  - `ExecutorRouter` routes through OpenClaw when `OPENCLAW_GATEWAY_URL` is set
+  - Added OpenClaw service to `docker/docker-compose.middleware.yml`
