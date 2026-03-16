@@ -1,0 +1,178 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-6"
+      },
+      "models": {
+        "anthropic/claude-sonnet-4-6": {}
+      },
+      "sandbox": {
+        "mode": "off"
+      }
+    },
+    "list": [
+      {
+        "id": "nexusops-chat",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-chat/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-k8s",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-k8s/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-deploy",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-deploy/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-dns",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-dns/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-logs",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-logs/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-cost",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-cost/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-cicd",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-cicd/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      },
+      {
+        "id": "nexusops-git",
+        "workspace": "~/.openclaw/nexusops/workspace",
+        "agentDir": "~/.openclaw/agents/nexusops-git/agent",
+        "runtime": {
+          "type": "acp",
+          "acp": {
+            "agent": "claude",
+            "backend": "acpx",
+            "mode": "persistent",
+            "cwd": "~/.openclaw/nexusops/workspace"
+          }
+        }
+      }
+    ]
+  },
+  "gateway": {
+    "mode": "local",
+    "bind": "lan",
+    "auth": {
+      "mode": "token",
+      "token": "nexusops-gateway-token-change-me"
+    },
+    "http": {
+      "endpoints": {
+        "responses": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "bindings": [
+    {
+      "agentId": "nexusops-chat",
+      "match": { "channel": "api", "accountId": "nexusops-chat" }
+    },
+    {
+      "agentId": "nexusops-k8s",
+      "match": { "channel": "api", "accountId": "nexusops-k8s" }
+    },
+    {
+      "agentId": "nexusops-deploy",
+      "match": { "channel": "api", "accountId": "nexusops-deploy" }
+    },
+    {
+      "agentId": "nexusops-dns",
+      "match": { "channel": "api", "accountId": "nexusops-dns" }
+    },
+    {
+      "agentId": "nexusops-logs",
+      "match": { "channel": "api", "accountId": "nexusops-logs" }
+    },
+    {
+      "agentId": "nexusops-cost",
+      "match": { "channel": "api", "accountId": "nexusops-cost" }
+    },
+    {
+      "agentId": "nexusops-cicd",
+      "match": { "channel": "api", "accountId": "nexusops-cicd" }
+    },
+    {
+      "agentId": "nexusops-git",
+      "match": { "channel": "api", "accountId": "nexusops-git" }
+    }
+  ]
+}

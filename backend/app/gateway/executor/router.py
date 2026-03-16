@@ -6,6 +6,7 @@ MK-007: Executor 路由器
 Routes agent invocations to the appropriate executor.
 """
 
+import os
 from typing import Dict, Optional, Any
 from datetime import datetime
 
@@ -18,6 +19,7 @@ from app.gateway.executor.base import (
 )
 from app.gateway.executor.builtin import BuiltinExecutor
 from app.gateway.executor.remote import RemoteExecutor, MockRemoteExecutor
+from app.gateway.executor.openclaw import OpenClawExecutor
 
 
 class ExecutorRouter:
@@ -25,6 +27,8 @@ class ExecutorRouter:
     Executor router.
 
     Routes agent invocations to the appropriate executor based on agent type.
+    When OPENCLAW_GATEWAY_URL is set, built-in agents are routed through
+    OpenClaw. BuiltinExecutor is kept as fallback.
     """
 
     def __init__(self, use_mock_remote: bool = False):
@@ -41,6 +45,13 @@ class ExecutorRouter:
             self._remote: BaseExecutor = MockRemoteExecutor()
         else:
             self._remote = RemoteExecutor()
+
+        # OpenClaw executor — active when OPENCLAW_GATEWAY_URL is set
+        openclaw_url = os.getenv("OPENCLAW_GATEWAY_URL")
+        self._openclaw: Optional[OpenClawExecutor] = None
+        if openclaw_url:
+            self._openclaw = OpenClawExecutor(gateway_url=openclaw_url)
+            self._openclaw.set_fallback(self._builtin)
 
         # Agent registry: agent_id -> registration info
         self._agent_registry: Dict[str, dict] = {}
@@ -210,8 +221,14 @@ class ExecutorRouter:
         return None
 
     def _select_executor(self, agent_type: ExecutorType) -> BaseExecutor:
-        """Select executor based on agent type"""
+        """Select executor based on agent type.
+
+        When OpenClaw is configured, built-in agents are routed through it.
+        Falls back to BuiltinExecutor if OpenClaw is not available.
+        """
         if agent_type == ExecutorType.BUILTIN:
+            if self._openclaw is not None:
+                return self._openclaw
             return self._builtin
         elif agent_type in (ExecutorType.REMOTE, ExecutorType.MOCK):
             return self._remote
